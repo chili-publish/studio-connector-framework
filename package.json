@@ -1,0 +1,9 @@
+{
+  "name": "studio-connector-contrib",
+  "version": "1.0.0",
+  "author": "CHILI publish",
+  "license": "MIT",
+  "scripts": {
+    "build": "cd ./src/connectors/acquia && yarn build && cd ../../../ && cd ./src/test-harnass && yarn execute"
+  }
+}
