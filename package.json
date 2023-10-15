@@ -4,8 +4,10 @@
   "author": "CHILI publish",
   "license": "MIT",
   "scripts": {
-    "build": "cd ./src/connectors/acquia && yarn build && cd ../../../ && cd ./src/test-harnass && yarn execute",
-    "install": ""
+    "build-cli": "cd ./src/connector-cli/ && yarn build",
+    "refresh-cli": "yarn build-cli && rm -rf node_modules && yarn install",
+    "build-connectors": "node scripts/build-test-connectors.js",
+    "build": "yarn refresh-cli && yarn build-connectors"
   },
   "devDependencies": {
     "connector-cli": "./src/connector-cli"

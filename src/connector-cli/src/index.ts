@@ -20,7 +20,7 @@ async function main() {
 
     program
         .command('test')
-        .option('-c, --connectorFile  <connectorFile>')
+        .argument('<connectorFile>', 'Connector file (compiled js) to run test suite for')
         .option('-t, --testFile <testFile>')
         .action(runTests);
 
@@ -57,8 +57,8 @@ async function runGetInfo(connectorFile: string, options: any): Promise<void> {
 
 }
 
-async function runTests(options: any): Promise<void> {
-    const connectorFile = options.connectorFile;
+async function runTests(connectorFile:string, options: any): Promise<void> {
+    
     const testFile = options.testFile;
 
     if (!connectorFile || fs.existsSync(connectorFile) === false) {

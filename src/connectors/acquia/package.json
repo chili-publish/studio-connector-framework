@@ -21,6 +21,10 @@
     "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
   },
   "scripts": {
-    "build": "yarn run tsc"
+    "build": "yarn run tsc",
+    "test": "yarn run connector-cli test -t tests.json ./out/connector.js"
+  },
+  "devDependencies": {
+    "connector-cli": "../../../src/connector-cli"
   }
 }
