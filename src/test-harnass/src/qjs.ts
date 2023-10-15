@@ -5,6 +5,14 @@ export let runtimeConfig: RuntimeConfiguration = {
     fetchInterceptor: undefined
 }
 
+export function evalSync(vm: QuickJSContext, code: string) {
+
+    var evalResult = vm.evalCode(code);
+
+    const promiseHandle = vm.unwrapResult(evalResult);
+    return vm.dump(promiseHandle);
+}
+
 export async function evalAsync(vm: QuickJSContext, code: string) {
 
     var evalResult = vm.evalCode(code);
@@ -26,6 +34,8 @@ export async function evalAsync(vm: QuickJSContext, code: string) {
 
     return endResultPromise;
 }
+
+
 export type RuntimeConfiguration = {
     fetchInterceptor?: (url: string, options: any) => Promise<Response | undefined>;
 };

@@ -12,7 +12,10 @@ export default class AcquiaConnector implements Media.MediaConnector{
     runtime: Conn.ConnectorRuntimeContext;
 
     detail(id: string, context: Conn.Dictionary): Promise<Media.MediaDetail> {
-        throw new Error('Method not implemented.')
+        return Promise.resolve({
+            "name": "dummy",
+            "extension": ""
+        } as Media.MediaDetail)
     }
     async query(options: Conn.QueryOptions, context: Conn.Dictionary): Promise<Media.MediaPage> {
         try {
@@ -57,10 +60,25 @@ export default class AcquiaConnector implements Media.MediaConnector{
         throw new Error('Method not implemented.')
     }
     getConfigurationOptions(): Conn.ConnectorConfigOptions | null {
-        throw new Error('Method not implemented.')
+        return [
+            {
+                name: "MyOption1",
+                displayName: "Option 1",
+                type: Conn.ConnectorConfigValueType.text
+            }
+        ]
+            
+        
     }
     getCapabilities(): Conn.ConnectorCapabilities {
-        throw new Error('Method not implemented.')
+        return {
+            detail: true,
+            query: true,
+            copy: false,
+            remove: false,
+            filtering: false,
+            upload: false
+        }
     }
 
 }

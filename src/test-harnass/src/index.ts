@@ -1,18 +1,56 @@
 import fs from 'fs'
 import { program } from 'commander';
-import { initRuntime, evalAsync, runtimeConfig } from './qjs';
+import { initRuntime, evalAsync, runtimeConfig, evalSync } from './qjs';
 import { TestModels } from './testConfiguration';
 import { assertResult } from './asserts';
 
 async function main() {
 
     program
+        .name('connector-cli')
+        .version('1.0.0')
+        .description('Tool to manage connector test/publish process')
+
+    program
+        .command('info')
+        .argument('<connector file>', 'Connector file (compiled) to get info about')
+        .option('-o, --out <out>', "Output json file")
+        .action(runGetInfo);
+
+    program
+        .command('test')
         .option('-c, --connectorFile  <connectorFile>')
-        .option('-t, --testFile <testFile>');
+        .option('-t, --testFile <testFile>')
+        .action(runTests);
 
     program.parse(process.argv);
+}
 
-    const options = program.opts();
+try {
+    main()
+} catch (error) {
+    console.log(error)
+}
+
+
+async function runGetInfo(connectorFile: string, options: any): Promise<void> {
+    if (!connectorFile || fs.existsSync(connectorFile) === false) {
+        console.log("connectorFile is required")
+        return;
+    }
+    const vm = await initRuntime(connectorFile, {});
+
+    const capabilities = evalSync(vm, "loadedConnector.getCapabilities()");
+    const configurationOptions = evalSync(vm, "loadedConnector.getConfigurationOptions();")
+
+    fs.writeFileSync(options.out ? options.out : "./out.json", JSON.stringify({
+        capabilities,
+        configurationOptions
+    }, null, 2));
+
+}
+
+async function runTests(options: any): Promise<void> {
     const connectorFile = options.connectorFile;
     const testFile = options.testFile;
 
@@ -92,8 +130,3 @@ async function main() {
     return;
 }
 
-try {
-    main()
-} catch (error) {
-    console.log(error)
-}

@@ -1,8 +1,11 @@
 {
   "name": "test-harnass",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.ts",
   "license": "MIT",
+  "bin": {
+    "connector-cli": "./bin/connector-cli"
+  },
   "dependencies": {
     "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz",
     "@tootallnate/quickjs-emscripten": "^0.23.0",
@@ -14,6 +17,7 @@
     "@types/node": "^20.8.5"
   },
   "scripts": {
+    "build": "yarn run tsc",
     "execute": "yarn run ts-node src/index.ts -c '../connectors/acquia/out/connector.js' -t ./tests.json "
   }
 }
