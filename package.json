@@ -6,9 +6,8 @@
   "scripts": {
     "build": "cd ./src/connectors/acquia && yarn build && cd ../../../ && cd ./src/test-harnass && yarn execute",
     "install": ""
-  
   },
   "devDependencies": {
-    "test-harnass": "./src/test-harnass"
+    "connector-cli": "./src/connector-cli"
   }
 }

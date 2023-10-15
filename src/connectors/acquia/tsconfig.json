@@ -8,6 +8,7 @@
       "outDir": "out",
       "target": "ES2020",
       "moduleResolution": "Node",
+      "preserveConstEnums": false,
       "esModuleInterop": false,
       "removeComments": true,
       "declaration": false,

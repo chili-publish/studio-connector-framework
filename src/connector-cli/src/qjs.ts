@@ -124,7 +124,6 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
 
     // load connectors dynamically
     vm.runtime.setModuleLoader((moduleName: string) => {
-        console.log("module loader called", moduleName)
 
         if (moduleName === "Connector") {
             return fs.readFileSync(connectorUri, "utf8")

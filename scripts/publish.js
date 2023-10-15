@@ -13,7 +13,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const processConnector = (dir) => {
-    try {
         // Build the project
         execSync('yarn build', { cwd: dir, stdio: 'inherit' });
 
@@ -31,6 +30,15 @@ const processConnector = (dir) => {
         // Read the connector.js file
         const connectorJs = fs.readFileSync(path.join(outDir, 'connector.js'), 'utf-8');
 
+        // Build the project
+        const infoCommand = 'yarn run connector-cli info  -o ' + path.join(outDir, 'props.json')+' ' + path.join(outDir, 'connector.js');
+        console.log(infoCommand);
+        
+        execSync( infoCommand, { cwd: repoRoot });
+        
+        const infoOutput = fs.readFileSync(path.join(outDir, 'props.json'))
+        const connectorInfo = JSON.parse(  infoOutput);
+
         // Create a new JSON object
         const jsonObject = {
             name,
@@ -42,6 +50,7 @@ const processConnector = (dir) => {
         };
 
         Object.assign(jsonObject, config);
+        Object.assign(jsonObject, connectorInfo);
 
         // Write the JSON object to <repo root>/publish/<name>.json
         const publishDir = path.join(__dirname, '..', 'publish');
@@ -50,9 +59,6 @@ const processConnector = (dir) => {
         }
         fs.writeFileSync(path.join(publishDir, `${name}.${version}.json`), JSON.stringify(jsonObject, null, 2));
         console.log(`Successfully processed ${name}`);
-    } catch (error) {
-        console.error(`Error processing ${dir}: ${error}`);
-    }
 };
 
 const findRepoRoot = startPath => {

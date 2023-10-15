@@ -64,7 +64,8 @@ export default class AcquiaConnector implements Media.MediaConnector{
             {
                 name: "MyOption1",
                 displayName: "Option 1",
-                type: Conn.ConnectorConfigValueType.text
+                //@ts-ignore
+                type: 'text'
             }
         ]
             

@@ -1,5 +1,5 @@
 {
-  "name": "test-harnass",
+  "name": "connector-cli",
   "version": "1.0.1",
   "main": "index.ts",
   "license": "MIT",

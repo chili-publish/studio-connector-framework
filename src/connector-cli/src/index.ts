@@ -3,6 +3,7 @@ import { program } from 'commander';
 import { initRuntime, evalAsync, runtimeConfig, evalSync } from './qjs';
 import { TestModels } from './testConfiguration';
 import { assertResult } from './asserts';
+import { stdout } from 'process';
 
 async function main() {
 
@@ -43,10 +44,16 @@ async function runGetInfo(connectorFile: string, options: any): Promise<void> {
     const capabilities = evalSync(vm, "loadedConnector.getCapabilities()");
     const configurationOptions = evalSync(vm, "loadedConnector.getConfigurationOptions();")
 
-    fs.writeFileSync(options.out ? options.out : "./out.json", JSON.stringify({
+    const properties = JSON.stringify({
         capabilities,
         configurationOptions
-    }, null, 2));
+    }, null, 2);
+
+    if (options.out) {
+        fs.writeFileSync(options.out ? options.out : "./out.json", properties);
+    } else {
+        process.stdout.write(properties)
+    }
 
 }
 
