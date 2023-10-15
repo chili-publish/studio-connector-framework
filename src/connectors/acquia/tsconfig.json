@@ -7,12 +7,14 @@
       "module": "ES2020",
       "outDir": "out",
       "target": "ES2020",
+      "moduleResolution": "Node",
       "esModuleInterop": false,
       "removeComments": true,
       "declaration": false,
       "typeRoots": [
           "node_modules/@chili-publish/studio-connectors/types"
       ],
+      
   },
   "include": [
       "connector.ts"

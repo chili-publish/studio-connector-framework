@@ -1,5 +1,5 @@
-import * as Conn from 'Connector.Shared'
-import * as Media from 'MediaConnector'
+import * as Conn from '@chili-publish/studio-connectors/types/Connector.Shared'
+import * as Media from '@chili-publish/studio-connectors/types/MediaConnector'
 
 export default class AcquiaConnector implements Media.MediaConnector{
     /**

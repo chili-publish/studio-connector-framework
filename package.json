@@ -4,6 +4,8 @@
   "author": "CHILI publish",
   "license": "MIT",
   "scripts": {
-    "build": "cd ./src/connectors/acquia && yarn build && cd ../../../ && cd ./src/test-harnass && yarn execute"
+    "build": "cd ./src/connectors/acquia && yarn build && cd ../../../ && cd ./src/test-harnass && yarn execute",
+    "install": ""
+  
   }
 }

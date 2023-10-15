@@ -1,12 +1,24 @@
 {
   "name": "acquia",
+  "description": "",
   "version": "1.0.0",
-  "main": "index.js",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "main": "out/connector.js",
+  "config": {
+    "options": {
+      "BASE_URL": "",
+      "DEBUG": "0"
+    },
+    "mappings": {}
+  },
   "license": "MIT",
   "dependencies": {
     "typescript": "^5.2.2",
     "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
-    
   },
   "scripts": {
     "build": "yarn run tsc"
