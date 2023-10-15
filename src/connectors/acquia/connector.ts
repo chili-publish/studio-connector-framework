@@ -14,7 +14,7 @@ export default class AcquiaConnector implements Media.MediaConnector{
     detail(id: string, context: Conn.Dictionary): Promise<Media.MediaDetail> {
         return Promise.resolve({
             "name": "dummy",
-            "extension": ""
+            "extension": "png"
         } as Media.MediaDetail)
     }
     async query(options: Conn.QueryOptions, context: Conn.Dictionary): Promise<Media.MediaPage> {
