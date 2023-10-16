@@ -1,5 +1,4 @@
-import * as Conn from '@chili-publish/studio-connectors/types/Connector.Shared'
-import * as Media from '@chili-publish/studio-connectors/types/MediaConnector'
+import { Connector, Media  }  from '@chili-publish/studio-connectors'
 
 export default class YourConnector implements Media.MediaConnector{
 
