@@ -1,6 +1,6 @@
 import { Connector, Media  }  from '@chili-publish/studio-connectors'
 
-export default class YourConnector implements Media.MediaConnector{
+export default class PublisherConnector implements Media.MediaConnector{
 
     constructor(runtime: Connector.ConnectorRuntimeContext) {        
         this.runtime = runtime;

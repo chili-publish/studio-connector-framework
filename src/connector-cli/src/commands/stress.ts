@@ -65,6 +65,7 @@ export async function runStressTest(connectorFile: string, options: any): Promis
 }
 
 function analyzeMemoryStats(stats: MemoryStats[]): void {
+
     let previousStats: MemoryStats | null = null;
     const significantIncreaseFactor = 1.1; // Define what you consider a "significant" increase
 

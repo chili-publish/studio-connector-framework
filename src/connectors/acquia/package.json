@@ -17,7 +17,6 @@
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
-    "typescript": "^5.2.2",
     "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz"
   },
   "scripts": {
@@ -25,6 +24,7 @@
     "test": "yarn run connector-cli test -t tests.json ./out/connector.js && yarn run connector-cli stress ./out/connector.js"
   },
   "devDependencies": {
+    "typescript": "^5.2.2",
     "connector-cli": "../../../src/connector-cli"
   }
 }

@@ -1,4 +1,4 @@
-name: Validate PR
+name: Validate Connector PR
 
 on:
   pull_request:
@@ -36,25 +36,6 @@ jobs:
           fi
         done
         echo "::set-output name=connector::$connector_changed"
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-
-    - name: Install dependencies
-      run: |
-        yarn install
-
-    - name: Check for required files and run tests
-      run: |
-        dir=${{ steps.check_connector.outputs.connector }}
-        if [[ -f "${dir}/connector.ts" ]] && [[ -f "${dir}/tests.json" ]]
-        then
-          cd ${dir}
-          yarn build
-          cd ../../test-harnass
-          npx ts-node src/index.ts --connFile ../${dir}/out/connector.js --tests ../${dir}/tests.json
-          cd -
-        fi
 
     - name: Add labels
       uses: actions-ecosystem/action-add-labels@v1

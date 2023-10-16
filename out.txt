@@ -1,0 +1,67 @@
+yarn run v1.22.19
+$ yarn run tsc
+$ /home/coder/studio-connector-contrib/src/connectors/acquia/node_modules/.bin/tsc
+Done in 0.62s.
+yarn run connector-cli info  -o /home/coder/studio-connector-contrib/src/connectors/acquia/out/props.json /home/coder/studio-connector-contrib/src/connectors/acquia/out/connector.js
+error Command "connector-cli" not found.
+node:child_process:965
+    throw err;
+    ^
+
+Error: Command failed: yarn run connector-cli info  -o /home/coder/studio-connector-contrib/src/connectors/acquia/out/props.json /home/coder/studio-connector-contrib/src/connectors/acquia/out/connector.js
+error Command "connector-cli" not found.
+
+    at checkExecSyncError (node:child_process:890:11)
+    at execSync (node:child_process:962:15)
+    at processConnector (/home/coder/studio-connector-contrib/scripts/publish.js:37:9)
+    at /home/coder/studio-connector-contrib/scripts/publish.js:87:13
+    at Array.forEach (<anonymous>)
+    at /home/coder/studio-connector-contrib/scripts/publish.js:84:11
+    at FSReqCallback.oncomplete (node:fs:200:23) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    Buffer(103) [Uint8Array] [
+      121,  97, 114, 110,  32, 114, 117, 110,  32, 118,  49,  46,
+       50,  50,  46,  49,  57,  10, 105, 110, 102, 111,  32,  86,
+      105, 115, 105, 116,  32, 104, 116, 116, 112, 115,  58,  47,
+       47, 121,  97, 114, 110, 112, 107, 103,  46,  99, 111, 109,
+       47, 101, 110,  47, 100, 111,  99, 115,  47,  99, 108, 105,
+       47, 114, 117, 110,  32, 102, 111, 114,  32, 100, 111,  99,
+      117, 109, 101, 110, 116,  97, 116, 105, 111, 110,  32,  97,
+       98, 111, 117, 116,  32, 116, 104, 105, 115,  32,  99, 111,
+      109, 109,  97, 110,
+      ... 3 more items
+    ],
+    Buffer(41) [Uint8Array] [
+      101, 114, 114, 111, 114,  32, 67, 111, 109,
+      109,  97, 110, 100,  32,  34, 99, 111, 110,
+      110, 101,  99, 116, 111, 114, 45,  99, 108,
+      105,  34,  32, 110, 111, 116, 32, 102, 111,
+      117, 110, 100,  46,  10
+    ]
+  ],
+  pid: 3462083,
+  stdout: Buffer(103) [Uint8Array] [
+    121,  97, 114, 110,  32, 114, 117, 110,  32, 118,  49,  46,
+     50,  50,  46,  49,  57,  10, 105, 110, 102, 111,  32,  86,
+    105, 115, 105, 116,  32, 104, 116, 116, 112, 115,  58,  47,
+     47, 121,  97, 114, 110, 112, 107, 103,  46,  99, 111, 109,
+     47, 101, 110,  47, 100, 111,  99, 115,  47,  99, 108, 105,
+     47, 114, 117, 110,  32, 102, 111, 114,  32, 100, 111,  99,
+    117, 109, 101, 110, 116,  97, 116, 105, 111, 110,  32,  97,
+     98, 111, 117, 116,  32, 116, 104, 105, 115,  32,  99, 111,
+    109, 109,  97, 110,
+    ... 3 more items
+  ],
+  stderr: Buffer(41) [Uint8Array] [
+    101, 114, 114, 111, 114,  32, 67, 111, 109,
+    109,  97, 110, 100,  32,  34, 99, 111, 110,
+    110, 101,  99, 116, 111, 114, 45,  99, 108,
+    105,  34,  32, 110, 111, 116, 32, 102, 111,
+    117, 110, 100,  46,  10
+  ]
+}
+
+Node.js v18.18.0

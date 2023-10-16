@@ -1,0 +1,32 @@
+# workflow to run both yarn && yarn build in the repo when pr is merged to main
+name: Publish Connectors
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+  build-and-publish:
+    # checkout the repo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.x
+      - name: Install dependencies
+        run: yarn
+      - name: Build
+        run: yarn build
+      - name: Publish
+        run: node scripts/publish.js
+        # upload to azure
+      - name: copy to upload folder
+        run: cp -r publish/ upload/connectors
+      - name: Upload to Azure
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch -d sdk -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true

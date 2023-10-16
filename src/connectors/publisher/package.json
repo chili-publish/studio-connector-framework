@@ -1,5 +1,5 @@
 {
-  "name": "acquia",
+  "name": "publisher",
   "description": "",
   "version": "1.0.0",
   "author": {
@@ -25,6 +25,6 @@
     "test": "yarn run connector-cli test -t tests.json ./out/connector.js"
   },
   "devDependencies": {
-    "connector-cli": "../src/connector-cli"
+    "connector-cli": "../../connector-cli"
   }
 }

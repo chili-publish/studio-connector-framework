@@ -67,8 +67,6 @@ export default class AcquiaConnector implements Media.MediaConnector{
                 type: 'text'
             }
         ]
-            
-        
     }
     getCapabilities(): Connector.ConnectorCapabilities {
         return {
@@ -80,5 +78,4 @@ export default class AcquiaConnector implements Media.MediaConnector{
             upload: false
         }
     }
-
 }
