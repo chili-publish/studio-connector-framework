@@ -15,7 +15,7 @@ fs.readdir(baseDir, { withFileTypes: true }, (err, files) => {
             const dirPath = path.join(baseDir, file.name);
             
             const installCommand = spawnSync('yarn',[], { cwd: dirPath, stdio: 'inherit' });
-            trackProcess(installCommand, dirPath, 'build');
+            trackProcess(installCommand, dirPath, 'install');
 
             const buildCommand = spawnSync('yarn',["build"], { cwd: dirPath, stdio: 'inherit' });
             trackProcess(buildCommand, dirPath, 'build');

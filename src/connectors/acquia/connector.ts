@@ -41,7 +41,10 @@ export default class AcquiaConnector implements Media.MediaConnector{
     }
     async download(id: string, previewType: Media.DownloadType, context: Connector.Dictionary): Promise<Connector.ArrayBufferPointer> {
         try {
-            const t = await this.runtime.fetch("https://chili-publish.com/", { method:"GET"});
+            // random string
+            // var r = Math.random().toString(36).substring(7);
+            // this.runtime[r] = "test";
+            const t = await Promise.resolve({arrayBuffer: {id:"{}", bytes: 1000}});
             return t.arrayBuffer;
         } catch (error) {
             this.runtime.logError(error);

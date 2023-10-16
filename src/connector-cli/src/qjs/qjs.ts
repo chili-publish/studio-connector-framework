@@ -10,7 +10,9 @@ export function evalSync(vm: QuickJSContext, code: string) {
     var evalResult = vm.evalCode(code);
 
     const promiseHandle = vm.unwrapResult(evalResult);
-    return vm.dump(promiseHandle);
+    const dump = vm.dump(promiseHandle);
+    promiseHandle.dispose();
+    return dump;
 }
 
 export async function evalAsync(vm: QuickJSContext, code: string) {
