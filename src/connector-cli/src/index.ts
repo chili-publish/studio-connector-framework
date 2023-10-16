@@ -1,6 +1,7 @@
 import { program } from 'commander';
 import { runGetInfo } from './commands/info';
 import { runTests } from './commands/test';
+import { runStressTest } from './commands/stress';
 
 async function main() {
 
@@ -20,6 +21,11 @@ async function main() {
         .argument('<connectorFile>', 'Connector file (compiled js) to run test suite for')
         .option('-t, --testFile <testFile>')
         .action(runTests);
+
+    program.command('stress')
+        .argument('<connectorFile>', 'Connector file (compiled js) to run stress test suite for')
+        .option('-i, --iterations <iterations>')
+        .action(runStressTest);
 
     program.parse(process.argv);
 }
