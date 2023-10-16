@@ -20,8 +20,10 @@ export async function runTests(connectorFile:string, options: any): Promise<void
     // parse the test file (its a json)
     const testConfig: TestModels.TestConfiguration = JSON.parse(fs.readFileSync(testFile, "utf8"))
     const vm = await initRuntime(connectorFile, testConfig.setup.runtime_options);
-
+    
     for (const test of testConfig.tests) {
+
+        test.failed = false;
 
         // construct a string with all values from test.arguments object to pass to the method
         var argumentsString = " "
@@ -43,22 +45,21 @@ export async function runTests(connectorFile:string, options: any): Promise<void
 
         if (test.asserts.fetch) {
             runtimeConfig.fetchInterceptor = async (url: string, options: any) => {
-                console.log("fetch called", url, options)
-
+                
                 var match = test.asserts.fetch.find((fetchAssert: TestModels.Fetch) => {
                     if (fetchAssert.url === url && fetchAssert.method === options.method) {
                         fetchAssert.count = fetchAssert.count - 1;
-                        if (fetchAssert.count === 0) {
-                            console.log("fetch assert passed", fetchAssert)
-                        } else {
-                            console.log("fetch assert failed", fetchAssert)
+                        if (fetchAssert.count < 0) {
+                            test.failed = true;
+                            test.failReason = "Fetch assert (" + fetchAssert.url + ") called more times than expected";
                         }
                         return true;
                     }
                 });
 
                 if (!match) {
-                    console.log("fetch assert failed", url, options)
+                    test.failed = true;
+                    test.failReason = "Fetch assert (" + url + ") called but not expected";
                     return;
                 }
 
@@ -73,10 +74,21 @@ export async function runTests(connectorFile:string, options: any): Promise<void
                 return fetch(url, options)
             }
         }
-
-        const testResult = await evalAsync(vm, script);
-
-        assertResult(testResult, test.method)
+        try {   
+            const testResult = await evalAsync(vm, script);
+            assertResult(testResult, test, test.method)
+        }
+        catch (error) {
+            test.failed = true;
+            test.failReason = JSON.stringify(error);
+        }      
+        
+        if (test.failed) {
+            // console art of the test name and the fail reason
+            console.log("\x1b[31m", `FAIL: ${test.name}::${test.failReason}`)
+        }else{
+            console.log("\x1b[32m", `PASS: ${test.name}`)
+        }
     }
 
     vm.dispose()
