@@ -2,13 +2,13 @@ import { Connector, Media  }  from '@chili-publish/studio-connectors'
 
 export default class YourConnector implements Media.MediaConnector{
 
-    constructor(runtime: Conn.ConnectorRuntimeContext) {        
+    constructor(runtime: Connector.ConnectorRuntimeContext) {        
         this.runtime = runtime;
     }
 
-    runtime: Conn.ConnectorRuntimeContext;
+    runtime: Connector.ConnectorRuntimeContext;
 
-    detail(id: string, context: Conn.Dictionary): Promise<Media.MediaDetail> {
+    detail(id: string, context: Connector.Dictionary): Promise<Media.MediaDetail> {
         return Promise.resolve({
             id: "",
             name: "dummy",
@@ -20,7 +20,7 @@ export default class YourConnector implements Media.MediaConnector{
             metaData: {},            
         } as Media.MediaDetail)
     }
-    async query(options: Conn.QueryOptions, context: Conn.Dictionary): Promise<Media.MediaPage> {
+    async query(options: Connector.QueryOptions, context: Connector.Dictionary): Promise<Media.MediaPage> {
         return Promise.resolve({
             links: {
                 nextPage: ""
@@ -40,7 +40,7 @@ export default class YourConnector implements Media.MediaConnector{
             ]
         }) as Promise<Media.MediaPage>;
     }
-    async download(id: string, previewType: Media.DownloadType, context: Conn.Dictionary): Promise<Conn.ArrayBufferPointer> {
+    async download(id: string, previewType: Media.DownloadType, context: Connector.Dictionary): Promise<Connector.ArrayBufferPointer> {
         try {
             const t = await this.runtime.fetch(`https://chili-publish.com/asset/${id}`, { method:"GET"});
             return t.arrayBuffer;
@@ -48,16 +48,16 @@ export default class YourConnector implements Media.MediaConnector{
             this.runtime.logError(error);
         }
     }
-    upload(name: string, blob: Conn.ArrayBufferPointer, context: Conn.Dictionary): Promise<Media.Media> {
+    upload(name: string, blob: Connector.ArrayBufferPointer, context: Connector.Dictionary): Promise<Media.Media> {
         throw new Error('Method not implemented.')
     }
-    remove(id: string, context: Conn.Dictionary): Promise<boolean> {
+    remove(id: string, context: Connector.Dictionary): Promise<boolean> {
         throw new Error('Method not implemented.')
     }
-    copy(id: string, newName: string, context: Conn.Dictionary): Promise<Media.Media> {
+    copy(id: string, newName: string, context: Connector.Dictionary): Promise<Media.Media> {
         throw new Error('Method not implemented.')
     }
-    getConfigurationOptions(): Conn.ConnectorConfigOptions | null {
+    getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
         return [
             {
                 name: "MyOption1",
@@ -68,7 +68,7 @@ export default class YourConnector implements Media.MediaConnector{
             
         
     }
-    getCapabilities(): Conn.ConnectorCapabilities {
+    getCapabilities(): Connector.ConnectorCapabilities {
         return {
             detail: true,
             query: true,

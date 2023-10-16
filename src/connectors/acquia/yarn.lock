@@ -6,10 +6,6 @@
   version "0.0.3"
   resolved "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
 
-"@chili-publish/studio-connectors@file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz":
-  version "1.0.0"
-  resolved "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz#6ebfebffe5cbb7cf3f619c8c96afdeaad0d24805"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz#00629c35a688e05a88b1cda684fb9d5e73f000a1"
@@ -83,7 +79,7 @@ commander@^11.1.0:
 connector-cli@../../../src/connector-cli:
   version "1.0.1"
   dependencies:
-    "@chili-publish/studio-connectors" "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
+    "@chili-publish/studio-connectors" "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz"
     "@tootallnate/quickjs-emscripten" "^0.23.0"
     commander "^11.1.0"
     ts-node "^10.9.1"

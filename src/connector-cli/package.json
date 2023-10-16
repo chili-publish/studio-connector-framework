@@ -7,7 +7,7 @@
     "connector-cli": "./bin/connector-cli"
   },
   "dependencies": {
-    "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v1.0.0.tgz",
+    "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz",
     "@tootallnate/quickjs-emscripten": "^0.23.0",
     "commander": "^11.1.0",
     "ts-node": "^10.9.1",

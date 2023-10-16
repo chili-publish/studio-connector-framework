@@ -1,4 +1,4 @@
-import * as Media from '@chili-publish/studio-connectors/types/MediaConnector'
+import {Media} from '@chili-publish/studio-connectors'
 
 export function assertResult(testResult: unknown, method: string) {
 

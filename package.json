@@ -4,7 +4,7 @@
   "author": "CHILI publish",
   "license": "MIT",
   "scripts": {
-    "build-cli": "cd ./src/connector-cli/ && yarn build",
+    "build-cli": "cd ./src/connector-cli/ && yarn && yarn build",
     "refresh-cli": "yarn build-cli && rm -rf node_modules && yarn install",
     "build-connectors": "node scripts/build-test-connectors.js",
     "build": "yarn refresh-cli && yarn build-connectors"
