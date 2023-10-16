@@ -11,7 +11,11 @@
       "preserveConstEnums": false,
       "esModuleInterop": false,
       "removeComments": true,
-      "declaration": false      
+      "declaration": false,
+      "typeRoots": [
+          "node_modules/@chili-publish/studio-connectors/types"
+      ],
+      
   },
   "include": [
       "connector.ts"
