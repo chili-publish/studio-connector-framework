@@ -25,6 +25,6 @@
     "test": "yarn run connector-cli test -t tests.json ./out/connector.js"
   },
   "devDependencies": {
-    "connector-cli": "../../connector-cli"
+    "connector-cli": "file:../../connector-cli"
   }
 }
