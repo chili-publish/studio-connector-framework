@@ -1,8 +1,5 @@
 {
   "name": "studio-connector-contrib",
-  "workspaces": [
-    "src/**"
-  ],
   "version": "1.0.0",
   "author": "CHILI publish",
   "license": "MIT",
@@ -14,6 +11,5 @@
   },
   "devDependencies": {
     "connector-cli": "./src/connector-cli"
-  },
-  "private": true
+  }
 }

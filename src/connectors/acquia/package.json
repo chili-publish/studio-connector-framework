@@ -24,6 +24,7 @@
     "test": "yarn run connector-cli test -t tests.json ./out/connector.js && yarn run connector-cli stress ./out/connector.js"
   },
   "devDependencies": {
+    "connector-cli": "../../connector-cli",
     "typescript": "^5.2.2"
   }
 }
