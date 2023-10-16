@@ -1,5 +1,5 @@
-import {Media} from '@chili-publish/studio-connectors'
-import {TestModels} from './testConfiguration'
+import { Media } from '@chili-publish/studio-connectors'
+import { TestModels } from './testConfiguration'
 
 export function assertResult(testResult: unknown, test: TestModels.Test, method: string) {
 
@@ -20,40 +20,34 @@ export function assertQueryResult(testResult: unknown, test: TestModels.Test) {
     var r = testResult as Media.MediaPage;
 
     if (r.data === undefined) {
-        test.failed = true;
-        test.failReason = "query assert failed, 'data' property undefined";
+        test.result = { failReason: "query assert failed, 'data' property undefined" };
         return;
     }
 
     if (r.pageSize === undefined) {
-        test.failed = true;
-        test.failReason = "query assert failed, 'pageSize' property undefined";
+        test.result = { failReason: "query assert failed, 'pageSize' property undefined" };
         return;
     }
 
     for (const media of r.data) {
 
         if (media.id === undefined) {
-            test.failed = true;
-            test.failReason = "query assert failed, 'id' property undefined";
+            test.result = { failReason: "query assert failed, 'id' property undefined" };
             return;
         }
 
         if (media.name === undefined) {
-            test.failed = true;
-            test.failReason = "query assert failed, 'name' property undefined";
+            test.result = { failReason: "query assert failed, 'name' property undefined" };
             return;
         }
 
         if (media.relativePath === undefined) {
-            test.failed = true;
-            test.failReason = "query assert failed, 'relativePath' property undefined";
+            test.result = { failReason: "query assert failed, 'relativePath' property undefined" };
             return;
         }
 
         if (media.type === undefined) {
-            test.failed = true;
-            test.failReason = "query assert failed, 'type' property undefined";
+            test.result = { failReason: "query assert failed, 'type' property undefined" };
             return;
         }
     }

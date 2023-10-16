@@ -12,8 +12,9 @@ export module TestModels {
     export interface RuntimeOptions extends Record<string, string> { }
 
     export interface Test {
-        failed?: boolean
-        failReason?: string
+        result?: {
+            failReason?: string            
+        } | undefined
         id: string
         name: string
         descr: string

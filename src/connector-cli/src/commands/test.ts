@@ -1,10 +1,11 @@
+import { fail } from "assert";
 import { initRuntime, runtimeConfig, evalAsync } from "../qjs/qjs";
 import { assertResult } from "../tests/asserts";
 import { TestModels } from "../tests/testConfiguration";
 import fs from 'fs'
 
-export async function runTests(connectorFile:string, options: any): Promise<void> {
-    
+export async function runTests(connectorFile: string, options: any): Promise<void> {
+
     const testFile = options.testFile;
 
     if (!connectorFile || fs.existsSync(connectorFile) === false) {
@@ -20,10 +21,10 @@ export async function runTests(connectorFile:string, options: any): Promise<void
     // parse the test file (its a json)
     const testConfig: TestModels.TestConfiguration = JSON.parse(fs.readFileSync(testFile, "utf8"))
     const vm = await initRuntime(connectorFile, testConfig.setup.runtime_options);
-    
+
     for (const test of testConfig.tests) {
 
-        test.failed = false;
+        let start = new Date().getTime();
 
         // construct a string with all values from test.arguments object to pass to the method
         var argumentsString = " "
@@ -45,21 +46,19 @@ export async function runTests(connectorFile:string, options: any): Promise<void
 
         if (test.asserts.fetch) {
             runtimeConfig.fetchInterceptor = async (url: string, options: any) => {
-                
+
                 var match = test.asserts.fetch.find((fetchAssert: TestModels.Fetch) => {
                     if (fetchAssert.url === url && fetchAssert.method === options.method) {
                         fetchAssert.count = fetchAssert.count - 1;
                         if (fetchAssert.count < 0) {
-                            test.failed = true;
-                            test.failReason = "Fetch assert (" + fetchAssert.url + ") called more times than expected";
+                            test.result = { failReason: "Fetch assert (" + fetchAssert.url + ") called more times than expected"};
                         }
                         return true;
                     }
                 });
 
                 if (!match) {
-                    test.failed = true;
-                    test.failReason = "Fetch assert (" + url + ") called but not expected";
+                    test.result = {failReason : "Fetch assert (" + url + ") called but not expected"};
                     return;
                 }
 
@@ -74,21 +73,24 @@ export async function runTests(connectorFile:string, options: any): Promise<void
                 return fetch(url, options)
             }
         }
-        try {   
+        try {
             const testResult = await evalAsync(vm, script);
             assertResult(testResult, test, test.method)
         }
         catch (error) {
-            test.failed = true;
-            test.failReason = JSON.stringify(error);
-        }      
-        
-        if (test.failed) {
-            // console art of the test name and the fail reason
-            console.log("\x1b[31m", `FAIL: ${test.name}::${test.failReason}`)
-        }else{
-            console.log("\x1b[32m", `PASS: ${test.name}`)
+            test.result = {failReason : JSON.stringify(error)};
         }
+
+        // end tracking time
+        let end = new Date().getTime();
+
+        import('chalk').then((chalk) => {
+            if (test.result?.failReason) {
+                console.log(chalk.default.bgRed.white(`FAIL [${end - start}ms]: ${test.name}::${test.result.failReason}`))
+            } else {
+                console.log(chalk.default.bgGreen.white(`PASS [${end - start}ms]: ${test.name}`));
+            }
+        });
     }
 
     vm.dispose()
