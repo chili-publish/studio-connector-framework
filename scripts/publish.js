@@ -28,7 +28,7 @@ fs.readdir(connectorsDir, (err, files) => {
 });
 
 // create index.json file based on contents of publish folder
-const publishDir = path.join(__dirname, '..', 'publish');
+const publishDir = path.join(repoRoot, 'publish');
 const indexJson = fs.existsSync(path.join(publishDir, 'index.json'))
   ? JSON.parse(fs.readFileSync(path.join(publishDir, 'index.json')))
   : {};
