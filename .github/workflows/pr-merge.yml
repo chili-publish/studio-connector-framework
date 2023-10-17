@@ -24,7 +24,7 @@ jobs:
         run: node scripts/publish.js
         # upload to azure
       - name: copy to upload folder
-        run: cp -r publish/ upload/connectors
+        run: mkdir -p upload/connectors && cp -r publish/* upload/connectors
       - name: Upload to Azure
         uses: azure/CLI@v1
         with:
