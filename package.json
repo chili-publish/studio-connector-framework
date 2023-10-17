@@ -10,6 +10,7 @@
     "build": "yarn refresh-cli && yarn build-connectors"
   },
   "devDependencies": {
-    "connector-cli": "./src/connector-cli"
+    "connector-cli": "./src/connector-cli",
+    "prettier": "^3.0.3"
   }
 }

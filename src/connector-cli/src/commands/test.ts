@@ -1,4 +1,3 @@
-import { fail } from "assert";
 import { initRuntime, runtimeConfig, evalAsync } from "../qjs/qjs";
 import { assertResult } from "../tests/asserts";
 import { TestModels } from "../tests/testConfiguration";
