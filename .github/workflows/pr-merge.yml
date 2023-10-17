@@ -23,7 +23,7 @@ jobs:
         with:
           inlineScript: |
             container_name="sdk"
-            blob_name="connectors/index.json"
+            blob_name="connector-repo/index.json"
             destination_file="existing/index.json"
             connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
 
@@ -44,12 +44,12 @@ jobs:
       - name: Publish
         run: node scripts/publish.js
       - name: copy to upload folder
-        run: mkdir -p upload/connectors && cp -r publish/* upload/connectors
+        run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
             name: connectors
-            path: upload/connectors
+            path: upload/connector-repo
       - name: Upload to Azure
         uses: azure/CLI@v1
         with:
