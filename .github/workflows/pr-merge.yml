@@ -22,7 +22,20 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob download -c sdk -n connectors/index.json -f publish/index.json --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
+            container_name="sdk"
+            blob_name="connectors/index.json"
+            destination_file="publish/index.json"
+            connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
+
+            # Check if the blob exists
+            blob_exists=$(az storage blob exists --name $blob_name --container-name $container_name --connection-string $connection_string --output tsv --query exists)
+
+            # If the blob exists, download it
+            if [ $blob_exists == "true" ]; then
+                az storage blob download --name $blob_name --file $destination_file --container-name $container_name --connection-string $connection_string --no-progress
+            else
+                echo "Blob does not exist."
+            fi
       - name: Build
         run: yarn build
       - name: Publish
