@@ -17,7 +17,7 @@
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
-    "@chili-publish/studio-connectors": "/home/coder/studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz"
+    "@chili-publish/studio-connectors": "file:../../../chili-publish-studio-connectors-v0.0.3.tgz"
   },
   "scripts": {
     "build": "yarn run tsc",
