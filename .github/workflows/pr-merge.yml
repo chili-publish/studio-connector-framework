@@ -22,9 +22,13 @@ jobs:
         run: yarn build
       - name: Publish
         run: node scripts/publish.js
-        # upload to azure
       - name: copy to upload folder
         run: mkdir -p upload/connectors && cp -r publish/* upload/connectors
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+            name: connectors
+            path: upload/connectors
       - name: Upload to Azure
         uses: azure/CLI@v1
         with:
