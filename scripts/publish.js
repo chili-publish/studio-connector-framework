@@ -13,20 +13,20 @@ const {execSync} = require('child_process');
 
 const repoRoot = findRepoRoot(__dirname);
 
+console.log(`Found repo root at ${repoRoot}`);
 const connectorsDir = path.join(repoRoot, 'src', 'connectors');
-fs.readdir(connectorsDir, (err, files) => {
-  if (err) {
-    console.error(err);
-    return;
+console.log(`Found connectors at ${connectorsDir}`);
+fs.readdirSync(connectorsDir).forEach(file => {
+  const dirPath = path.join(connectorsDir, file);
+  console.log(`Checking ${dirPath}`);
+  if (fs.statSync(dirPath).isDirectory()) {
+    console.log(`Processing ${dirPath}`);
+    processConnector(dirPath);
   }
-  files.forEach(file => {
-    const dirPath = path.join(connectorsDir, file);
-    if (fs.statSync(dirPath).isDirectory()) {
-      processConnector(dirPath);
-    }
-  });
 });
 
+console.log('Finished processing connectors');
+console.log('Creating index.json');
 // create index.json file based on contents of publish folder
 const publishDir = path.join(repoRoot, 'publish');
 const indexJson = fs.existsSync(path.join(publishDir, 'index.json'))
@@ -99,7 +99,7 @@ function processConnector(dir) {
   Object.assign(jsonObject, connectorInfo);
 
   // Write the JSON object to <repo root>/publish/<name>.json
-  const publishDir = path.join(__dirname, '..', 'publish');
+  const publishDir = path.join(repoRoot, 'publish');
   if (!fs.existsSync(publishDir)) {
     fs.mkdirSync(publishDir);
   }
