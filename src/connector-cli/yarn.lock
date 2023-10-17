@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@chili-publish/studio-connectors@file:../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz":
+"@chili-publish/studio-connectors@file:../../chili-publish-studio-connectors-v0.0.3.tgz":
   version "0.0.3"
-  resolved "file:../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
+  resolved "file:../../chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

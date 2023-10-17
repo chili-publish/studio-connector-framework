@@ -6,7 +6,6 @@ export let runtimeConfig: RuntimeConfiguration = {
 }
 
 export function evalSync(vm: QuickJSContext, code: string) {
-
     var evalResult = vm.evalCode(code);
 
     const promiseHandle = vm.unwrapResult(evalResult);
@@ -156,8 +155,6 @@ async function generateChiliResponseQuickJsObject(response: Response | undefined
         return vm.undefined
     }
 
-
-
     var chiliResponse = vm.newObject();
     vm.setProp(chiliResponse, "ok", vm.newNumber(response.ok ? 1 : 0))
     vm.setProp(chiliResponse, "redirected", vm.newNumber(response.redirected ? 1 : 0))
@@ -168,6 +165,7 @@ async function generateChiliResponseQuickJsObject(response: Response | undefined
 
     const contentType = response.headers.get("content-type");
     console.log("contentType", contentType)
+
     // if data is json, then parse it as text, otherwise return arrayBuffer
     if (contentType?.includes("application/json")) {
         var text = await response.text();

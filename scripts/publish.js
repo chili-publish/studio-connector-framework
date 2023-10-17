@@ -27,6 +27,35 @@ fs.readdir(connectorsDir, (err, files) => {
   });
 });
 
+// create index.json file based on contents of publish folder
+const publishDir = path.join(__dirname, '..', 'publish');
+const indexJson = fs.existsSync(path.join(publishDir, 'index.json'))
+  ? JSON.parse(fs.readFileSync(path.join(publishDir, 'index.json')))
+  : {};
+
+fs.readdirSync(publishDir).forEach(file => {
+  //check if json then read and add to index
+  if (file.endsWith('.json')) {
+    const connectorJson = JSON.parse(
+      fs.readFileSync(path.join(publishDir, file)),
+    );
+    const connectorName = connectorJson.name;
+    const connectorVersion = connectorJson.version;
+    if (!indexJson[connectorName]) {
+      indexJson[connectorName] = [];
+    }
+    if (indexJson[connectorName].includes(connectorVersion)) {
+      return;
+    }
+    indexJson[connectorName].push(connectorVersion);
+  }
+});
+
+fs.writeFileSync(
+  path.join(publishDir, 'index.json'),
+  JSON.stringify(indexJson, null, 2),
+);
+
 function processConnector(dir) {
   // Build the project
   execSync('yarn build', {cwd: dir, stdio: 'inherit'});

@@ -18,6 +18,11 @@ jobs:
           node-version: 18.x
       - name: Install dependencies
         run: yarn
+      - name: Download index.json
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob download -c sdk -n connectors/index.json -f publish/index.json --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
       - name: Build
         run: yarn build
       - name: Publish

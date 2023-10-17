@@ -2,13 +2,9 @@
 # yarn lockfile v1
 
 
-"@chili-publish/studio-connectors@../../../chili-publish-studio-connectors-v0.0.3.tgz":
+"@chili-publish/studio-connectors@file:../../../chili-publish-studio-connectors-v0.0.3.tgz":
   version "0.0.3"
-  resolved "../../../chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
-
-"@chili-publish/studio-connectors@file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz":
-  version "0.0.3"
-  resolved "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
+  resolved "file:../../../chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -88,7 +84,7 @@ commander@^11.1.0:
 connector-cli@../../connector-cli:
   version "1.0.1"
   dependencies:
-    "@chili-publish/studio-connectors" "file:../../../../studio-sdk/packages/connectors/chili-publish-studio-connectors-v0.0.3.tgz"
+    "@chili-publish/studio-connectors" "file:../../../../.cache/yarn/v6/npm-connector-cli-1.0.1-7dc89680-29e0-49c8-bd44-5fa4ad02ca06-1697525504687/chili-publish-studio-connectors-v0.0.3.tgz"
     "@tootallnate/quickjs-emscripten" "^0.23.0"
     chalk "^5.3.0"
     commander "^11.1.0"
