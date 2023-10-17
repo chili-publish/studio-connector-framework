@@ -29,8 +29,9 @@ console.log('Finished processing connectors');
 console.log('Creating index.json');
 // create index.json file based on contents of publish folder
 const publishDir = path.join(repoRoot, 'publish');
-const indexJson = fs.existsSync(path.join(publishDir, 'index.json'))
-  ? JSON.parse(fs.readFileSync(path.join(publishDir, 'index.json')))
+const existingDir = path.join(repoRoot, 'existing');
+const indexJson = fs.existsSync(path.join(existingDir, 'index.json'))
+  ? JSON.parse(fs.readFileSync(path.join(existingDir, 'index.json')))
   : {};
 
 fs.readdirSync(publishDir).forEach(file => {

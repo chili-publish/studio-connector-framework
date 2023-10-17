@@ -24,11 +24,11 @@ jobs:
           inlineScript: |
             container_name="sdk"
             blob_name="connectors/index.json"
-            destination_file="publish/index.json"
+            destination_file="existing/index.json"
             connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
 
-            # ensure publish folder exists
-            mkdir -p publish
+            # ensure 'existing' folder exists
+            mkdir -p existing
 
             # Check if the blob exists
             blob_exists=$(az storage blob exists --name $blob_name --container-name $container_name --connection-string $connection_string --output tsv --query exists)
