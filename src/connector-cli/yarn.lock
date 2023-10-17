@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@chili-publish/studio-connectors@file:../../chili-publish-studio-connectors-v0.0.3.tgz":
-  version "0.0.3"
-  resolved "file:../../chili-publish-studio-connectors-v0.0.3.tgz#04a13759787956c7b49df36c54e01ecf42e216a4"
+"@chili-publish/studio-connectors@https://stgrafxstudiodevpublic.blob.core.windows.net/sdk/connectors/chili-publish-studio-connectors-v1.0.0.tgz":
+  version "1.0.0"
+  resolved "https://stgrafxstudiodevpublic.blob.core.windows.net/sdk/connectors/chili-publish-studio-connectors-v1.0.0.tgz#929ea02529fd6449c2971ade211d99cc6060f3db"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

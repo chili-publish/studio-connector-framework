@@ -48,15 +48,6 @@ export default class PublisherConnector implements Media.MediaConnector{
             this.runtime.logError(error);
         }
     }
-    upload(name: string, blob: Connector.ArrayBufferPointer, context: Connector.Dictionary): Promise<Media.Media> {
-        throw new Error('Method not implemented.')
-    }
-    remove(id: string, context: Connector.Dictionary): Promise<boolean> {
-        throw new Error('Method not implemented.')
-    }
-    copy(id: string, newName: string, context: Connector.Dictionary): Promise<Media.Media> {
-        throw new Error('Method not implemented.')
-    }
     getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
         return [
             {
@@ -68,14 +59,11 @@ export default class PublisherConnector implements Media.MediaConnector{
             
         
     }
-    getCapabilities(): Connector.ConnectorCapabilities {
+    getCapabilities(): Media.MediaConnectorCapabilities {
         return {
             detail: true,
             query: true,
-            copy: false,
-            remove: false,
-            filtering: false,
-            upload: false
+            filtering: false
         }
     }
 }

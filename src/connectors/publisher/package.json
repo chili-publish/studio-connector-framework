@@ -18,7 +18,7 @@
   "main": "out/connector.js",
   "dependencies": {
     "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "file:../../../chili-publish-studio-connectors-v0.0.3.tgz"
+    "@chili-publish/studio-connectors": "https://stgrafxstudiodevpublic.blob.core.windows.net/sdk/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
   },
   "scripts": {
     "build": "yarn run tsc",
