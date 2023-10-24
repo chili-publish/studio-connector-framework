@@ -1,7 +1,8 @@
 import { initRuntime, evalSync } from "../qjs/qjs";
 import express from 'express';
 import Handlebars from "handlebars";
-
+import path from "path";
+import fs from "fs";
 
 export async function runDebugger(connectorFile: string, options: any): Promise<void> {
     const app = express();
@@ -10,12 +11,27 @@ export async function runDebugger(connectorFile: string, options: any): Promise<
     const port = options.port ?? 3300;
     const indexTemplate = Handlebars.compile(debuggerHandleBarTemplate);
 
-    app.get('/', (req, res) => {
+    // make sure connectorFile is absolute path
+    connectorFile = path.resolve(connectorFile);
+
+    app.get('/', (req, res) => {        
         res.send(indexTemplate({port: port}));
     });
 
     app.get('/bundle.js', (req, res) => {
-        res.sendFile('bundle.js', { root: __dirname });
+        const templatePath = path.join(__dirname, '../../debugger/bin/', 'index.js');
+        res.sendFile(templatePath);
+    });
+
+    app.get('/main.css', (req, res) => {
+        const binFolder = path.join(__dirname, '../../debugger/bin');
+        
+        // find css file in the bin folder
+        const files = fs.readdirSync(binFolder);
+        const cssFile = files.find(f => f.endsWith('.css'));
+        const templatePath = path.join(binFolder, cssFile!);
+
+        res.sendFile(templatePath);
     });
 
     app.get('/connector.js', (req, res) => {
@@ -34,6 +50,7 @@ const debuggerHandleBarTemplate = `
 <head>
     <meta charset="UTF-8">
     <title>Connector Debugger</title>
+    <link rel="stylesheet" href="http://localhost:{{port}}/main.css">
 </head>
 <body>
     <div id="app"></div>

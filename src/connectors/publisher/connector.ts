@@ -8,7 +8,7 @@ export default class PublisherConnector implements Media.MediaConnector{
 
     runtime: Connector.ConnectorRuntimeContext;
 
-    detail(id: string, context: Connector.Dictionary): Promise<Media.MediaDetail> {
+    async detail(id: string, context: Connector.Dictionary): Promise<Media.MediaDetail> {
         return Promise.resolve({
             id: "",
             name: "dummy",
@@ -42,7 +42,7 @@ export default class PublisherConnector implements Media.MediaConnector{
     }
     async download(id: string, previewType: Media.DownloadType, context: Connector.Dictionary): Promise<Connector.ArrayBufferPointer> {
         try {
-            const t = await this.runtime.fetch(`https://chili-publish.com/asset/${id}`, { method:"GET"});
+            const t = await this.runtime.fetch(`https://www.datocms-assets.com/11099/1685290983-frame-427318761-2.png?auto=format&dpr=0.23&w=2152`, { method:"GET"});
             return t.arrayBuffer;
         } catch (error) {
             this.runtime.logError(error);

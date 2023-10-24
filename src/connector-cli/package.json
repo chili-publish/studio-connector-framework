@@ -24,6 +24,6 @@
   },
   "scripts": {
     "build": "yarn run tsc",
-    "debugger": "yarn run ts-node src/index.ts debug '../connectors/acquia/out/connector.js'"
+    "debugger": "yarn run ts-node src/index.ts debug '../connectors/publisher/out/connector.js'"
   }
 }
