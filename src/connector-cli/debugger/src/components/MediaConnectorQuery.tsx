@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
-import { Button, Input, Form, List, Typography, Divider } from 'antd';
+import { Button, Input, Form, List, Typography, Divider, Space } from 'antd';
+import { useQueryOptions } from '../state/QueryContext';
 import { useData } from '../state/Context';
-import { getImageFromCache, initRuntime } from '../helpers/runtime';
-import { DownloadIntent, DownloadType, useDownloadOptions } from '../state/DownloadContext';
-import ArrayBufferImage from './ImageFromBuffer';
+import { initRuntime } from '../helpers/runtime';
+import JsonObjectRenderer from './JsonObjectRenderer';
 
-const DownloadForm: React.FC = () => {
-    const { state, dispatch } = useDownloadOptions();
+const MediaConnectorQuery: React.FC = () => {
+    const { state, dispatch } = useQueryOptions();
     const { state: globalHeaders } = useData();
 
-    const [id, setId] = useState(state?.id ?? '');
-    const [downloadType, setDownloadType] = useState(state?.downloadType ?? '');
-    const [downloadIntent, setDownloadIntent] = useState(state?.downloadIntent ?? '');
+    const [token, setToken] = useState(state?.queryOptions?.token??'');
+    const [filter, setFilter] = useState(state?.queryOptions?.filter??'');
+    const [collection, setCollection] = useState(state?.queryOptions?.collection??'');
+    const [pageSize, setPageSize] = useState(state?.queryOptions?.pageSize??10);
     const [metadataKey, setMetadataKey] = useState('');
     const [metadataValue, setMetadataValue] = useState('');
-    const [resultSet, setResults] = useState<ArrayBuffer|null>(null);
+    const [resultSet, setResults] = useState<any[]>([]);
 
-    const handleDownloadOptionsSubmit = () => {
-        dispatch({ type: 'SET_ID', payload: id });
-        dispatch({ type: 'SET_DOWNLOAD_TYPE', payload: downloadType });
-        dispatch({ type: 'SET_DOWNLOAD_INTENT', payload: downloadIntent });
+    const handleQueryOptionsSubmit = () => {
+        dispatch({ type: 'SET_QUERY_OPTIONS', payload: { token, filter, collection, pageSize } });
     };
 
     const handleMetadataSubmit = () => {
@@ -32,35 +31,38 @@ const DownloadForm: React.FC = () => {
         dispatch({ type: 'REMOVE_METADATA', payload: index });
     };
 
-    async function executeConnectorDownload(): Promise<void> {
+    async function executeConnectorQuery(): Promise<void> {
 
         var connector = await initRuntime(globalHeaders.headers);
-        const results = await connector.download(state.id, state.downloadType, state.downloadIntent, state.metadata);
+        const results = await connector.query(state.queryOptions, state.metadata);
 
         console.log('connector', connector);
         console.log('results', results);
-        setResults(await getImageFromCache(results.id));
+        setResults(results.data);
     }
 
     return (
         <>
-            <Form onFinish={handleDownloadOptionsSubmit} labelCol={{ span: 8 }}
+            <Form onFinish={handleQueryOptionsSubmit} labelCol={{ span: 8 }}
                 wrapperCol={{ span: 16 }}
                 style={{ maxWidth: 600 }}
                 initialValues={{ remember: true }}>
                 {/* Add form fields for token, filter, collection, and pageSize here */}
-                <Form.Item label="Id">
-                    <Input value={id} onChange={e => setId(e.target.value)} />
+                <Form.Item label="Next Page Token">
+                    <Input value={token} onChange={e => setToken(e.target.value)} />
                 </Form.Item>
-                <Form.Item label="DownloadType">
-                    <Input value={downloadType} onChange={e => setDownloadType(e.target.value as DownloadType)} />
+                <Form.Item label="Filter">
+                    <Input value={filter} onChange={e => setFilter(e.target.value)} />
                 </Form.Item>
-                <Form.Item label="DownloadIntent">
-                    <Input value={downloadIntent} onChange={e => setDownloadIntent(e.target.value as DownloadIntent)} />
+                <Form.Item label="Collection">
+                    <Input value={collection} onChange={e => setCollection(e.target.value)} />
+                </Form.Item>
+                <Form.Item label="Page Size">
+                    <Input value={pageSize} onChange={e => setPageSize(parseInt(e.target.value))} />
                 </Form.Item>
                 <Form.Item>
                     <Button type="default" htmlType="submit">
-                        Set Download Options
+                        Set Query Options
                     </Button>
                 </Form.Item>
             </Form><Divider />
@@ -99,20 +101,13 @@ const DownloadForm: React.FC = () => {
             />
 
             <Divider />
-            <Button type="primary" block onClick={executeConnectorDownload}>
+            <Button type="primary"  block onClick={executeConnectorQuery}>
                 Execute
             </Button>
-                        
-            {
-                resultSet == null && <Typography.Text strong >Failed</Typography.Text>
-            }
-            {resultSet != null &&  <ArrayBufferImage
-                width={200}                
-                buffer={resultSet}
-                height={200}
-            />}
+
+            <JsonObjectRenderer data={resultSet} />
         </>
     );
 };
 
-export default DownloadForm;
+export default MediaConnectorQuery;

@@ -5,7 +5,7 @@ import { useData } from '../state/Context';
 import { initRuntime } from '../helpers/runtime';
 import JsonObjectRenderer from './JsonObjectRenderer';
 
-const DetailOptionsForm: React.FC = () => {
+const MediaConnectorDetail: React.FC = () => {
     const { state, dispatch } = useDetailOptions();
     const { state: globalHeaders } = useData();
 
@@ -98,4 +98,4 @@ const DetailOptionsForm: React.FC = () => {
     );
 };
 
-export default DetailOptionsForm;
+export default MediaConnectorDetail;

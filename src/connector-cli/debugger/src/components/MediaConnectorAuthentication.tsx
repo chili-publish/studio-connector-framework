@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, Form, List } from 'antd';
 import { useData } from '../state/Context';
 
-const AddHeaderForm: React.FC = () => {
+const MediaConnectorAuthentication: React.FC = () => {
   const [httpHeader, setHttpHeader] = useState('');
   const [httpValue, setHttpValue] = useState('');
   const { state, dispatch } = useData();
@@ -53,4 +53,4 @@ const AddHeaderForm: React.FC = () => {
   );
 };
 
-export default AddHeaderForm;
+export default MediaConnectorAuthentication;

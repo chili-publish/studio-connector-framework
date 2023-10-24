@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import type { MenuProps } from 'antd';
 import { Layout, Menu, theme } from 'antd';
 import { DataProvider } from './state/Context';
-import AuthForm from './components/Auth';
 import { QueryOptionsProvider } from './state/QueryContext';
-import QueryOptionsForm from './components/QueryMethod';
-import DownloadForm from './components/DownloadMethod';
-import DetailOptionsForm from './components/DetailMethod';
+import MediaConnectorAuthentication from './components/MediaConnectorAuthentication';
+import MediaConnectorDetail from './components/MediaConnectorDetail';
+import MediaConnectorDownload from './components/MediaConnectorDownload';
+import MediaConnectorQuery from './components/MediaConnectorQuery';
 
 const { Content, Sider } = Layout;
-
 
 const App: React.FC = () => {
   const {
@@ -23,21 +22,24 @@ const App: React.FC = () => {
     setSelectedComponent(item);
   };
 
-  const components = {
-    AuthForm,
-    QueryOptionsForm,
-    DetailOptionsForm,
-    DownloadForm,
-  };
+  const components = [
+    { component: MediaConnectorAuthentication, name: 'Authentication'},
+    { component: MediaConnectorQuery, name: 'Query'},
+    { component: MediaConnectorDetail, name: 'Detail'},
+    { component: MediaConnectorDownload, name: 'Download'},
+  ];
 
-  const items: MenuProps['items'] = Object.keys(components).map((key, index) => ({
+  const items: MenuProps['items'] = components.map((key, index) => ({
     key: String(index + 1),
-    label: `${key}`,
-    onClick: () => handleMenuClick(key),
+    label: `${key.name}`,
+    onClick: () => handleMenuClick(key.name),
   }));
 
-  //@ts-ignore
-  const SelectedComponent = selectedComponent ? components[selectedComponent] : null;
+  const SelectedComponent = selectedComponent ? components.find((key, index) => {
+    if (key.name === selectedComponent) {
+      return true;
+    }
+  })?.component : null;
 
   return (
     <QueryOptionsProvider>
@@ -57,13 +59,11 @@ const App: React.FC = () => {
             <Menu theme="dark" mode="inline" defaultSelectedKeys={[]} items={items} />
           </Sider>
           <Layout className="site-layout" style={{ marginLeft: 200 }}>
-            {/* <Header style={{ padding: 0, background: colorBgContainer }} /> */}
             <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
               <div style={{ padding: 24, textAlign: 'center', background: colorBgContainer }}>
                 {SelectedComponent ? <SelectedComponent /> : 'Please select a component'}
               </div>
             </Content>
-            {/* <Footer style={{ textAlign: 'center' }}>CHILI publish ©2023 Studio Connector Debugger</Footer> */}
           </Layout>
         </Layout>
       </DataProvider>
