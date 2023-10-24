@@ -2,6 +2,7 @@ import { program } from 'commander';
 import { runGetInfo } from './commands/info';
 import { runTests } from './commands/test';
 import { runStressTest } from './commands/stress';
+import { runDebugger } from './commands/debug';
 
 async function main() {
 
@@ -9,6 +10,11 @@ async function main() {
         .name('connector-cli')
         .version('1.0.0')
         .description('Tool to manage connector test/publish process')
+
+    program.command('debug')
+        .argument('<connectorFile>', 'Connector file (compiled js) to run debug server for')
+        .option('-p, --port <port>')
+        .action(runDebugger);
 
     program
         .command('info')
