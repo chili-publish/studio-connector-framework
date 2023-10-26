@@ -26,7 +26,9 @@ export async function runDebugger(
   });
 
   app.get('/', (req, res) => {
-    res.send(indexTemplate({port: port}));
+    // get the full url of the request 
+    const host = req.protocol + '://' + req.hostname;
+    res.send(indexTemplate({port: port, host: host}));
   });
 
   app.get('/bundle.js', (req, res) => {
@@ -65,12 +67,12 @@ const debuggerHandleBarTemplate = `
 <head>
     <meta charset="UTF-8">
     <title>Connector Debugger</title>
-    <link rel="stylesheet" href="http://localhost:{{port}}/main.css">
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
     <div id="app"></div>
-    <script src="http://localhost:{{port}}/bundle.js"></script>
-    <script type="module" src="http://localhost:{{port}}/connector.js"></script>
+    <script src="bundle.js"></script>
+    <script type="module" src="connector.js"></script>
 </body>
 </html>
         `;
