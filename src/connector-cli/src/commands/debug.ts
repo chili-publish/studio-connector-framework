@@ -17,6 +17,14 @@ export async function runDebugger(
   // make sure connectorFile is absolute path
   connectorFile = path.resolve(connectorFile);
 
+  // handle all preflight requests
+  app.options('*', (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Headers', '*');
+    res.set('Access-Control-Allow-Methods', '*');
+    res.send();
+  });
+
   app.get('/', (req, res) => {
     res.send(indexTemplate({port: port}));
   });
