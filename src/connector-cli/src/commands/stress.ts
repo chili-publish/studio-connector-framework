@@ -1,9 +1,9 @@
-import {initRuntime, evalSync, evalAsync} from '../qjs/qjs';
+import { initRuntime, evalSync, evalAsync } from '../qjs/qjs';
 import fs from 'fs';
 
 export async function runStressTest(
   connectorFile: string,
-  options: any,
+  options: any
 ): Promise<void> {
   if (!connectorFile || fs.existsSync(connectorFile) === false) {
     console.log('connectorFile is required');
@@ -28,7 +28,7 @@ export async function runStressTest(
             }catch(error){
                 console.log("error", error)
             }
-        })()`,
+        })()`
     );
     const end = process.hrtime.bigint();
 
@@ -59,7 +59,7 @@ export async function runStressTest(
   console.log(
     'median time',
     Number(times[Math.floor(times.length / 2)]) / 1000000,
-    'ms',
+    'ms'
   );
 
   // display memory stats
@@ -70,11 +70,11 @@ export async function runStressTest(
   // find stats in the memories that only go up
   analyzeMemoryStats(memories);
 
-  let {first, last} = findFirstAndLast(memories);
+  let { first, last } = findFirstAndLast(memories);
   console.log(
     'Allocation increase: ',
     last.memory_used_size - first.memory_used_size,
-    'bytes',
+    'bytes'
   );
 }
 
@@ -98,7 +98,7 @@ function analyzeMemoryStats(stats: MemoryStats[]): void {
           // If the change is significantly high, log a warning
           if (change > significantIncreaseFactor) {
             console.warn(
-              `Warning: ${key} has increased significantly (change: ${change}%)`,
+              `Warning: ${key} has increased significantly (change: ${change}%)`
             );
           }
         }
@@ -137,6 +137,6 @@ type MemoryStats = {
   binary_object_size: number;
 };
 
-function findFirstAndLast(memories: MemoryStats[]): {first: any; last: any} {
-  return {first: memories[0], last: memories[memories.length - 1]};
+function findFirstAndLast(memories: MemoryStats[]): { first: any; last: any } {
+  return { first: memories[0], last: memories[memories.length - 1] };
 }

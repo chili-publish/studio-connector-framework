@@ -1,22 +1,22 @@
-import React, {useState} from 'react';
-import type {MenuProps} from 'antd';
-import {Layout, Menu, theme} from 'antd';
-import {DataProvider} from './state/Context';
-import {QueryOptionsProvider} from './state/QueryContext';
+import React, { useState } from 'react';
+import type { MenuProps } from 'antd';
+import { Layout, Menu, theme } from 'antd';
+import { DataProvider } from './state/Context';
+import { QueryOptionsProvider } from './state/QueryContext';
 import MediaConnectorAuthentication from './components/MediaConnectorAuthentication';
 import MediaConnectorDetail from './components/MediaConnectorDetail';
 import MediaConnectorDownload from './components/MediaConnectorDownload';
 import MediaConnectorQuery from './components/MediaConnectorQuery';
 
-const {Content, Sider} = Layout;
+const { Content, Sider } = Layout;
 
 const App: React.FC = () => {
   const {
-    token: {colorBgContainer},
+    token: { colorBgContainer },
   } = theme.useToken();
 
   const [selectedComponent, setSelectedComponent] = useState<String | null>(
-    null,
+    null
   );
 
   const handleMenuClick = (item: any) => {
@@ -25,10 +25,10 @@ const App: React.FC = () => {
   };
 
   const components = [
-    {component: MediaConnectorAuthentication, name: 'Authentication'},
-    {component: MediaConnectorQuery, name: 'Query'},
-    {component: MediaConnectorDetail, name: 'Detail'},
-    {component: MediaConnectorDownload, name: 'Download'},
+    { component: MediaConnectorAuthentication, name: 'Authentication' },
+    { component: MediaConnectorQuery, name: 'Query' },
+    { component: MediaConnectorDetail, name: 'Detail' },
+    { component: MediaConnectorDownload, name: 'Download' },
   ];
 
   const items: MenuProps['items'] = components.map((key, index) => ({
@@ -67,8 +67,8 @@ const App: React.FC = () => {
               items={items}
             />
           </Sider>
-          <Layout className="site-layout" style={{marginLeft: 200}}>
-            <Content style={{margin: '24px 16px 0', overflow: 'initial'}}>
+          <Layout className="site-layout" style={{ marginLeft: 200 }}>
+            <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
               <div
                 style={{
                   padding: 24,

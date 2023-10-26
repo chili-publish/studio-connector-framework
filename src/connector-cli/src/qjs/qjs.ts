@@ -25,8 +25,8 @@ export async function evalAsync(vm: QuickJSContext, code: string) {
   var scriptResult = vm.resolvePromise(promiseHandle);
   promiseHandle.dispose();
 
-  const endResultPromise = new Promise(resolve => {
-    scriptResult.then(wrappedExecutionResult => {
+  const endResultPromise = new Promise((resolve) => {
+    scriptResult.then((wrappedExecutionResult) => {
       var executionResult = vm.unwrapResult(wrappedExecutionResult);
       var toJsExecutionResult = vm.dump(executionResult);
       executionResult.dispose();
@@ -42,7 +42,7 @@ export async function evalAsync(vm: QuickJSContext, code: string) {
 export type RuntimeConfiguration = {
   fetchInterceptor?: (
     url: string,
-    options: any,
+    options: any
   ) => Promise<Response | undefined>;
 };
 
@@ -66,15 +66,15 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
         ? runtimeConfig.fetchInterceptor
         : fetch;
       fetcher(path, req)
-        .then(response => {
+        .then((response) => {
           generateChiliResponseQuickJsObject(response, vm).then(
-            chiliResponse => {
+            (chiliResponse) => {
               promise.resolve(chiliResponse);
               chiliResponse.dispose();
-            },
+            }
           );
         })
-        .catch(error => {
+        .catch((error) => {
           const newLocal_1 = vm.newString(error);
           promise.reject(newLocal_1);
           newLocal_1.dispose();
@@ -85,7 +85,7 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
       // waiting on the promise or callback.
       promise.settled.then(vm.runtime.executePendingJobs);
       return promise.handle;
-    },
+    }
   );
 
   // add consoleShim
@@ -158,7 +158,7 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
         console.log("error", error)
     }
 })();    
-`,
+`
   );
 
   return vm;
@@ -166,7 +166,7 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
 
 async function generateChiliResponseQuickJsObject(
   response: Response | undefined,
-  vm: QuickJSContext,
+  vm: QuickJSContext
 ) {
   if (!response) {
     return vm.undefined;
@@ -177,7 +177,7 @@ async function generateChiliResponseQuickJsObject(
   vm.setProp(
     chiliResponse,
     'redirected',
-    vm.newNumber(response.redirected ? 1 : 0),
+    vm.newNumber(response.redirected ? 1 : 0)
   );
   vm.setProp(chiliResponse, 'status', vm.newNumber(response.status));
   vm.setProp(chiliResponse, 'statusText', vm.newString(response.statusText));
@@ -199,12 +199,12 @@ async function generateChiliResponseQuickJsObject(
     vm.setProp(
       ArrayBufferPointer,
       'id',
-      response.ok ? vm.newString(hashedContent) : vm.newString('-1'),
+      response.ok ? vm.newString(hashedContent) : vm.newString('-1')
     );
     vm.setProp(
       ArrayBufferPointer,
       'bytes',
-      response.ok ? vm.newNumber(buffer.byteLength) : vm.newNumber(-1),
+      response.ok ? vm.newNumber(buffer.byteLength) : vm.newNumber(-1)
     );
 
     vm.setProp(chiliResponse, 'arrayBuffer', ArrayBufferPointer);

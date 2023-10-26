@@ -1,9 +1,9 @@
-import {initRuntime, evalSync} from '../qjs/qjs';
+import { initRuntime, evalSync } from '../qjs/qjs';
 import fs from 'fs';
 
 export async function runGetInfo(
   connectorFile: string,
-  options: any,
+  options: any
 ): Promise<void> {
   if (!connectorFile || fs.existsSync(connectorFile) === false) {
     console.log('connectorFile is required');
@@ -14,7 +14,7 @@ export async function runGetInfo(
   const capabilities = evalSync(vm, 'loadedConnector.getCapabilities()');
   const configurationOptions = evalSync(
     vm,
-    'loadedConnector.getConfigurationOptions();',
+    'loadedConnector.getConfigurationOptions();'
   );
 
   const properties = JSON.stringify(
@@ -23,7 +23,7 @@ export async function runGetInfo(
       configurationOptions,
     },
     null,
-    2,
+    2
   );
 
   if (options.out) {

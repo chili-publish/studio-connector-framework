@@ -1,11 +1,11 @@
-import {initRuntime, runtimeConfig, evalAsync} from '../qjs/qjs';
-import {assertResult} from '../tests/asserts';
-import {TestModels} from '../tests/testConfiguration';
+import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
+import { assertResult } from '../tests/asserts';
+import { TestModels } from '../tests/testConfiguration';
 import fs from 'fs';
 
 export async function runTests(
   connectorFile: string,
-  options: any,
+  options: any
 ): Promise<void> {
   const testFile = options.testFile;
 
@@ -21,7 +21,7 @@ export async function runTests(
 
   // parse the test file (its a json)
   const testConfig: TestModels.TestConfiguration = JSON.parse(
-    fs.readFileSync(testFile, 'utf8'),
+    fs.readFileSync(testFile, 'utf8')
   );
   const vm = await initRuntime(connectorFile, testConfig.setup.runtime_options);
 
@@ -88,22 +88,22 @@ export async function runTests(
       const testResult = await evalAsync(vm, script);
       assertResult(testResult, test, test.method);
     } catch (error) {
-      test.result = {failReason: JSON.stringify(error)};
+      test.result = { failReason: JSON.stringify(error) };
     }
 
     // end tracking time
     let end = new Date().getTime();
 
-    import('chalk').then(chalk => {
+    import('chalk').then((chalk) => {
       if (test.result?.failReason) {
         console.log(
           chalk.default.bgRed.white(
-            `FAIL [${end - start}ms]: ${test.name}::${test.result.failReason}`,
-          ),
+            `FAIL [${end - start}ms]: ${test.name}::${test.result.failReason}`
+          )
         );
       } else {
         console.log(
-          chalk.default.bgGreen.white(`PASS [${end - start}ms]: ${test.name}`),
+          chalk.default.bgGreen.white(`PASS [${end - start}ms]: ${test.name}`)
         );
       }
     });

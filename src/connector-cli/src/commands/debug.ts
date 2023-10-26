@@ -1,4 +1,4 @@
-import {initRuntime, evalSync} from '../qjs/qjs';
+import { initRuntime, evalSync } from '../qjs/qjs';
 import express from 'express';
 import Handlebars from 'handlebars';
 import path from 'path';
@@ -6,7 +6,7 @@ import fs from 'fs';
 
 export async function runDebugger(
   connectorFile: string,
-  options: any,
+  options: any
 ): Promise<void> {
   const app = express();
   app.set('view engine', 'hbs');
@@ -26,16 +26,16 @@ export async function runDebugger(
   });
 
   app.get('/', (req, res) => {
-    // get the full url of the request 
+    // get the full url of the request
     const host = req.protocol + '://' + req.hostname;
-    res.send(indexTemplate({port: port, host: host}));
+    res.send(indexTemplate({ port: port, host: host }));
   });
 
   app.get('/bundle.js', (req, res) => {
     const templatePath = path.join(
       __dirname,
       '../../debugger/bin/',
-      'index.js',
+      'index.js'
     );
     res.sendFile(templatePath);
   });
@@ -45,7 +45,7 @@ export async function runDebugger(
 
     // find css file in the bin folder
     const files = fs.readdirSync(binFolder);
-    const cssFile = files.find(f => f.endsWith('.css'));
+    const cssFile = files.find((f) => f.endsWith('.css'));
     const templatePath = path.join(binFolder, cssFile!);
 
     res.sendFile(templatePath);

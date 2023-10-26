@@ -1,10 +1,10 @@
-import {Media} from '@chili-publish/studio-connectors';
-import {TestModels} from './testConfiguration';
+import { Media } from '@chili-publish/studio-connectors';
+import { TestModels } from './testConfiguration';
 
 export function assertResult(
   testResult: unknown,
   test: TestModels.Test,
-  method: string,
+  method: string
 ) {
   switch (method) {
     case 'download':
@@ -69,10 +69,10 @@ export function assertQueryResult(testResult: unknown, test: TestModels.Test) {
 
 export function assertDetailResult(
   testResult: unknown,
-  test: TestModels.Test,
+  test: TestModels.Test
 ) {}
 
 export function assertDownloadResult(
   testResult: unknown,
-  test: TestModels.Test,
+  test: TestModels.Test
 ) {}

@@ -1,4 +1,4 @@
-import {Header} from '../state/Context';
+import { Header } from '../state/Context';
 
 export const cache = new Map<string, ArrayBuffer>();
 
@@ -20,11 +20,11 @@ export async function initRuntime(globalHeaders: Header[]) {
     const headers = {
       ...options.headers,
       ...globalHeaders.reduce(
-        (acc, curr) => ({...acc, [curr.HttpHeader]: curr.HttpValue}),
-        {},
+        (acc, curr) => ({ ...acc, [curr.HttpHeader]: curr.HttpValue }),
+        {}
       ),
     };
-    const response = await window.fetch(url, {...options, headers});
+    const response = await window.fetch(url, { ...options, headers });
 
     // if binary file, add arrayBufferPointer property
     if (response.headers.get('content-type')?.includes('json')) {

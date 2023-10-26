@@ -1,17 +1,17 @@
 import React from 'react';
-import {Table} from 'antd';
+import { Table } from 'antd';
 
 interface Props {
   data: Record<string, any>[];
 }
 
-const JsonObjectRenderer: React.FC<Props> = ({data}) => {
+const JsonObjectRenderer: React.FC<Props> = ({ data }) => {
   if (!data || data.length === 0) {
     return null;
   }
 
   // Extract column names from the first object in the array
-  const columns = Object.keys(data[0]).map(key => ({
+  const columns = Object.keys(data[0]).map((key) => ({
     title: key,
     dataIndex: key,
     key: key,

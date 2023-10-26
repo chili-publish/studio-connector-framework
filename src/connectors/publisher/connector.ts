@@ -1,4 +1,4 @@
-import {Connector, Media} from '@chili-publish/studio-connectors';
+import { Connector, Media } from '@chili-publish/studio-connectors';
 
 export default class PublisherConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
@@ -9,7 +9,7 @@ export default class PublisherConnector implements Media.MediaConnector {
 
   async detail(
     id: string,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     return Promise.resolve({
       id: '',
@@ -24,7 +24,7 @@ export default class PublisherConnector implements Media.MediaConnector {
   }
   async query(
     options: Connector.QueryOptions,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
     return Promise.resolve({
       links: {
@@ -48,12 +48,12 @@ export default class PublisherConnector implements Media.MediaConnector {
   async download(
     id: string,
     previewType: Media.DownloadType,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     try {
       const t = await this.runtime.fetch(
         `https://www.datocms-assets.com/11099/1685290983-frame-427318761-2.png?auto=format&dpr=0.23&w=2152`,
-        {method: 'GET'},
+        { method: 'GET' }
       );
       return t.arrayBuffer;
     } catch (error) {

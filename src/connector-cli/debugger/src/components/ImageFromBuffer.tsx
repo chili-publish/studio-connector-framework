@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 
 type Props = {
   buffer: ArrayBuffer;
@@ -6,12 +6,12 @@ type Props = {
   height: number;
 };
 
-const ArrayBufferImage: React.FC<Props> = ({buffer, width, height}) => {
+const ArrayBufferImage: React.FC<Props> = ({ buffer, width, height }) => {
   const [imageSrc, setImageSrc] = useState<String | null>(null);
 
   useEffect(() => {
     if (buffer) {
-      const blob = new Blob([buffer], {type: 'image/jpeg'}); // change the type if you're dealing with different image format
+      const blob = new Blob([buffer], { type: 'image/jpeg' }); // change the type if you're dealing with different image format
       const url = URL.createObjectURL(blob);
       setImageSrc(url);
 

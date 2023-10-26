@@ -1,4 +1,4 @@
-import {Connector, Media} from '@chili-publish/studio-connectors';
+import { Connector, Media } from '@chili-publish/studio-connectors';
 
 export default class AcquiaConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
@@ -9,7 +9,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
   detail(
     id: string,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     //https://mysite.widencollective.com/api/rest/asset/uuid/uuid?options=preconversions,downloadUrl
     return Promise.resolve({
@@ -20,7 +20,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
   async query(
     options: Connector.QueryOptions,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
     try {
       const startIndex = options.pageToken ?? 0;
@@ -39,11 +39,11 @@ export default class AcquiaConnector implements Media.MediaConnector {
       url = url + `&metadata=`;
       url = url + `&query=${query}`;
 
-      const t = await this.runtime.fetch(url, {method: 'GET'});
+      const t = await this.runtime.fetch(url, { method: 'GET' });
 
       if (!t?.ok) {
         this.runtime.logError(
-          `Error while querying Acquia DAM: ${t?.status} - ${t?.statusText}`,
+          `Error while querying Acquia DAM: ${t?.status} - ${t?.statusText}`
         );
         return {
           pageSize: 0,
@@ -59,7 +59,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
       // transform the data to the MediaPage format
       return {
         pageSize: 10,
-        data: data.items.map(item => {
+        data: data.items.map((item) => {
           return {
             // this id can be the literal uuid, or a JSON.stringify() of uuid + other info to later use in the download() method
             id: item.id,
@@ -81,12 +81,14 @@ export default class AcquiaConnector implements Media.MediaConnector {
   async download(
     id: string,
     previewType: Media.DownloadType,
-    context: Connector.Dictionary,
+    context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     try {
       // check if the previewUrls are 'predictable' and if so, just use the uuid to construct the url
       // otherwise, use the id to encode extra information of the previewUrl(s)
-      const t = await Promise.resolve({arrayBuffer: {id: '{}', bytes: 1000}});
+      const t = await Promise.resolve({
+        arrayBuffer: { id: '{}', bytes: 1000 },
+      });
       return t.arrayBuffer;
     } catch (error) {
       this.runtime.logError(error);

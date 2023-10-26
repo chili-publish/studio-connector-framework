@@ -16,26 +16,26 @@ type State = {
 };
 
 type Action =
-  | {type: 'ADD_HEADER'; payload: Header}
-  | {type: 'SET_HEADERS'; payload: Header[]};
+  | { type: 'ADD_HEADER'; payload: Header }
+  | { type: 'SET_HEADERS'; payload: Header[] };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'ADD_HEADER':
-      return {...state, headers: [...state.headers, action.payload]};
+      return { ...state, headers: [...state.headers, action.payload] };
     case 'SET_HEADERS':
-      return {...state, headers: action.payload};
+      return { ...state, headers: action.payload };
     default:
       return state;
   }
 }
 
-const initialState: State = {headers: []};
+const initialState: State = { headers: [] };
 
 const DataContext = createContext<{
   state: State;
   dispatch: React.Dispatch<Action>;
-}>({state: initialState, dispatch: () => undefined});
+}>({ state: initialState, dispatch: () => undefined });
 
 type Props = {
   children: ReactNode;
@@ -45,7 +45,7 @@ export const DataProvider: FC<Props> = (props: Props) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   return (
-    <DataContext.Provider value={{state, dispatch}}>
+    <DataContext.Provider value={{ state, dispatch }}>
       <>{props.children}</>
     </DataContext.Provider>
   );

@@ -1,8 +1,8 @@
-import {program} from 'commander';
-import {runGetInfo} from './commands/info';
-import {runTests} from './commands/test';
-import {runStressTest} from './commands/stress';
-import {runDebugger} from './commands/debug';
+import { program } from 'commander';
+import { runGetInfo } from './commands/info';
+import { runTests } from './commands/test';
+import { runStressTest } from './commands/stress';
+import { runDebugger } from './commands/debug';
 
 async function main() {
   program
@@ -14,7 +14,7 @@ async function main() {
     .command('debug')
     .argument(
       '<connectorFile>',
-      'Connector file (compiled js) to run debug server for',
+      'Connector file (compiled js) to run debug server for'
     )
     .option('-p, --port <port>')
     .action(runDebugger);
@@ -29,7 +29,7 @@ async function main() {
     .command('test')
     .argument(
       '<connectorFile>',
-      'Connector file (compiled js) to run test suite for',
+      'Connector file (compiled js) to run test suite for'
     )
     .option('-t, --testFile <testFile>')
     .action(runTests);
@@ -38,7 +38,7 @@ async function main() {
     .command('stress')
     .argument(
       '<connectorFile>',
-      'Connector file (compiled js) to run stress test suite for',
+      'Connector file (compiled js) to run stress test suite for'
     )
     .option('-i, --iterations <iterations>')
     .action(runStressTest);

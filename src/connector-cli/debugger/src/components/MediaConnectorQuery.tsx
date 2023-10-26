@@ -1,18 +1,18 @@
-import React, {useState} from 'react';
-import {Button, Input, Form, List, Typography, Divider, Space} from 'antd';
-import {useQueryOptions} from '../state/QueryContext';
-import {useData} from '../state/Context';
-import {initRuntime} from '../helpers/runtime';
+import React, { useState } from 'react';
+import { Button, Input, Form, List, Typography, Divider, Space } from 'antd';
+import { useQueryOptions } from '../state/QueryContext';
+import { useData } from '../state/Context';
+import { initRuntime } from '../helpers/runtime';
 import JsonObjectRenderer from './JsonObjectRenderer';
 
 const MediaConnectorQuery: React.FC = () => {
-  const {state, dispatch} = useQueryOptions();
-  const {state: globalHeaders} = useData();
+  const { state, dispatch } = useQueryOptions();
+  const { state: globalHeaders } = useData();
 
   const [token, setToken] = useState(state?.queryOptions?.token ?? '');
   const [filter, setFilter] = useState(state?.queryOptions?.filter ?? '');
   const [collection, setCollection] = useState(
-    state?.queryOptions?.collection ?? '',
+    state?.queryOptions?.collection ?? ''
   );
   const [pageSize, setPageSize] = useState(state?.queryOptions?.pageSize ?? 10);
   const [metadataKey, setMetadataKey] = useState('');
@@ -22,21 +22,21 @@ const MediaConnectorQuery: React.FC = () => {
   const handleQueryOptionsSubmit = () => {
     dispatch({
       type: 'SET_QUERY_OPTIONS',
-      payload: {token, filter, collection, pageSize},
+      payload: { token, filter, collection, pageSize },
     });
   };
 
   const handleMetadataSubmit = () => {
     dispatch({
       type: 'ADD_METADATA',
-      payload: {key: metadataKey, value: metadataValue},
+      payload: { key: metadataKey, value: metadataValue },
     });
     setMetadataKey('');
     setMetadataValue('');
   };
 
   const handleRemove = (index: number) => {
-    dispatch({type: 'REMOVE_METADATA', payload: index});
+    dispatch({ type: 'REMOVE_METADATA', payload: index });
   };
 
   async function executeConnectorQuery(): Promise<void> {
@@ -52,28 +52,28 @@ const MediaConnectorQuery: React.FC = () => {
     <>
       <Form
         onFinish={handleQueryOptionsSubmit}
-        labelCol={{span: 8}}
-        wrapperCol={{span: 16}}
-        style={{maxWidth: 600}}
-        initialValues={{remember: true}}
+        labelCol={{ span: 8 }}
+        wrapperCol={{ span: 16 }}
+        style={{ maxWidth: 600 }}
+        initialValues={{ remember: true }}
       >
         {/* Add form fields for token, filter, collection, and pageSize here */}
         <Form.Item label="Next Page Token">
-          <Input value={token} onChange={e => setToken(e.target.value)} />
+          <Input value={token} onChange={(e) => setToken(e.target.value)} />
         </Form.Item>
         <Form.Item label="Filter">
-          <Input value={filter} onChange={e => setFilter(e.target.value)} />
+          <Input value={filter} onChange={(e) => setFilter(e.target.value)} />
         </Form.Item>
         <Form.Item label="Collection">
           <Input
             value={collection}
-            onChange={e => setCollection(e.target.value)}
+            onChange={(e) => setCollection(e.target.value)}
           />
         </Form.Item>
         <Form.Item label="Page Size">
           <Input
             value={pageSize}
-            onChange={e => setPageSize(parseInt(e.target.value))}
+            onChange={(e) => setPageSize(parseInt(e.target.value))}
           />
         </Form.Item>
         <Form.Item>
@@ -85,24 +85,24 @@ const MediaConnectorQuery: React.FC = () => {
       <Divider />
       <Form
         onFinish={handleMetadataSubmit}
-        labelCol={{span: 8}}
-        wrapperCol={{span: 16}}
-        style={{maxWidth: 600}}
-        initialValues={{remember: true}}
+        labelCol={{ span: 8 }}
+        wrapperCol={{ span: 16 }}
+        style={{ maxWidth: 600 }}
+        initialValues={{ remember: true }}
       >
         <Form.Item label="Metadata Key">
           <Input
             value={metadataKey}
-            onChange={e => setMetadataKey(e.target.value)}
+            onChange={(e) => setMetadataKey(e.target.value)}
           />
         </Form.Item>
         <Form.Item label="Metadata Value">
           <Input
             value={metadataValue}
-            onChange={e => setMetadataValue(e.target.value)}
+            onChange={(e) => setMetadataValue(e.target.value)}
           />
         </Form.Item>
-        <Form.Item wrapperCol={{offset: 0, span: 16}}>
+        <Form.Item wrapperCol={{ offset: 0, span: 16 }}>
           <Button type="default" htmlType="submit">
             Add Metadata
           </Button>
