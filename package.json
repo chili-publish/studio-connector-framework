@@ -7,7 +7,8 @@
     "build-cli": "cd ./src/connector-cli/ && yarn && yarn build",
     "refresh-cli": "yarn build-cli && rm -rf node_modules && yarn install",
     "build-connectors": "node scripts/build-test-connectors.js",
-    "build": "yarn refresh-cli && yarn build-connectors"
+    "build": "yarn refresh-cli && yarn build-connectors",
+    "debug": "yarn build && node scripts/debug.mjs"
   },
   "devDependencies": {
     "connector-cli": "./src/connector-cli",

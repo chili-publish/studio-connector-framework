@@ -89,6 +89,7 @@ const MediaConnectorDetail: React.FC = () => {
             />
 
             <Divider />
+            
             <Button type="primary"  block onClick={executeConnectorDetail}>
                 Execute
             </Button>
