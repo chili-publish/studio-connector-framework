@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { Button, Input, Form, List } from 'antd';
-import { useData } from '../state/Context';
+import React, {useState} from 'react';
+import {Button, Input, Form, List} from 'antd';
+import {useData} from '../state/Context';
 
 const MediaConnectorAuthentication: React.FC = () => {
   const [httpHeader, setHttpHeader] = useState('');
   const [httpValue, setHttpValue] = useState('');
-  const { state, dispatch } = useData();
+  const {state, dispatch} = useData();
 
   const handleSubmit = () => {
-    dispatch({ type: 'ADD_HEADER', payload: { HttpHeader: httpHeader, HttpValue: httpValue } });
+    dispatch({
+      type: 'ADD_HEADER',
+      payload: {HttpHeader: httpHeader, HttpValue: httpValue},
+    });
     setHttpHeader('');
     setHttpValue('');
   };
@@ -16,17 +19,23 @@ const MediaConnectorAuthentication: React.FC = () => {
   const handleRemove = (index: number) => {
     const newHeaders = [...state.headers];
     newHeaders.splice(index, 1);
-    dispatch({ type: 'SET_HEADERS', payload: newHeaders });
+    dispatch({type: 'SET_HEADERS', payload: newHeaders});
   };
 
   return (
     <>
       <Form onFinish={handleSubmit}>
         <Form.Item label="HTTP Header">
-          <Input value={httpHeader} onChange={e => setHttpHeader(e.target.value)} />
+          <Input
+            value={httpHeader}
+            onChange={e => setHttpHeader(e.target.value)}
+          />
         </Form.Item>
         <Form.Item label="HTTP Value">
-          <Input value={httpValue} onChange={e => setHttpValue(e.target.value)} />
+          <Input
+            value={httpValue}
+            onChange={e => setHttpValue(e.target.value)}
+          />
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit">
@@ -45,7 +54,10 @@ const MediaConnectorAuthentication: React.FC = () => {
               </Button>,
             ]}
           >
-            <List.Item.Meta title={item.HttpHeader} description={item.HttpValue} />
+            <List.Item.Meta
+              title={item.HttpHeader}
+              description={item.HttpValue}
+            />
           </List.Item>
         )}
       />
