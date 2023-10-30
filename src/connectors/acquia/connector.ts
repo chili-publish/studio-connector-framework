@@ -1,5 +1,56 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
 
+interface AcquiaCollection {
+  uuid: string;
+  name: string;
+}
+
+interface AcquiaAsset {
+  uuid: string;
+  name: string;
+  previews: {
+    preview600: string;
+  };
+}
+
+interface GetCollectionsResponse {
+  collections: Array<AcquiaCollection>;
+  count: number;
+}
+
+interface GetAssetsResponse {
+  assets: Array<AcquiaAsset>;
+}
+
+class Converter {
+  static collectionToMedia({
+    collections,
+  }: GetCollectionsResponse): Array<Media.Media> {
+    return collections.map((c) => ({
+      id: c.uuid,
+      name: c.name,
+      relativePath: '/',
+      // 0 - file
+      // 1 - folder
+      type: 1,
+      metaData: null,
+    }));
+  }
+
+  static assetsToMedia({ assets }: GetAssetsResponse): Array<Media.Media> {
+    return assets.map((a) => ({
+      id: a.uuid,
+      name: a.name,
+      // TODO: to be defined
+      relativePath: '/',
+      // 0 - file
+      // 1 - folder
+      type: 0,
+      metaData: null,
+    }));
+  }
+}
+
 export default class AcquiaConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -30,14 +81,22 @@ export default class AcquiaConnector implements Media.MediaConnector {
       // TODO: implement the options.collection and append to query in a proper way
       // TODO: implement the options.sort and append to query in a proper way
 
-      // based on docs, the query should be something like this:
-      var url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
-      url =
-        url +
-        `api/rest/asset/search/query?start=${startIndex}&max=${options.pageSize}&sort=date-added-reversed&searchdocuments=false`;
-      url = url + `&options=preconversions,downloadUrl`;
-      url = url + `&metadata=`;
-      url = url + `&query=${query}`;
+      let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
+      // When we request "root" level, collection options is empty
+      // TODO: Add pagination logic here
+      // start=${startIndex}&max=${options.pageSize}
+      if (!options.collection) {
+        url += 'api/rest/collection/local';
+      } else {
+        // based on docs, the query should be something like this:
+
+        url =
+          url +
+          `api/rest/asset/search/query?sort=date-added-reversed&searchdocuments=false`;
+        url = url + `&options=preconversions,downloadUrl`;
+        url = url + `&metadata=`;
+        url = url + `&query=${query} `;
+      }
 
       const t = await this.runtime.fetch(url, { method: 'GET' });
 
@@ -54,22 +113,16 @@ export default class AcquiaConnector implements Media.MediaConnector {
         };
       }
 
-      var data = JSON.parse(t.text);
+      const data = JSON.parse(t.text);
 
       // transform the data to the MediaPage format
       return {
-        pageSize: 10,
-        data: data.items.map((item) => {
-          return {
-            // this id can be the literal uuid, or a JSON.stringify() of uuid + other info to later use in the download() method
-            id: item.id,
-            name: item.name,
-            relativePath: item.url,
-            type: 0,
-            metaData: item.context,
-          };
-        }),
+        pageSize: options.pageSize,
+        data: options.collection
+          ? Converter.assetsToMedia(data)
+          : Converter.collectionToMedia(data),
         links: {
+          // TODO: Add pagination logic here
           // should be the next startIndex in this case (see start and max parameters in the url above)
           nextPage: '',
         },

@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "bun build ./src/index.tsx --outdir=bin --minify",
-    "start": "bun build ./src/index.tsx --outdir=bin --minify --watch"
+    "start": "bun build ./src/index.tsx --outdir=bin --watch"
   },
   "eslintConfig": {
     "extends": [

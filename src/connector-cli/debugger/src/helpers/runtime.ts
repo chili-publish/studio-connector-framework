@@ -28,23 +28,28 @@ export async function initRuntime(globalHeaders: Header[]) {
 
     // if binary file, add arrayBufferPointer property
     if (response.headers.get('content-type')?.includes('json')) {
+      const text = await response.text();
+      // We couldn't make a ... copy of response object as it is not iterable
+      (response as any)['text'] = text;
       return response;
     } else {
       const arrayBuffer = await response.arrayBuffer();
       const id = Math.random().toString(36).substring(7);
       cache.set(id, arrayBuffer);
-      return {
-        ...response,
-        arrayBuffer: {
-          id: id,
-          bytes: arrayBuffer.byteLength,
-        },
+      // We couldn't make a ... copy of response object as it is not iterable
+      (response as any)['arrayBuffer'] = {
+        id: id,
+        bytes: arrayBuffer.byteLength,
       };
+      return response;
     }
   };
 
   const runtime = {
-    options: {},
+    options: {
+      // TODO: Should be taken from config somehow
+      BASE_URL: 'https://cloud.widencollective.com',
+    },
     logError: console.error,
     platform: {},
     sdkVersion: '1.0.0',
