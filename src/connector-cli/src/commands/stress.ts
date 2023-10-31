@@ -1,15 +1,19 @@
 import { initRuntime, evalSync, evalAsync } from '../qjs/qjs';
 import fs from 'fs';
+import { validateInputConnectorFile } from '../validation';
+import { compileToTempFile } from '../compiler/connectorCompiler';
 
 export async function runStressTest(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
-    console.log('connectorFile is required');
+  if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
-  const vm = await initRuntime(connectorFile, {});
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  const vm = await initRuntime(compilation.tempFile, {});
 
   const iterations: number = options.iterations ? options.iterations : 1000;
 

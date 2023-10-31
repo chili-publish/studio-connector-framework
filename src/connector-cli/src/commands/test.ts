@@ -1,29 +1,36 @@
+import path from 'path';
+import { compileToTempFile } from '../compiler/connectorCompiler';
 import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
 import { assertResult } from '../tests/asserts';
 import { TestModels } from '../tests/testConfiguration';
 import fs from 'fs';
+import { validateInputConnectorFile } from '../validation';
 
 export async function runTests(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  const testFile = options.testFile;
-
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
-    console.log('connectorFile is required');
+  if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
+
+  const testFile = options.testFile;
 
   if (!testFile || fs.existsSync(testFile) === false) {
     console.log('testFile is required');
     return;
   }
 
+  const compilation = await compileToTempFile(connectorFile);
+
   // parse the test file (its a json)
   const testConfig: TestModels.TestConfiguration = JSON.parse(
     fs.readFileSync(testFile, 'utf8')
   );
-  const vm = await initRuntime(connectorFile, testConfig.setup.runtime_options);
+  const vm = await initRuntime(
+    compilation.tempFile,
+    testConfig.setup.runtime_options
+  );
 
   for (const test of testConfig.tests) {
     let start = new Date().getTime();

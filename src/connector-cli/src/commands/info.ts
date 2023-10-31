@@ -1,15 +1,20 @@
+import path from 'path';
+import { compileToTempFile } from '../compiler/connectorCompiler';
 import { initRuntime, evalSync } from '../qjs/qjs';
 import fs from 'fs';
+import { validateInputConnectorFile } from '../validation';
 
 export async function runGetInfo(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
-    console.log('connectorFile is required');
+  if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
-  const vm = await initRuntime(connectorFile, {});
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  const vm = await initRuntime(compilation.tempFile, {});
 
   const capabilities = evalSync(vm, 'loadedConnector.getCapabilities()');
   const configurationOptions = evalSync(

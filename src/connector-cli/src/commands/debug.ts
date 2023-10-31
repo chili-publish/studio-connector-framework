@@ -1,13 +1,37 @@
-import { initRuntime, evalSync } from '../qjs/qjs';
 import express from 'express';
 import Handlebars from 'handlebars';
 import path from 'path';
 import fs from 'fs';
+import { validateInputConnectorFile } from '../validation';
+import { compileToTempFile } from '../compiler/connectorCompiler';
 
 export async function runDebugger(
   connectorFile: string,
   options: any
 ): Promise<void> {
+  if (!validateInputConnectorFile(connectorFile)) {
+    return;
+  }
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  if (options.watch) {
+    fs.watchFile(connectorFile, async function () {
+      console.log('File changed, rebuilding...');
+      const watchCompilation = await compileToTempFile(
+        connectorFile,
+        compilation.tempFile
+      );
+      if (watchCompilation.errors.length > 0) {
+        console.log('Build failed');
+        return;
+      }
+
+      console.log('Build succeeded');
+      console.log('Watching for changes... (press ctrl+c to exit)');
+    });
+  }
+
   const app = express();
   app.set('view engine', 'hbs');
 
@@ -15,7 +39,7 @@ export async function runDebugger(
   const indexTemplate = Handlebars.compile(debuggerHandleBarTemplate);
 
   // make sure connectorFile is absolute path
-  connectorFile = path.resolve(connectorFile);
+  const tempConnectorBuild = path.resolve(compilation.tempFile);
 
   // handle all preflight requests
   app.options('*', (req, res) => {
@@ -52,7 +76,7 @@ export async function runDebugger(
   });
 
   app.get('/connector.js', (req, res) => {
-    res.sendFile(connectorFile);
+    res.sendFile(tempConnectorBuild);
   });
 
   const server = app.listen(port, async () => {

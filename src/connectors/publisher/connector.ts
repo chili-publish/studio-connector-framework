@@ -11,7 +11,7 @@ export default class PublisherConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    return Promise.resolve({
+        return Promise.resolve({
       id: '',
       name: 'dummy',
       extension: '',
