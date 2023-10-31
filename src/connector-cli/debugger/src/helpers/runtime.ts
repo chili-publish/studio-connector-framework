@@ -48,7 +48,7 @@ export async function initRuntime(globalHeaders: Header[]) {
   const runtime = {
     options: {
       // TODO: Should be taken from config somehow
-      BASE_URL: 'https://cloud.widencollective.com',
+      BASE_URL: 'https://api.widencollective.com',
     },
     logError: console.error,
     platform: {},

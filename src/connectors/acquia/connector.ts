@@ -5,11 +5,14 @@ interface AcquiaCollection {
   name: string;
 }
 
-interface AcquiaAsset {
-  uuid: string;
-  name: string;
-  previews: {
-    preview600: string;
+interface AcquiaAssetV2 {
+  id: string;
+  filename: string;
+  thumbnails: {
+    '600px': string;
+  };
+  metadata: {
+    fields: { [metadata_key: string]: Array<string> | string };
   };
 }
 
@@ -19,7 +22,7 @@ interface GetCollectionsResponse {
 }
 
 interface GetAssetsResponse {
-  assets: Array<AcquiaAsset>;
+  items: Array<AcquiaAssetV2>;
 }
 
 class Converter {
@@ -37,16 +40,24 @@ class Converter {
     }));
   }
 
-  static assetsToMedia({ assets }: GetAssetsResponse): Array<Media.Media> {
-    return assets.map((a) => ({
-      id: a.uuid,
-      name: a.name,
+  static assetsToMedia({ items }: GetAssetsResponse): Array<Media.Media> {
+    return items.map((a) => ({
+      id: a.id,
+      name: a.filename,
       // TODO: to be defined
       relativePath: '/',
       // 0 - file
       // 1 - folder
       type: 0,
-      metaData: null,
+      metaData: Object.entries(a.metadata.fields).reduce(
+        (metadata, [fieldKey, fieldValue]) => {
+          metadata[fieldKey] = Array.isArray(fieldValue)
+            ? fieldValue[0]
+            : fieldValue;
+          return metadata;
+        },
+        {} as Connector.Dictionary
+      ),
     }));
   }
 }
@@ -62,6 +73,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
+    // TODO: should be v2 API request
     //https://mysite.widencollective.com/api/rest/asset/uuid/uuid?options=preconversions,downloadUrl
     return Promise.resolve({
       name: 'dummy',
@@ -76,27 +88,24 @@ export default class AcquiaConnector implements Media.MediaConnector {
     try {
       const startIndex = options.pageToken ?? 0;
       const query = context['query'] ?? '';
+      const collection = context['collection'] ?? '';
 
       // TODO: implement the options.filter and append to query in a proper way
       // TODO: implement the options.collection and append to query in a proper way
       // TODO: implement the options.sort and append to query in a proper way
 
       let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
-      // When we request "root" level, collection options is empty
-      // TODO: Add pagination logic here
-      // start=${startIndex}&max=${options.pageSize}
-      if (!options.collection) {
-        url += 'api/rest/collection/local';
-      } else {
-        // based on docs, the query should be something like this:
 
-        url =
-          url +
-          `api/rest/asset/search/query?sort=date-added-reversed&searchdocuments=false`;
-        url = url + `&options=preconversions,downloadUrl`;
-        url = url + `&metadata=`;
-        url = url + `&query=${query} `;
-      }
+      // We append "collection" filtering if provided
+      const finalQuery = collection ? query + ` cn:${collection}` : query;
+
+      url =
+        url +
+        `v2/assets/search?${
+          finalQuery ? 'query=' + finalQuery + '&' : ''
+        }offset=${startIndex}&limit=${
+          options.pageSize
+        }&expand=thumbnails,metadata`;
 
       const t = await this.runtime.fetch(url, { method: 'GET' });
 
@@ -118,9 +127,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
       // transform the data to the MediaPage format
       return {
         pageSize: options.pageSize,
-        data: options.collection
-          ? Converter.assetsToMedia(data)
-          : Converter.collectionToMedia(data),
+        data: Converter.assetsToMedia(data),
         links: {
           // TODO: Add pagination logic here
           // should be the next startIndex in this case (see start and max parameters in the url above)
@@ -152,6 +159,11 @@ export default class AcquiaConnector implements Media.MediaConnector {
       {
         name: 'query',
         displayName: 'Search Query',
+        type: 'text',
+      },
+      {
+        name: 'collection',
+        displayName: 'Collection name',
         type: 'text',
       },
     ];
