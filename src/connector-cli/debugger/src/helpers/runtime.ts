@@ -1,4 +1,5 @@
 import { Header } from '../state/Context';
+import { BASE_URL, PROXY_HOSTS } from './config';
 
 export const cache = new Map<string, ArrayBuffer>();
 
@@ -16,15 +17,31 @@ export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
 
 export async function initRuntime(globalHeaders: Header[]) {
   // proxy the fetch function to be able to inject headers
-  const fetch = async (url: string, options: any) => {
+  const fetch = async (url: string, options: RequestInit) => {
     const headers = {
-      ...options.headers,
+      ...(options.headers as unknown as Record<string, string>),
       ...globalHeaders.reduce(
         (acc, curr) => ({ ...acc, [curr.HttpHeader]: curr.HttpValue }),
         {}
       ),
     };
-    const response = await window.fetch(url, { ...options, headers });
+    // TODO: Take a look at built-in solutions of create react app via dev server
+    const shouldProxy = PROXY_HOSTS.some((proxy) => {
+      return url.match(proxy);
+    });
+    let response;
+    // TODO: doesn't work yet
+    // if (shouldProxy) {
+    //   // To avoid CORS issues we proxy image request via debug backend
+    //   response = await window.fetch(
+    //     '/image?requestUrl=' + window.encodeURI(url),
+    //     {
+    //       method: 'GET',
+    //     }
+    //   );
+    // } else {
+    response = await window.fetch(url, { ...options, headers });
+    // }
 
     // if binary file, add arrayBufferPointer property
     if (response.headers.get('content-type')?.includes('json')) {
@@ -47,8 +64,7 @@ export async function initRuntime(globalHeaders: Header[]) {
 
   const runtime = {
     options: {
-      // TODO: Should be taken from config somehow
-      BASE_URL: 'https://api.widencollective.com',
+      BASE_URL,
     },
     logError: console.error,
     platform: {},
@@ -56,14 +72,13 @@ export async function initRuntime(globalHeaders: Header[]) {
     fetch: fetch,
   };
 
-  const dynamicImport = new Function('url', `return import(url)`);
+  // const dynamicImport = new Function('url', `return import(url)`);
   // get the current base url and append connector.js to it
   const url = `${window.location.origin}/connector.js`;
   // fetch the connector js code as a module
-  //@ts-ignore
-  var mod = await dynamicImport(url);
+  const mod = await import(url);
   // get the default export from the module
-  var connector = new mod.default(runtime);
+  const connector = new mod.default(runtime);
 
   return connector;
 }

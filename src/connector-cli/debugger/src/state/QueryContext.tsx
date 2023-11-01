@@ -1,7 +1,7 @@
 import React, { ReactNode, createContext, useContext, useReducer } from 'react';
 
 interface QueryOption {
-  token: string;
+  pageToken: string;
   filter: string;
   collection: string;
   pageSize: number;
@@ -41,7 +41,7 @@ function reducer(state: State, action: Action): State {
 }
 
 const initialState: State = {
-  queryOptions: { token: '', filter: '', collection: '', pageSize: 10 },
+  queryOptions: { pageToken: '', filter: '', collection: '', pageSize: 10 },
   metadata: [],
 };
 

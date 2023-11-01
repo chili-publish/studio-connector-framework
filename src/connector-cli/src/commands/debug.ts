@@ -3,6 +3,7 @@ import express from 'express';
 import Handlebars from 'handlebars';
 import path from 'path';
 import fs from 'fs';
+import { Readable } from 'stream';
 
 export async function runDebugger(
   connectorFile: string,
@@ -53,6 +54,17 @@ export async function runDebugger(
 
   app.get('/connector.js', (req, res) => {
     res.sendFile(connectorFile);
+  });
+
+  // Suppose to be use to avoid CORS issues when requesting previews, however doesn't work yet
+  app.get('/image', async (req, res) => {
+    const requestUrl = req.query.requestUrl as string;
+    const proxiedResponse = await fetch(requestUrl);
+    if (proxiedResponse.ok) {
+      Readable.fromWeb(proxiedResponse.body as any).pipe(res);
+    } else {
+      res.status(proxiedResponse.status).send(proxiedResponse.statusText);
+    }
   });
 
   const server = app.listen(port, async () => {
