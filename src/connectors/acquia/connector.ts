@@ -6,6 +6,7 @@ interface AcquiaAssetV2 {
   thumbnails: {
     '600px': { url: string };
   };
+  external_id: string;
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
   };
@@ -18,13 +19,14 @@ interface GetAssetsResponse {
 class Converter {
   static assetToMedia(item: AcquiaAssetV2): Media.Media {
     return {
-      id: JSON.stringify({ id: item.id, thumbnails: item.thumbnails }),
+      id: JSON.stringify({ id: item.id, eid: item.external_id, thumbnails: item.thumbnails }),
       name: item.filename,
       // TODO: to be defined
       relativePath: '/',
       // 0 - file
       // 1 - folder
       type: 0,
+      extension: 'png',
       metaData: Object.entries(item.metadata.fields).reduce(
         (metadata, [fieldKey, fieldValue]) => {
           metadata[fieldKey] = Array.isArray(fieldValue)
@@ -43,17 +45,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
     this.runtime = runtime;
     // TODO: Should be taken from configuration
     this.runtime.options['BASE_URL'] = 'https://api.widencollective.com/';
-    const originalFetch = this.runtime.fetch;
-    // TODO: Temporary inject authorization info into all requests
-    this.runtime.fetch = function (...args: Parameters<typeof originalFetch>) {
-      const [url, init] = args;
-      return originalFetch(url, {
-        ...init,
-        headers: {
-          Authorization: 'Bearer wat_cloud_72fdd4860252be68243455d89c8e2505',
-        } as any,
-      });
-    };
+    this.runtime.options['TOKEN'] = 'Bearer wat_cloud_72fdd4860252be68243455d89c8e2505';
   }
 
   runtime: Connector.ConnectorRuntimeContext;
@@ -68,6 +60,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
     url = url + `v2/assets/${assetId}?expand=thumbnails,metadata`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
+      headers: {
+        Authorization: this.runtime.options['TOKEN'],
+      }
     });
     if (!t?.ok) {
       this.runtime.logError(
@@ -99,19 +94,35 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
       let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
 
+      // mediaId will be used for filtering, so we need to parse it.
+      // filtering could also be just a string, so we need to handle that as well (try/catch)
+      let filter = undefined;
+      if (options.filter && options.filter.length > 0){
+      try {
+        const temp = JSON.parse(options.filter[0]);
+        filter = temp.eid;  
+       } catch (error) {
+        filter = options.filter[0];
+       }
+      }
+
       // We append "collection" filtering if it's provided
-      const finalQuery = collection ? query + ` cn:${collection}` : query;
+      let finalQuery = collection ? query + ` cn:${collection}` : query;  
+      // supporting the queryOptions filter is required for the advanced demo    
+      let filterQuery = filter ?  ` (eid:${filter} or fn:${filter})` : '';
+      finalQuery =  finalQuery + filterQuery;
 
       url =
         url +
-        `v2/assets/search?${
-          finalQuery ? 'query=' + finalQuery + '&' : ''
-        }offset=${startIndex * options.pageSize}&limit=${
-          options.pageSize
+        `v2/assets/search?${finalQuery ? 'query=' + finalQuery + '&' : ''
+        }offset=${startIndex * options.pageSize}&limit=${options.pageSize
         }&expand=thumbnails,metadata`;
 
       const t = await this.runtime.fetch(url, {
         method: 'GET',
+        headers: {
+          Authorization: this.runtime.options['TOKEN'],
+        }
       });
 
       if (!t?.ok) {
@@ -130,15 +141,24 @@ export default class AcquiaConnector implements Media.MediaConnector {
       const data: GetAssetsResponse = JSON.parse(t.text);
 
       // transform the data to the MediaPage format
-      return {
+      const result = {
         pageSize: options.pageSize,
         data: data.items.map(Converter.assetToMedia),
         links: {
-          nextPage: `${startIndex + 1}`,
+          nextPage: `${(data.items.length < options.pageSize ? '' : startIndex + 1)}`,
         },
       };
+
+      return result;
     } catch (error) {
       this.runtime.logError(error);
+      return {
+        pageSize: 0,
+        data: [],
+        links: {
+          nextPage: "ERROR:: " + JSON.stringify(error)
+        },
+      };
     }
   }
   async download(
@@ -172,19 +192,14 @@ export default class AcquiaConnector implements Media.MediaConnector {
         name: 'query',
         displayName: 'Search Query',
         type: 'text',
-      },
-      {
-        name: 'collection',
-        displayName: 'Collection name',
-        type: 'text',
-      },
+      }
     ];
   }
   getCapabilities(): Media.MediaConnectorCapabilities {
     return {
       detail: true,
       query: true,
-      filtering: false,
+      filtering: true,
     };
   }
   ensureTrailingSlash(arg0: string) {
