@@ -1,0 +1,30 @@
+{
+  "name": "dall-e",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "options": {
+      "BASE_URL": "",
+      "DEBUG": "0"
+    },
+    "mappings": {}
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "typescript": "^5.2.2",
+    "@chili-publish/studio-connectors": "https://stgrafxstudiodevpublic.blob.core.windows.net/sdk/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
+  },
+  "scripts": {
+    "build": "yarn run tsc",
+    "test": "yarn run connector-cli test -t tests.json ./out/connector.js"
+  },
+  "devDependencies": {
+    "connector-cli": "file:../../connector-cli"
+  }
+}
