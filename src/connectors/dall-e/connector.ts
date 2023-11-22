@@ -11,7 +11,7 @@ export default class DallEConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-        return Promise.resolve({
+    return Promise.resolve({
       id: '',
       name: 'dummy',
       extension: '',
@@ -22,14 +22,11 @@ export default class DallEConnector implements Media.MediaConnector {
       metaData: {},
     } as Media.MediaDetail);
   }
+
   async query(
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
-
-    
-
-
     return Promise.resolve({
       links: {
         nextPage: '',
@@ -49,6 +46,7 @@ export default class DallEConnector implements Media.MediaConnector {
       ],
     }) as Promise<Media.MediaPage>;
   }
+
   async download(
     id: string,
     previewType: Media.DownloadType,
@@ -57,7 +55,7 @@ export default class DallEConnector implements Media.MediaConnector {
   ): Promise<Connector.ArrayBufferPointer> {
     try {
       const t = await this.runtime.fetch(
-        `https://dalle-proxy.azurewebsites.net/api/generate?prompt=${context.prompt??'empty'}&imagesize=${context.image_size??''}&cacheId=${context.cacheId??''}`,
+        `https://dalle-proxy.azurewebsites.net/api/generate?prompt=${context.prompt ?? 'empty'}&imagesize=${context.image_size ?? ''}&cacheId=${context.cacheId ?? ''}`,
         { method: 'GET' }
       );
       return t.arrayBuffer;
@@ -65,13 +63,14 @@ export default class DallEConnector implements Media.MediaConnector {
       this.runtime.logError(error);
     }
   }
+
   getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
     return [
       {
         name: 'prompt',
         displayName: 'Prompt',
         type: 'text',
-      },{
+      }, {
         name: 'image_size',
         displayName: 'Image Size (256, 512, 1024) (optional)',
         type: 'text',
@@ -83,6 +82,7 @@ export default class DallEConnector implements Media.MediaConnector {
       },
     ];
   }
+  
   getCapabilities(): Media.MediaConnectorCapabilities {
     return {
       detail: false,
