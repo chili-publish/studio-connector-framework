@@ -1,6 +1,6 @@
 {
   "name": "@chili-publish/connector-cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "index.ts",
   "license": "MIT",
   "bin": {
@@ -25,7 +25,7 @@
   },
   "scripts": {
     "build": "yarn run tsc",
-    "debugger": "yarn run ts-node src/index.ts debug '../connectors/publisher/out/connector.js'",
+    "debugger": "yarn run ts-node src/index.ts debug '../connectors/scaper/connector.ts'",
     "update": "yarn build && npm version patch && yarn pack"
   }
 }
