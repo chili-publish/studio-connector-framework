@@ -17,6 +17,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
       extension: '',
     } as Media.MediaDetail);
   }
+  
 
   async query(
     options: Connector.QueryOptions,
@@ -81,6 +82,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
   async download(
     id: string,
     previewType: Media.DownloadType,
+    intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     try {

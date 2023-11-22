@@ -82,7 +82,7 @@ function processConnector(dir) {
   const connectorApiVersion = extractConnectorSdkVersion(packageJson);
 
   // Build the project
-  const connectorInfo = extractConnectorInfo(outDir);
+  const connectorInfo = extractConnectorInfo(outDir, dir);
 
   // Create a new JSON object
   const jsonObject = {
@@ -178,12 +178,12 @@ function readScripts(outDir, dir) {
   return {connectorJs, connectorTs};
 }
 
-function extractConnectorInfo(outDir) {
+function extractConnectorInfo(outDir, inputDir) {
   const infoCommand =
     'yarn run connector-cli info  -o ' +
     path.join(outDir, 'props.json') +
     ' ' +
-    path.join(outDir, 'connector.js');
+    path.join(inputDir, 'connector.ts');
   console.log(infoCommand);
 
   execSync(infoCommand, {cwd: repoRoot});

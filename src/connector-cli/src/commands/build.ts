@@ -1,13 +1,15 @@
-import * as ts from 'typescript';
 import * as fs from 'fs';
 import { compile } from '../compiler/connectorCompiler';
 import path from 'path';
 import { validateInputConnectorFile } from '../validation';
+import { errorNoColor, info, startCommand, success, verbose } from '../logger';
 
 export async function runBuild(
   connectorFile: string,
   options: any
 ): Promise<void> {
+  startCommand('build', { connectorFile, options });
+
   if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
@@ -23,38 +25,42 @@ export async function runBuild(
 
   // if outfolder does not exist, create it
   if (!fs.existsSync(out)) {
+    verbose(`Creating out folder ${out}`);
     fs.mkdirSync(out);
   }
 
   const compilation = await compile(connectorFile);
 
   if (compilation.errors.length > 0) {
-    console.log('Build failed');
+    errorNoColor(compilation.formattedDiagnostics);
     return;
   }
 
   // write to out/connector.js
   fs.writeFileSync(`${out}/connector.js`, compilation.script);
+  verbose(`Written to ${out}/connector.js`);
 
-  console.log(`Written to ${out}/connector.js`);
-  console.log('Build succeeded');
+  success('Build succeeded');
 
   if (watch) {
-    console.log('Watching for changes... (press ctrl+c to exit)');
+    info(
+      'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+    );
     const watcher = fs.watchFile(connectorFile, async function () {
-      console.log('File changed, rebuilding...');
+      info('Rebuilding...');
       const compilation = await compile(connectorFile);
       if (compilation.errors.length > 0) {
-        console.log('Build failed');
+        errorNoColor(compilation.formattedDiagnostics);
         return;
+      } else {
+        success('Build succeeded -> ' + `${out}/connector.js`);
       }
 
       // write to out/connector.js
       fs.writeFileSync(`${out}/connector.js`, compilation.script);
 
-      console.log(`Written to ${out}/connector.js`);
-      console.log('Build succeeded');
-      console.log('Watching for changes... (press ctrl+c to exit)');
+      info('');
+      info('Watching for changes... (press ctrl+c to exit)');
     });
 
     // wait for user to press ctrl+c
