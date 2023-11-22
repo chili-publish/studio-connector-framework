@@ -52,6 +52,7 @@ export default class DallEConnector implements Media.MediaConnector {
   async download(
     id: string,
     previewType: Media.DownloadType,
+    intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     try {

@@ -1,17 +1,21 @@
 {
   "name": "studio-connector-contrib",
+  "private": "true",
   "version": "1.0.1",
   "author": "CHILI publish",
+  "workspaces": [
+    "src/connector-cli",
+    "src/connectors/*"
+  ],
   "license": "MIT",
   "scripts": {
     "build-cli": "cd ./src/connector-cli/ && yarn && yarn build",
-    "refresh-cli": "yarn build-cli && rm -rf node_modules && yarn install",
-    "build-connectors": "node scripts/build-test-connectors.js",
-    "build": "yarn refresh-cli && yarn build-connectors",
-    "debug": "yarn build && node scripts/debug.mjs"
+    "refresh-cli": "yarn upgrade @chili-publish/connector-cli",
+    "build-connectors": "yarn workspaces run build",
+    "publish-all": "node scripts/publish.js"
   },
   "devDependencies": {
-    "connector-cli": "./src/connector-cli",
+    "@chili-publish/connector-cli": "^1.0.28",
     "prettier": "^3.0.3"
   }
 }

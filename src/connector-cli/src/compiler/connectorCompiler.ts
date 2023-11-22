@@ -1,33 +1,47 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
-import { tmpdir } from 'node:os';
 
 export async function compileToTempFile(
   connectorFile: string,
   tempFile?: string | undefined
-): Promise<{ tempFile: string; errors: { line: string; error: string }[] }> {
+): Promise<{
+  tempFile: string;
+  errors: { line: string; error: string }[];
+  formattedDiagnostics: string;
+}> {
   const compileResult = await compile(connectorFile);
 
   if (compileResult.errors.length > 0) {
     return {
       tempFile: '',
       errors: compileResult.errors,
+      formattedDiagnostics: compileResult.formattedDiagnostics,
     };
   }
 
-  const tempFileUsed =
-    tempFile ?? `${fs.mkdtempSync(tmpdir())}/connector.js`;
+  // Get the current timestamp
+  let timestamp = new Date().getTime();
+  let randomNumber = Math.floor(Math.random() * 10000);
+  let filename = `file_${timestamp}_${randomNumber}`;
+
+  const tempFileUsed = tempFile ?? `/tmp/${filename}.js`;
+
   fs.writeFileSync(tempFileUsed, compileResult.script);
 
   return {
     tempFile: tempFileUsed,
     errors: [],
+    formattedDiagnostics: '',
   };
 }
 
 export async function compile(
   connectorFile: string
-): Promise<{ script: string; errors: { line: string; error: string }[] }> {
+): Promise<{
+  script: string;
+  errors: { line: string; error: string }[];
+  formattedDiagnostics: string;
+}> {
   const fileName = connectorFile;
   const compilerOptions: ts.CompilerOptions = {
     libs: ['es2020'],
@@ -57,18 +71,12 @@ export async function compile(
           error: 'Compile failed',
         },
       ],
+      formattedDiagnostics: '',
     };
   }
 
   // output to console
   const diagnostics = ts.getPreEmitDiagnostics(program);
-  console.log(
-    ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-      getCurrentDirectory: () => process.cwd(),
-      getCanonicalFileName: (fileName) => fileName,
-      getNewLine: () => ts.sys.newLine,
-    })
-  );
 
   return {
     script: output,
@@ -77,5 +85,10 @@ export async function compile(
         d.file?.getLineAndCharacterOfPosition(d.start!).line.toString() ?? '',
       error: d.messageText.toString(),
     })),
+    formattedDiagnostics: ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+      getCurrentDirectory: () => process.cwd(),
+      getCanonicalFileName: (fileName) => fileName,
+      getNewLine: () => ts.sys.newLine,
+    }),
   };
 }
