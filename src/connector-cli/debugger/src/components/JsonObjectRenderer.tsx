@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table } from 'antd';
+import { Popover, Table } from 'antd';
 
 interface Props {
   data: Record<string, any>[];
@@ -16,18 +16,38 @@ const JsonObjectRenderer: React.FC<Props> = ({ data }) => {
     dataIndex: key,
     key: key,
     render: (text: any) => {
+      let cellText = '';
       // Check if the text is an object or array
       if (typeof text === 'object' && text !== null) {
         // Stringify the value if it's an object or array
-        return JSON.stringify(text, null, 2);
+        cellText = JSON.stringify(text, null, 2);
+      } else {
+        cellText = text;
       }
 
-      // Otherwise, return the value as is
-      return text;
+      return (
+        <Popover
+          placement="top"
+          title="Full value"
+          content={cellText}
+          trigger="hover"
+          destroyTooltipOnHide={true}
+          fresh={true}
+        >
+          {cellText}
+        </Popover>
+      );
     },
   }));
 
-  return <Table columns={columns} dataSource={data} />;
+  return (
+    <Table
+      rootClassName="json-object-renderer"
+      columns={columns}
+      dataSource={data}
+      pagination={false}
+    />
+  );
 };
 
 export default JsonObjectRenderer;

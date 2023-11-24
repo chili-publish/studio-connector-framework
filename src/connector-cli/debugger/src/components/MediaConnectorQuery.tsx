@@ -9,7 +9,9 @@ const MediaConnectorQuery: React.FC = () => {
   const { state, dispatch } = useQueryOptions();
   const { state: globalHeaders } = useData();
 
-  const [token, setToken] = useState(state?.queryOptions?.token ?? '');
+  const [pageToken, setPageToken] = useState(
+    state?.queryOptions?.pageToken ?? ''
+  );
   const [filter, setFilter] = useState(state?.queryOptions?.filter ?? '');
   const [collection, setCollection] = useState(
     state?.queryOptions?.collection ?? ''
@@ -22,7 +24,7 @@ const MediaConnectorQuery: React.FC = () => {
   const handleQueryOptionsSubmit = () => {
     dispatch({
       type: 'SET_QUERY_OPTIONS',
-      payload: { token, filter, collection, pageSize },
+      payload: { pageToken, filter, collection, pageSize },
     });
   };
 
@@ -40,7 +42,7 @@ const MediaConnectorQuery: React.FC = () => {
   };
 
   async function executeConnectorQuery(): Promise<void> {
-    var connector = await initRuntime(globalHeaders.headers);
+    const connector = await initRuntime(globalHeaders.headers);
     const results = await connector.query(state.queryOptions, state.metadata);
 
     console.log('connector', connector);
@@ -59,7 +61,10 @@ const MediaConnectorQuery: React.FC = () => {
       >
         {/* Add form fields for token, filter, collection, and pageSize here */}
         <Form.Item label="Next Page Token">
-          <Input value={token} onChange={(e) => setToken(e.target.value)} />
+          <Input
+            value={pageToken}
+            onChange={(e) => setPageToken(e.target.value)}
+          />
         </Form.Item>
         <Form.Item label="Filter">
           <Input value={filter} onChange={(e) => setFilter(e.target.value)} />

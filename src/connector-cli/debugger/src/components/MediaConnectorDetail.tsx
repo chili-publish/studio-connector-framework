@@ -32,7 +32,7 @@ const MediaConnectorDetail: React.FC = () => {
   };
 
   async function executeConnectorDetail(): Promise<void> {
-    var connector = await initRuntime(globalHeaders.headers);
+    const connector = await initRuntime(globalHeaders.headers);
     const results = await connector.detail(
       state.detailOptions.id,
       state.metadata

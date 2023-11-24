@@ -7,6 +7,8 @@ import MediaConnectorAuthentication from './components/MediaConnectorAuthenticat
 import MediaConnectorDetail from './components/MediaConnectorDetail';
 import MediaConnectorDownload from './components/MediaConnectorDownload';
 import MediaConnectorQuery from './components/MediaConnectorQuery';
+import { DetailOptionsProvider } from './state/DetailContext';
+import { DownloadOptionsProvider } from './state/DownloadContext';
 
 const { Content, Sider } = Layout;
 
@@ -47,45 +49,49 @@ const App: React.FC = () => {
 
   return (
     <QueryOptionsProvider>
-      <DataProvider>
-        <Layout hasSider>
-          <Sider
-            style={{
-              overflow: 'auto',
-              height: '100vh',
-              position: 'fixed',
-              left: 0,
-              top: 0,
-              bottom: 0,
-            }}
-          >
-            <div className="demo-logo-vertical" />
-            <Menu
-              theme="dark"
-              mode="inline"
-              defaultSelectedKeys={[]}
-              items={items}
-            />
-          </Sider>
-          <Layout className="site-layout" style={{ marginLeft: 200 }}>
-            <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
-              <div
+      <DetailOptionsProvider>
+        <DownloadOptionsProvider>
+          <DataProvider>
+            <Layout hasSider>
+              <Sider
                 style={{
-                  padding: 24,
-                  textAlign: 'center',
-                  background: colorBgContainer,
+                  overflow: 'auto',
+                  height: '100vh',
+                  position: 'fixed',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
                 }}
               >
-                {SelectedComponent ? (
-                  <SelectedComponent />
-                ) : (
-                  'Please select a component'
-                )}
-              </div>
-            </Content>
-          </Layout>
-        </Layout>
-      </DataProvider>
+                <div className="demo-logo-vertical" />
+                <Menu
+                  theme="dark"
+                  mode="inline"
+                  defaultSelectedKeys={[]}
+                  items={items}
+                />
+              </Sider>
+              <Layout className="site-layout" style={{ marginLeft: 200 }}>
+                <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
+                  <div
+                    style={{
+                      padding: 24,
+                      textAlign: 'center',
+                      background: colorBgContainer,
+                    }}
+                  >
+                    {SelectedComponent ? (
+                      <SelectedComponent />
+                    ) : (
+                      'Please select a component'
+                    )}
+                  </div>
+                </Content>
+              </Layout>
+            </Layout>
+          </DataProvider>
+        </DownloadOptionsProvider>
+      </DetailOptionsProvider>
     </QueryOptionsProvider>
   );
 };

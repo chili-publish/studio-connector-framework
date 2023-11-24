@@ -11,3 +11,14 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* TODO: Move this styles under JsonObjectRenderer */
+.json-object-renderer table {
+  table-layout: fixed !important;
+}
+
+.json-object-renderer table td {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

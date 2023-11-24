@@ -21,10 +21,11 @@
     "@types/handlebars": "^4.1.0",
     "@types/node": "^20.8.6",
     "prettier": "^3.0.3",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "copyfiles": "2.4.1"
   },
   "scripts": {
-    "build": "yarn run tsc && yarn --cwd ./debugger run build && cp ./debugger/bin/* ./out/debugger/ -rv",
+    "build": "yarn run tsc && yarn --cwd ./debugger run build && copyfiles -Vf ./debugger/bin/* ./out/debugger/",
     "debugger": "yarn run ts-node src/index.ts debug '../connectors/scaper/connector.ts'",
     "update": "yarn build && npm version patch && yarn pack",
     "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'"
