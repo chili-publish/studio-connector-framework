@@ -42,7 +42,7 @@ const MediaConnectorDownload: React.FC = () => {
   };
 
   async function executeConnectorDownload(): Promise<void> {
-    var connector = await initRuntime(globalHeaders.headers);
+    const connector = await initRuntime(globalHeaders.headers);
     const results = await connector.download(
       state.id,
       state.downloadType,
