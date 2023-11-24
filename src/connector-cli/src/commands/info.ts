@@ -1,4 +1,3 @@
-import path from 'path';
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import { initRuntime, evalSync } from '../qjs/qjs';
 import fs from 'fs';

@@ -1,6 +1,6 @@
 import { program } from 'commander';
 import { runGetInfo } from './commands/info';
-import { runTests } from './commands/test';
+import { runDemo, runTests } from './commands/test';
 import { runStressTest } from './commands/stress';
 import { runDebugger } from './commands/debug';
 import { runPublish } from './commands/publish';
@@ -74,6 +74,14 @@ async function main() {
     )
     .option('-t, --testFile <testFile>')
     .action(runTests);
+
+  program
+    .command('demo')
+    .argument(
+      '[connectorFile]', 
+      'Connector file (ts) to run demo for', 
+      './connector.ts')
+    .action(runDemo);
 
   program
     .command('stress')

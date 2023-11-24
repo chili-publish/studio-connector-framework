@@ -11,12 +11,7 @@ Inspect the root package.json to see how to build / setup
 ## connector-cli
 In `src/connector-cli` we created a cli tool that is able to run a connector in standalone mode. This isolated runtime gives us the opportunity to run tests, while mocking network requests, etc.
 
-Currently the cli supports 2 commands:
-
-* `connector-cli info <connector.js>`
-  * This will instantiate the QuickJS runtime, load the connector and get capabilities and configurable options from the connector instance. Outputs a json object to stdout, or save to file using the `-o` argument
-* `connector-cli test -t <tests.json> <connector.js>
-  * runs a test suite against the specified connector
+See the readme in the connector-cli folder for more info.
  
 ### Updating / adding a connector:
 

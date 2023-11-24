@@ -26,6 +26,7 @@
   "scripts": {
     "build": "yarn run tsc && yarn --cwd ./debugger run build && cp ./debugger/bin/* ./out/debugger/ -rv",
     "debugger": "yarn run ts-node src/index.ts debug '../connectors/scaper/connector.ts'",
-    "update": "yarn build && npm version patch && yarn pack"
+    "update": "yarn build && npm version patch && yarn pack",
+    "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'"
   }
 }
