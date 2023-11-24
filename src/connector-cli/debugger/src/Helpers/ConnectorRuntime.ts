@@ -1,9 +1,9 @@
 export const cache = new Map<string, ArrayBuffer>();
 
 export interface Header {
-    HttpHeader: string;
-    HttpValue: string;
-  }
+  HttpHeader: string;
+  HttpValue: string;
+}
 
 export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
@@ -62,6 +62,6 @@ export async function initRuntime(globalHeaders: Header[]) {
   var mod = await dynamicImport(url);
   // get the default export from the module
   var connector = new mod.default(runtime);
-  
+
   return connector;
 }

@@ -4,10 +4,14 @@ interface Props {
   data: Record<string, any>[];
 }
 
-const PrettyPrintJson: React.FC<any> = ({data}) => {
+const PrettyPrintJson: React.FC<any> = ({ data }) => {
   // (destructured) data could be a prop for example
-  return (<div><pre>{ JSON.stringify(data, null, 2) }</pre></div>);
-}
+  return (
+    <div>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+};
 
 const JsonObjectRenderer: React.FC<Props> = ({ data }) => {
   if (!data || data.length === 0) {
