@@ -52,8 +52,6 @@ export async function initRuntime(globalHeaders: Header[]) {
     sdkVersion: '1.0.0',
     fetch: fetch,
   };
-
-  // const dynamicImport = new Function('url', `return import(url)`);
   // get the current base url and append connector.js to it
   const url = `${window.location.origin}/connector.js`;
   // fetch the connector js code as a module
