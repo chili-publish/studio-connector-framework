@@ -11,6 +11,7 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { connectorFile, options });
   if (!validateInputConnectorFile(connectorFile)) {
+    errorNoColor('!!!!!!!!!!!!!!!!!!');
     return;
   }
 

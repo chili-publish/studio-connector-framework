@@ -1,5 +1,4 @@
 import { Header } from '../state/Context';
-import { BASE_URL, PROXY_HOSTS } from './config';
 
 export const cache = new Map<string, ArrayBuffer>();
 
@@ -25,23 +24,7 @@ export async function initRuntime(globalHeaders: Header[]) {
         {}
       ),
     };
-    // TODO: Take a look at built-in solutions of create react app via dev server
-    const shouldProxy = PROXY_HOSTS.some((proxy) => {
-      return url.match(proxy);
-    });
-    let response;
-    // TODO: doesn't work yet
-    // if (shouldProxy) {
-    //   // To avoid CORS issues we proxy image request via debug backend
-    //   response = await window.fetch(
-    //     '/image?requestUrl=' + window.encodeURI(url),
-    //     {
-    //       method: 'GET',
-    //     }
-    //   );
-    // } else {
-    response = await window.fetch(url, { ...options, headers });
-    // }
+    const response = await window.fetch(url, { ...options, headers });
 
     // if binary file, add arrayBufferPointer property
     if (response.headers.get('content-type')?.includes('json')) {
@@ -63,9 +46,7 @@ export async function initRuntime(globalHeaders: Header[]) {
   };
 
   const runtime = {
-    options: {
-      BASE_URL,
-    },
+    options: {},
     logError: console.error,
     platform: {},
     sdkVersion: '1.0.0',
