@@ -67,6 +67,7 @@ export module TestModels {
         arguments: {
           id: '',
           download_type: 'thumbnail',
+          download_intent: 'animation',
           context: {},
         },
         asserts: {

@@ -11,7 +11,7 @@ export type DataModel = {
 
 export type ConnectorMetadata = {
     name: string;
-    type: "media" | "font" | "data";
+    type: "MediaConnector" | "FontConnector" | "DataConnector";
     getDisplayType: () => string;   
 };
 

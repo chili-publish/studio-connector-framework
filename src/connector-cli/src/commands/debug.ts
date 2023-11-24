@@ -4,6 +4,28 @@ import fs from 'fs';
 import { validateInputConnectorFile } from '../validation';
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import { errorNoColor, info, startCommand, success, verbose } from '../logger';
+import ts, { ParameterDeclaration, TypeNode } from 'typescript';
+
+export async function introspectTsFile(connectorFile: string): Promise<string> {
+
+  // use typescript to load the connector file
+  // and get the connector class
+  const program = ts.createProgram([connectorFile], {});
+  const sourceFile = program.getSourceFile(connectorFile);
+  const typeChecker = program.getTypeChecker();
+  
+  let iface = '';
+  sourceFile?.statements.filter(ts.isClassDeclaration).forEach((classDeclaration) => {    
+    classDeclaration.heritageClauses?.forEach((heritageClause) => {
+      heritageClause.types.forEach((type) => {
+        var symbol = typeChecker.getTypeAtLocation(type.expression);
+        iface = symbol.symbol.escapedName.toString();
+      });
+    });
+  });
+
+  return iface;
+}
 
 export async function runDebugger(
   connectorFile: string,
@@ -14,6 +36,7 @@ export async function runDebugger(
     return;
   }
 
+  const connectorType = await introspectTsFile(connectorFile);
   const compilation = await compileToTempFile(connectorFile);
 
   if (options.watch) {
@@ -43,6 +66,28 @@ export async function runDebugger(
   const port = options.port ?? 3300;
   const indexTemplate = debuggerHandleBarTemplate;
 
+  // recursive (3 deep) find parent folder with subfolder 'out'
+  function findOutFolder(folder: string, depth: number): string | undefined {
+    if (depth === 5) {
+      return undefined;
+    }
+    info('Looking for out folder in ' + folder);
+    const outFolder = path.join(folder, 'out');
+    if (fs.existsSync(outFolder)) {
+      return outFolder;
+    }
+    return findOutFolder(path.join(folder, '..'), depth + 1);
+  }
+
+  const outFolder = findOutFolder(__dirname, 0);
+
+  if (!outFolder) {
+    errorNoColor('Could not find out folder');
+    return;
+  }
+
+  info('Detected out folder: ' + outFolder);
+
   // make sure connectorFile is absolute path
   const tempConnectorBuild = path.resolve(compilation.tempFile);
 
@@ -61,14 +106,19 @@ export async function runDebugger(
 
   app.get('/bundle.js', (req, res) => {
     verbose('Serving bundle.js');
-    const templatePath = path.join(__dirname, '../../debugger/', 'index.js');
+    
+    const binFolder = outFolder;
+    // find js file in the bin folder
+    const files = fs.readdirSync(binFolder);
+    const jsFile = files.find((f) => f.endsWith('.js'));
+    const templatePath = path.join(binFolder, jsFile!);
+
     res.sendFile(templatePath);
   });
 
   app.get('/main.css', (req, res) => {
     verbose('Serving main.css');
-    const binFolder = path.join(__dirname, '../../debugger');
-
+    const binFolder = outFolder;
     // find css file in the bin folder
     const files = fs.readdirSync(binFolder);
     const cssFile = files.find((f) => f.endsWith('.css'));
@@ -84,7 +134,7 @@ export async function runDebugger(
 
   const server = app.listen(port, async () => {
     info(`Debugger running on port ${port}`);
-    (await import('open')).default(`http://localhost:${port}`);
+    (await import('open')).default(`http://localhost:${port}?type=${connectorType}`);
   });
 }
 
@@ -97,7 +147,7 @@ const debuggerHandleBarTemplate = `
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <div id="app"></div>
+    <div id="root"></div>
     <script src="bundle.js"></script>
     <script type="module" src="connector.js"></script>
 </body>
