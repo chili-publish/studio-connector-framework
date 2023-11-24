@@ -7,6 +7,121 @@ import Chalk from 'chalk';
 import fs from 'fs';
 import { error, errorNoColor, info, startCommand, success } from '../logger';
 import chalk from 'chalk';
+import { introspectTsFile } from './debug';
+
+export async function runDemo(
+  connectorFile: string,
+  options: any
+): Promise<void> {
+
+  introspectTsFile(connectorFile);
+
+  startCommand('test', { connectorFile, options });
+
+  if (!validateInputConnectorFile(connectorFile)) {
+    return;
+  }
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  if (compilation.errors.length > 0) {
+    errorNoColor(compilation.formattedDiagnostics);
+    return;
+  } else {
+    success('Build succeeded -> ' + compilation.tempFile);
+  }
+
+  const vm = await initRuntime(
+    compilation.tempFile,
+    {}
+  );
+
+  let urlsUsed: string[] = [];
+
+  runtimeConfig.fetchInterceptor = async (url: string, options: any) => {
+    urlsUsed.push(url);
+    var response = new Response(JSON.stringify({}), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+    return response;
+  };
+
+  const script = `
+      (async () => {
+          try{
+              return await loadedConnector.query({
+                collection: null,
+                filter: null,
+                pageSize: 1,
+                pageToken: null,
+                sortBy: null,
+                sortOrder: null
+              }, {})
+          }catch(error){
+              console.log("error", error)
+          }
+      })()`;
+
+  try {
+    const testResult = await evalAsync(vm, script);
+  }
+  catch (error) {
+    console.log(error);
+  }
+
+  vm.dispose();
+
+  let dummyTestConfiguration: TestModels.TestConfiguration = {
+    setup: {
+      runtime_options: {}
+    },
+    tests: [
+      {
+        id: "default_query",
+        description: "default_query",
+        name: "default_query",
+        method: "query",
+        arguments: {
+          queryOptions: {
+            collection: null,
+            filter: null,
+            pageSize: 1,
+            pageToken: null,
+            sortBy: null,
+            sortOrder: null
+          },
+          context: {}
+        },
+        asserts: {
+          fetch: urlsUsed.map<TestModels.Fetch>((url) => {
+            return {
+              url: url,
+              method: "GET",
+              count: 1,
+              response: {
+                status: 200,
+                headers: [
+                  [
+                    "content-type",
+                    "application/json"
+                  ]
+                ],
+                body: {}
+              }
+            };
+          })
+        }
+      }
+    ]
+  }
+
+  // write dummyTestConfiguration to ./tests.generated.json formatted json
+  fs.writeFileSync('./tests.generated.json', JSON.stringify(dummyTestConfiguration, null, 2));
+  return;
+}
 
 export async function runTests(
   connectorFile: string,

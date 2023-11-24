@@ -1,5 +1,5 @@
 {
-  "exclude": ["node_modules", "debugger"],
+  "exclude": ["node_modules", "debugger", "debugger"],
   "compilerOptions": {
     "resolveJsonModule": true,
     /* Visit https://aka.ms/tsconfig to read more about this file */

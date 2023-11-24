@@ -1,3 +1,6 @@
+import { Dictionary, QueryOptions } from "@chili-publish/studio-connectors/dist/Connector.Shared";
+import { DownloadIntent, DownloadType } from "@chili-publish/studio-connectors/dist/MediaConnector";
+
 export module TestModels {
   export interface TestConfiguration {
     setup: Setup;
@@ -17,19 +20,23 @@ export module TestModels {
       | undefined;
     id: string;
     name: string;
-    descr: string;
+    description: string;
     method: string;
-    arguments: Arguments;
+    arguments: DownloadArguments | QueryArguments;
     asserts: Asserts;
   }
 
-  export interface Arguments {
+  export interface DownloadArguments {
     id: string;
-    download_type: string;
-    context: Context;
+    download_type: DownloadType;
+    download_intent: DownloadIntent;
+    context: Dictionary;
   }
 
-  export interface Context extends Record<string, string> {}
+  export interface QueryArguments {
+    queryOptions: QueryOptions;
+    context: Dictionary;
+  }
 
   export interface Asserts {
     fetch: Fetch[];
@@ -55,11 +62,12 @@ export module TestModels {
       this.test = {
         id: '',
         name: '',
-        descr: '',
+        description: '',
         method: '',
         arguments: {
           id: '',
-          download_type: '',
+          download_type: 'thumbnail',
+          download_intent: 'animation',
           context: {},
         },
         asserts: {
@@ -79,7 +87,7 @@ export module TestModels {
     }
 
     setDescr(descr: string) {
-      this.test.descr = descr;
+      this.test.description = descr;
       return this;
     }
 
@@ -88,7 +96,7 @@ export module TestModels {
       return this;
     }
 
-    setArguments(callback: (args: TestModels.Arguments) => void) {
+    setArguments(callback: (args: TestModels.DownloadArguments | TestModels.QueryArguments) => void) {
       callback(this.test.arguments);
       return this;
     }

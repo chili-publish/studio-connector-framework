@@ -1,41 +1,31 @@
 {
-  "name": "debugger",
-  "version": "0.1.0",
+  "name": "vite-react-typescript-starter",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "@types/node": "^16.18.59",
-    "@types/react": "^18.2.31",
-    "@types/react-dom": "^18.2.14",
-    "antd": "^5.10.2",
     "react": "^18.2.0",
-    "react-app-polyfill": "^3.0.0",
-    "react-dev-utils": "^12.0.1",
-    "react-dom": "^18.2.0",
-    "react-refresh": "^0.11.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "typescript": "^4.9.5"
-  },
-  "scripts": {
-    "build": "bun install && bun build ./src/index.tsx --outdir=bin --minify",
-    "start": "bun build ./src/index.tsx --outdir=bin --watch --minify"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.53.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
   }
 }

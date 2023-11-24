@@ -1,6 +1,6 @@
 {
   "name": "@chili-publish/connector-cli",
-  "version": "1.0.32",
+  "version": "1.0.41",
   "main": "index.ts",
   "license": "MIT",
   "bin": {
@@ -25,8 +25,10 @@
     "copyfiles": "2.4.1"
   },
   "scripts": {
-    "build": "yarn run tsc && yarn --cwd ./debugger run build && copyfiles -Vf ./debugger/bin/* ./out/debugger/",
-    "debugger": "yarn run ts-node src/index.ts debug '../connectors/scaper/connector.ts'",
-    "update": "yarn build && npm version patch && yarn pack"
+    "build": "rm -rf ./out &&  yarn run tsc && yarn --cwd ./debugger build && copyfiles -Vf ./debugger/dist/assets/* ./out/",
+    "debugger": "yarn run ts-node src/index.ts debug '../connectors/acquia/connector.ts'",
+    "update": "yarn build && npm version patch && yarn pack",
+    "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'",
+    "publish-now": "yarn build && npm version patch && yarn publish"
   }
 }
