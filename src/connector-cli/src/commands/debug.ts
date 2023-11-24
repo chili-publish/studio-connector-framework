@@ -1,22 +1,50 @@
-import { initRuntime, evalSync } from '../qjs/qjs';
 import express from 'express';
-import Handlebars from 'handlebars';
 import path from 'path';
 import fs from 'fs';
-import { Readable } from 'stream';
+import { validateInputConnectorFile } from '../validation';
+import { compileToTempFile } from '../compiler/connectorCompiler';
+import { errorNoColor, info, startCommand, success, verbose } from '../logger';
 
 export async function runDebugger(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  const app = express();
-  app.set('view engine', 'hbs');
+  startCommand('debug', { connectorFile, options });
+  if (!validateInputConnectorFile(connectorFile)) {
+    return;
+  }
 
+  const compilation = await compileToTempFile(connectorFile);
+
+  if (options.watch) {
+    info(
+      'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+    );
+    fs.watchFile(connectorFile, async function () {
+      info('Rebuilding...');
+
+      const watchCompilation = await compileToTempFile(
+        connectorFile,
+        compilation.tempFile
+      );
+      if (watchCompilation.errors.length > 0) {
+        errorNoColor(watchCompilation.formattedDiagnostics);
+        return;
+      } else {
+        success('Build succeeded -> ' + compilation.tempFile);
+      }
+
+      info('');
+      info('Watching for changes... (press ctrl+c to exit)');
+    });
+  }
+
+  const app = express();
   const port = options.port ?? 3300;
-  const indexTemplate = Handlebars.compile(debuggerHandleBarTemplate);
+  const indexTemplate = debuggerHandleBarTemplate;
 
   // make sure connectorFile is absolute path
-  connectorFile = path.resolve(connectorFile);
+  const tempConnectorBuild = path.resolve(compilation.tempFile);
 
   // handle all preflight requests
   app.options('*', (req, res) => {
@@ -27,22 +55,19 @@ export async function runDebugger(
   });
 
   app.get('/', (req, res) => {
-    // get the full url of the request
-    const host = req.protocol + '://' + req.hostname;
-    res.send(indexTemplate({ port: port, host: host }));
+    verbose('Serving index.html');
+    res.send(indexTemplate);
   });
 
   app.get('/bundle.js', (req, res) => {
-    const templatePath = path.join(
-      __dirname,
-      '../../debugger/bin/',
-      'index.js'
-    );
+    verbose('Serving bundle.js');
+    const templatePath = path.join(__dirname, '../../debugger/', 'index.js');
     res.sendFile(templatePath);
   });
 
   app.get('/main.css', (req, res) => {
-    const binFolder = path.join(__dirname, '../../debugger/bin');
+    verbose('Serving main.css');
+    const binFolder = path.join(__dirname, '../../debugger');
 
     // find css file in the bin folder
     const files = fs.readdirSync(binFolder);
@@ -53,22 +78,12 @@ export async function runDebugger(
   });
 
   app.get('/connector.js', (req, res) => {
-    res.sendFile(connectorFile);
-  });
-
-  // Suppose to be use to avoid CORS issues when requesting previews, however doesn't work yet
-  app.get('/image', async (req, res) => {
-    const requestUrl = req.query.requestUrl as string;
-    const proxiedResponse = await fetch(requestUrl);
-    if (proxiedResponse.ok) {
-      Readable.fromWeb(proxiedResponse.body as any).pipe(res);
-    } else {
-      res.status(proxiedResponse.status).send(proxiedResponse.statusText);
-    }
+    verbose('Serving connector.js');
+    res.sendFile(tempConnectorBuild);
   });
 
   const server = app.listen(port, async () => {
-    console.log(`Debugger listening at http://localhost:${port}`);
+    info(`Debugger running on port ${port}`);
     (await import('open')).default(`http://localhost:${port}`);
   });
 }

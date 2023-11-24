@@ -19,7 +19,11 @@ interface GetAssetsResponse {
 class Converter {
   static assetToMedia(item: AcquiaAssetV2): Media.Media {
     return {
-      id: JSON.stringify({ id: item.id, eid: item.external_id, thumbnails: item.thumbnails }),
+      id: JSON.stringify({
+        id: item.id,
+        eid: item.external_id,
+        thumbnails: item.thumbnails,
+      }),
       name: item.filename,
       // TODO: to be defined
       relativePath: '/',
@@ -45,7 +49,6 @@ export default class AcquiaConnector implements Media.MediaConnector {
     this.runtime = runtime;
     // TODO: Should be taken from configuration
     this.runtime.options['BASE_URL'] = 'https://api.widencollective.com/';
-    this.runtime.options['TOKEN'] = 'Bearer wat_cloud_72fdd4860252be68243455d89c8e2505';
   }
 
   runtime: Connector.ConnectorRuntimeContext;
@@ -60,9 +63,6 @@ export default class AcquiaConnector implements Media.MediaConnector {
     url = url + `v2/assets/${assetId}?expand=thumbnails,metadata`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
-      headers: {
-        Authorization: this.runtime.options['TOKEN'],
-      }
     });
     if (!t?.ok) {
       this.runtime.logError(
@@ -97,32 +97,31 @@ export default class AcquiaConnector implements Media.MediaConnector {
       // mediaId will be used for filtering, so we need to parse it.
       // filtering could also be just a string, so we need to handle that as well (try/catch)
       let filter = undefined;
-      if (options.filter && options.filter.length > 0){
-      try {
-        const temp = JSON.parse(options.filter[0]);
-        filter = temp.eid;  
-       } catch (error) {
-        filter = options.filter[0];
-       }
+      if (options.filter && options.filter.length > 0) {
+        try {
+          const temp = JSON.parse(options.filter[0]);
+          filter = temp.eid;
+        } catch (error) {
+          filter = options.filter[0];
+        }
       }
 
       // We append "collection" filtering if it's provided
-      let finalQuery = collection ? query + ` cn:${collection}` : query;  
-      // supporting the queryOptions filter is required for the advanced demo    
-      let filterQuery = filter ?  ` (eid:${filter} or fn:${filter})` : '';
-      finalQuery =  finalQuery + filterQuery;
+      let finalQuery = collection ? query + ` cn:${collection}` : query;
+      // supporting the queryOptions filter is required for the advanced demo
+      let filterQuery = filter ? ` (eid:${filter} or fn:${filter})` : '';
+      finalQuery = finalQuery + filterQuery;
 
       url =
         url +
-        `v2/assets/search?${finalQuery ? 'query=' + finalQuery + '&' : ''
-        }offset=${startIndex * options.pageSize}&limit=${options.pageSize
+        `v2/assets/search?${
+          finalQuery ? 'query=' + finalQuery + '&' : ''
+        }offset=${startIndex * options.pageSize}&limit=${
+          options.pageSize
         }&expand=thumbnails,metadata`;
 
       const t = await this.runtime.fetch(url, {
         method: 'GET',
-        headers: {
-          Authorization: this.runtime.options['TOKEN'],
-        }
       });
 
       if (!t?.ok) {
@@ -145,7 +144,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
         pageSize: options.pageSize,
         data: data.items.map(Converter.assetToMedia),
         links: {
-          nextPage: `${(data.items.length < options.pageSize ? '' : startIndex + 1)}`,
+          nextPage: `${
+            data.items.length < options.pageSize ? '' : startIndex + 1
+          }`,
         },
       };
 
@@ -156,7 +157,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
         pageSize: 0,
         data: [],
         links: {
-          nextPage: "ERROR:: " + JSON.stringify(error)
+          nextPage: 'ERROR:: ' + JSON.stringify(error),
         },
       };
     }
@@ -164,6 +165,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
   async download(
     id: string,
     previewType: Media.DownloadType,
+    intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     try {
@@ -192,7 +194,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
         name: 'query',
         displayName: 'Search Query',
         type: 'text',
-      }
+      },
     ];
   }
   getCapabilities(): Media.MediaConnectorCapabilities {

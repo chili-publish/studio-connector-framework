@@ -1,15 +1,29 @@
 import { initRuntime, evalSync, evalAsync } from '../qjs/qjs';
 import fs from 'fs';
+import { validateInputConnectorFile } from '../validation';
+import { compileToTempFile } from '../compiler/connectorCompiler';
+import { errorNoColor, info, startCommand, success, warn } from '../logger';
 
 export async function runStressTest(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
-    console.log('connectorFile is required');
+  startCommand('stress', { connectorFile, options });
+
+  if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
-  const vm = await initRuntime(connectorFile, {});
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  if (compilation.errors.length > 0) {
+    errorNoColor(compilation.formattedDiagnostics);
+    return;
+  } else {
+    success('Build succeeded -> ' + compilation.tempFile);
+  }
+
+  const vm = await initRuntime(compilation.tempFile, {});
 
   const iterations: number = options.iterations ? options.iterations : 1000;
 
@@ -24,9 +38,9 @@ export async function runStressTest(
       vm,
       `(async () => {
             try{
-                return await await loadedConnector.download('id', '', {})
+                return await await loadedConnector.download('id' +'' +{})
             }catch(error){
-                console.log("error", error)
+                info("error", error)
             }
         })()`
     );
@@ -47,34 +61,30 @@ export async function runStressTest(
   for (let i = 0; i < times.length; i++) {
     totalTime += Number(times[i]);
   }
-  console.log('Performance stats for ', iterations, ' iterations');
+  info(`Performance stats for ${iterations} iterations`);
   // draw horizontal line
-  console.log('--------------------------------------------------');
-  console.log('total time', totalTime / 1000000, 'ms');
-  console.log('average time', totalTime / times.length / 1000000, 'ms');
+  info('--------------------------------------------------');
+  info(`total time${totalTime / 1000000}ms`);
+  info(`average time${totalTime / times.length / 1000000}ms`);
   // min, max and median (times is a bigint array)
   times.sort((a, b) => Number(a) - Number(b));
-  console.log('min time', Number(times[0]) / 1000000, 'ms');
-  console.log('max time', Number(times[times.length - 1]) / 1000000, 'ms');
-  console.log(
-    'median time',
-    Number(times[Math.floor(times.length / 2)]) / 1000000,
-    'ms'
-  );
+  info(`min time${Number(times[0]) / 1000000}ms`);
+  info(`max time${Number(times[times.length - 1]) / 1000000}ms`);
+  info(`median time${Number(times[Math.floor(times.length / 2)]) / 1000000}ms`);
 
   // display memory stats
-  console.log('Memory stats for ', iterations, ' iterations');
+  info(`Memory stats for ${iterations} iterations`);
   // draw horizontal line
-  console.log('--------------------------------------------------');
+  info('--------------------------------------------------');
 
   // find stats in the memories that only go up
   analyzeMemoryStats(memories);
 
   let { first, last } = findFirstAndLast(memories);
-  console.log(
-    'Allocation increase: ',
-    last.memory_used_size - first.memory_used_size,
-    'bytes'
+  info(
+    `Allocation increase: ${
+      last.memory_used_size - first.memory_used_size
+    }bytes`
   );
 }
 
@@ -97,7 +107,7 @@ function analyzeMemoryStats(stats: MemoryStats[]): void {
 
           // If the change is significantly high, log a warning
           if (change > significantIncreaseFactor) {
-            console.warn(
+            warn(
               `Warning: ${key} has increased significantly (change: ${change}%)`
             );
           }

@@ -1,29 +1,47 @@
+import { compileToTempFile } from '../compiler/connectorCompiler';
 import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
+import { validateInputConnectorFile } from '../validation';
 import { assertResult } from '../tests/asserts';
 import { TestModels } from '../tests/testConfiguration';
+import Chalk from 'chalk';
 import fs from 'fs';
+import { error, errorNoColor, info, startCommand, success } from '../logger';
+import chalk from 'chalk';
 
 export async function runTests(
   connectorFile: string,
   options: any
 ): Promise<void> {
-  const testFile = options.testFile;
+  startCommand('test', { connectorFile, options });
 
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
-    console.log('connectorFile is required');
+  if (!validateInputConnectorFile(connectorFile)) {
     return;
   }
 
+  const testFile = options.testFile;
+
   if (!testFile || fs.existsSync(testFile) === false) {
-    console.log('testFile is required');
+    error('testFile is required');
     return;
+  }
+
+  const compilation = await compileToTempFile(connectorFile);
+
+  if (compilation.errors.length > 0) {
+    errorNoColor(compilation.formattedDiagnostics);
+    return;
+  } else {
+    success('Build succeeded -> ' + compilation.tempFile);
   }
 
   // parse the test file (its a json)
   const testConfig: TestModels.TestConfiguration = JSON.parse(
     fs.readFileSync(testFile, 'utf8')
   );
-  const vm = await initRuntime(connectorFile, testConfig.setup.runtime_options);
+  const vm = await initRuntime(
+    compilation.tempFile,
+    testConfig.setup.runtime_options
+  );
 
   for (const test of testConfig.tests) {
     let start = new Date().getTime();
@@ -35,7 +53,7 @@ export async function runTests(
     }
     argumentsString = argumentsString.slice(0, -1);
 
-    console.log('running test', test.name);
+    info(`running test ${chalk.bold(test.name)}`);
 
     const script = `
         (async () => {
@@ -94,19 +112,15 @@ export async function runTests(
     // end tracking time
     let end = new Date().getTime();
 
-    import('chalk').then((chalk) => {
-      if (test.result?.failReason) {
-        console.log(
-          chalk.default.bgRed.white(
-            `FAIL [${end - start}ms]: ${test.name}::${test.result.failReason}`
-          )
-        );
-      } else {
-        console.log(
-          chalk.default.bgGreen.white(`PASS [${end - start}ms]: ${test.name}`)
-        );
-      }
-    });
+    if (test.result?.failReason) {
+      errorNoColor(
+        Chalk.bgRed.white(
+          `FAIL [${end - start}ms]: ${test.name}::${test.result.failReason}`
+        )
+      );
+    } else {
+      success(`PASS [${end - start}ms]: ${test.name}`);
+    }
   }
 
   vm.dispose();

@@ -1,9 +1,5 @@
 import fs from 'fs';
-import {
-  QuickJSContext,
-  getQuickJS,
-  QuickJSHandle,
-} from '@tootallnate/quickjs-emscripten';
+import { QuickJSContext, getQuickJS, QuickJSHandle } from 'quickjs-emscripten';
 
 export let runtimeConfig: RuntimeConfiguration = {
   fetchInterceptor: undefined,

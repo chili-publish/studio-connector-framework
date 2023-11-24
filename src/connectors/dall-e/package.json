@@ -1,5 +1,5 @@
 {
-  "name": "publisher",
+  "name": "dall-e",
   "description": "",
   "version": "1.0.0",
   "author": {
@@ -17,14 +17,14 @@
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
-    "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "https://stgrafxstudiodevpublic.blob.core.windows.net/sdk/connectors/chili-publish-studio-connectors-v1.0.0.tgz"
+    "@chili-publish/studio-connectors": "^1.3.3",
+    "typescript": "^5.2.2"
   },
   "scripts": {
-    "build": "yarn run tsc",
-    "test": "yarn run connector-cli test -t tests.json ./out/connector.js"
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
   },
   "devDependencies": {
-    "connector-cli": "file:../../connector-cli"
+    "@chili-publish/connector-cli": "^1.0.7"
   }
 }

@@ -17,7 +17,7 @@ Currently the cli supports 2 commands:
   * This will instantiate the QuickJS runtime, load the connector and get capabilities and configurable options from the connector instance. Outputs a json object to stdout, or save to file using the `-o` argument
 * `connector-cli test -t <tests.json> <connector.js>
   * runs a test suite against the specified connector
-
+ 
 ### Updating / adding a connector:
 
 * Open PR
@@ -37,3 +37,12 @@ Currently the cli supports 2 commands:
 
 * After merge
   * The connector now availble in the platform UI to choose from when adding a connector to an environment. People can choose a connector, and then pick a version (this info is loaded frm the index json file)
+
+### Verified Developers
+
+* Developers can be verified by the repo maintainers. Connectors published by verified developers will be marked as such in the UI. This is to give users confidence that the connector is maintained by a verified developer. This will make sure that an offical connector is not published by a random person, and that the connector is maintained by someone who knows what they are doing.
+
+#### Partner framework
+
+* Official Partner
+* GraFx SLA (not all CP connectors )
