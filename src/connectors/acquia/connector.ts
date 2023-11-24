@@ -79,7 +79,6 @@ export default class AcquiaConnector implements Media.MediaConnector {
     const data = JSON.parse(t.text);
     return Converter.assetToMedia(data);
   }
-  
 
   async query(
     options: Connector.QueryOptions,
@@ -90,7 +89,6 @@ export default class AcquiaConnector implements Media.MediaConnector {
       const query = context['query'] ?? '';
       const collection = context['collection'] ?? '';
 
-      // TODO: implement the options.filter and append to query in a proper way
       // TODO: implement the options.sort and append to query in a proper way
 
       let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
