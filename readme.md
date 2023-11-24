@@ -34,12 +34,7 @@ Currently the cli supports 2 commands:
   - We should run our own suite of tests to verify capabilities / options, etc are all returning without errors.
   - The PR is now ready to be reviewed by repo maintainers
 
-- Merge PR
-
-  - When merging the PR to main branch, the scripts/publish.js file will be executed. This file will combine all metadata + code in a json file <connectorName>.<connectorVersion>.json in the root /publish folder.
-  - All files in the ./publish folder are copied to Azure Storage, where they are hosted in a CDN friendly folder. We update an index file 'index.json' which contains a list of all connectors, and their versions.
-
-- After merge
+* After merge
   - The connector now availble in the platform UI to choose from when adding a connector to an environment. People can choose a connector, and then pick a version (this info is loaded frm the index json file)
 
 ### Verified Developers

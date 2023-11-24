@@ -79,6 +79,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
     const data = JSON.parse(t.text);
     return Converter.assetToMedia(data);
   }
+  
 
   async query(
     options: Connector.QueryOptions,
