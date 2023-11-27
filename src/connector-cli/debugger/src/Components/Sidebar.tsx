@@ -13,7 +13,6 @@ export const Sidebar = ({
   onModelChanged: (model: DataModel) => void;
 }) => {
   // get url parameter for connector type (media/font/data)
-
   let models: DataModel[] = [];
 
   models.push(Models.Auth);

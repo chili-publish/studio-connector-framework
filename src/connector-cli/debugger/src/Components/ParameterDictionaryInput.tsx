@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Parameter } from '../Helpers/DataModel';
 
 export const ParameterDictionaryInput = ({
-  parentParameter,
   parameter,
   onChange,
 }: {

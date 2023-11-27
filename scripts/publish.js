@@ -21,7 +21,17 @@ fs.readdirSync(connectorsDir).forEach(file => {
   console.log(`Checking ${dirPath}`);
   if (fs.statSync(dirPath).isDirectory()) {
     console.log(`Processing ${dirPath}`);
-    processConnector(dirPath);
+    var connectorJson = processConnector(dirPath);
+    // Write the JSON object to <repo root>/publish/<name>.json
+    const publishDir = path.join(repoRoot, 'publish');
+    if (!fs.existsSync(publishDir)) {
+      fs.mkdirSync(publishDir);
+    }
+    fs.writeFileSync(
+      path.join(publishDir, `${connectorJson.name}.${connectorJson.version}.json`),
+      JSON.stringify(connectorJson, null, 2),
+    );
+    console.log(`Successfully processed ${name}`);
   }
 });
 
@@ -99,16 +109,7 @@ function processConnector(dir) {
   Object.assign(jsonObject, config);
   Object.assign(jsonObject, connectorInfo);
 
-  // Write the JSON object to <repo root>/publish/<name>.json
-  const publishDir = path.join(repoRoot, 'publish');
-  if (!fs.existsSync(publishDir)) {
-    fs.mkdirSync(publishDir);
-  }
-  fs.writeFileSync(
-    path.join(publishDir, `${name}.${version}.json`),
-    JSON.stringify(jsonObject, null, 2),
-  );
-  console.log(`Successfully processed ${name}`);
+  return jsonObject;
 }
 
 function extractConnectorSdkVersion(packageJson) {
@@ -155,6 +156,23 @@ function extractConnectorSdkVersion(packageJson) {
   return connectorApiVersion;
 }
 
+
+function extractConnectorInfo(outDir, inputDir) {
+  const infoCommand =
+    'yarn run connector-cli info  -o ' +
+    path.join(outDir, 'props.json') +
+    ' ' +
+    path.join(inputDir, 'connector.ts');
+  console.log(infoCommand);
+
+  execSync(infoCommand, {cwd: repoRoot});
+
+  const infoOutput = fs.readFileSync(path.join(outDir, 'props.json'));
+  const connectorInfo = JSON.parse(infoOutput);
+  return connectorInfo;
+}
+
+
 function findRepoRoot(startPath) {
   let currentPath = startPath;
   while (!fs.existsSync(path.join(currentPath, 'package.json'))) {
@@ -176,19 +194,4 @@ function readScripts(outDir, dir) {
     ? fs.readFileSync(path.join(dir, 'connector.ts'), 'utf-8')
     : undefined;
   return {connectorJs, connectorTs};
-}
-
-function extractConnectorInfo(outDir, inputDir) {
-  const infoCommand =
-    'yarn run connector-cli info  -o ' +
-    path.join(outDir, 'props.json') +
-    ' ' +
-    path.join(inputDir, 'connector.ts');
-  console.log(infoCommand);
-
-  execSync(infoCommand, {cwd: repoRoot});
-
-  const infoOutput = fs.readFileSync(path.join(outDir, 'props.json'));
-  const connectorInfo = JSON.parse(infoOutput);
-  return connectorInfo;
 }
