@@ -7,6 +7,7 @@ import { runPublish } from './commands/publish';
 import { runBuild } from './commands/build';
 import { runInit } from './commands/init';
 import info from '../package.json';
+import { runLogin } from './commands/login';
 
 async function main() {
   program
@@ -28,7 +29,8 @@ async function main() {
       './connector.ts'
     )
     .option('-t, --token <token>', 'Token to use for publishing')
-    .option('-e, --endpoint <endpoint>', 'Endpoint to use for publishing')
+    .option('-e', '--environment <environment>', 'Environment to use for publishing')
+    .option('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
     .option('-n, --name <name>', 'Name to use for publishing')
     .option('-o, --overwrite', 'Overwrite existing connector')
     .action(runPublish);
@@ -78,8 +80,8 @@ async function main() {
   program
     .command('demo')
     .argument(
-      '[connectorFile]', 
-      'Connector file (ts) to run demo for', 
+      '[connectorFile]',
+      'Connector file (ts) to run demo for',
       './connector.ts')
     .action(runDemo);
 
@@ -93,7 +95,12 @@ async function main() {
     .option('-i, --iterations <iterations>')
     .action(runStressTest);
 
+  program
+      .command('login')
+      .action(runLogin);
+
   program.parse(process.argv);
+
 }
 
 try {

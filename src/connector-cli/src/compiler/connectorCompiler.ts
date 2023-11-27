@@ -4,11 +4,7 @@ import * as fs from 'fs';
 export async function compileToTempFile(
   connectorFile: string,
   tempFile?: string | undefined
-): Promise<{
-  tempFile: string;
-  errors: { line: string; error: string }[];
-  formattedDiagnostics: string;
-}> {
+): Promise<TempFileCompilationResult> {
   const compileResult = await compile(connectorFile);
 
   if (compileResult.errors.length > 0) {
@@ -37,11 +33,7 @@ export async function compileToTempFile(
 
 export async function compile(
   connectorFile: string
-): Promise<{
-  script: string;
-  errors: { line: string; error: string }[];
-  formattedDiagnostics: string;
-}> {
+): Promise<InMemoryCompilationResult> {
   const fileName = connectorFile;
   const compilerOptions: ts.CompilerOptions = {
     libs: ['es2020'],
@@ -92,3 +84,21 @@ export async function compile(
     }),
   };
 }
+
+export type AnyCompilationResult = TempFileCompilationResult | InMemoryCompilationResult;
+
+export type TempFileCompilationResult = CompilationResult & {
+  tempFile: string;
+};
+
+export type InMemoryCompilationResult = CompilationResult & {
+  script: string;
+};
+
+export type CompilationResult = {  
+  errors: {
+    line: string;
+    error: string;
+  }[];
+  formattedDiagnostics: string;
+};

@@ -1,4 +1,4 @@
-import { compileToTempFile } from '../compiler/connectorCompiler';
+import { AnyCompilationResult, TempFileCompilationResult, compileToTempFile } from '../compiler/connectorCompiler';
 import { initRuntime, evalSync } from '../qjs/qjs';
 import fs from 'fs';
 import { validateInputConnectorFile } from '../validation';
@@ -22,6 +22,17 @@ export async function runGetInfo(
     success('Build succeeded -> ' + compilation.tempFile);
   }
 
+  const properties = '\n'+ JSON.stringify(await getInfoInternal(compilation)) + '\n';
+
+  if (options.out) {
+    fs.writeFileSync(options.out ? options.out : './out.json', properties);
+    info(`Written to ${options.out ? options.out : './out.json'}`);
+  } else {
+    process.stdout.write(properties);
+  }
+}
+
+export async function getInfoInternal(compilation: TempFileCompilationResult) {
   const vm = await initRuntime(compilation.tempFile, {});
 
   const capabilities = evalSync(vm, 'loadedConnector.getCapabilities()');
@@ -30,22 +41,11 @@ export async function runGetInfo(
     'loadedConnector.getConfigurationOptions();'
   );
 
-  const properties =
-    '\n' +
-    JSON.stringify(
+  const properties = 
       {
         capabilities,
         configurationOptions,
-      },
-      null,
-      2
-    ) +
-    '\n';
+      };
 
-  if (options.out) {
-    fs.writeFileSync(options.out ? options.out : './out.json', properties);
-    info(`Written to ${options.out ? options.out : './out.json'}`);
-  } else {
-    process.stdout.write(properties);
-  }
+  return properties;
 }
