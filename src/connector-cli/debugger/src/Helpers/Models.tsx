@@ -99,7 +99,7 @@ export const Models: {
       invoke: async (values: any[]) => {
         const result = await Models.ConnectorInstance.query(
           values[0],
-          values[1]
+          values[1] || {}
         );
 
         console.table({ request: values, result });

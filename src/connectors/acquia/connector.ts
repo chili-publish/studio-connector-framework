@@ -7,6 +7,9 @@ interface AcquiaAssetV2 {
     '600px': { url: string };
   };
   external_id: string;
+  file_properties: {
+    format: string;
+  };
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
   };
@@ -30,7 +33,7 @@ class Converter {
       // 0 - file
       // 1 - folder
       type: 0,
-      extension: 'png',
+      extension: item.file_properties.format.toLowerCase(),
       metaData: Object.entries(item.metadata.fields).reduce(
         (metadata, [fieldKey, fieldValue]) => {
           metadata[fieldKey] = Array.isArray(fieldValue)
@@ -49,6 +52,8 @@ export default class AcquiaConnector implements Media.MediaConnector {
     this.runtime = runtime;
     // TODO: Should be taken from configuration
     this.runtime.options['BASE_URL'] = 'https://api.widencollective.com/';
+    this.runtime.options['TOKEN'] =
+      'Bearer wat_cloud_72fdd4860252be68243455d89c8e2505';
   }
 
   runtime: Connector.ConnectorRuntimeContext;
@@ -63,6 +68,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
     url = url + `v2/assets/${assetId}?expand=thumbnails,metadata`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
+      headers: {
+        Authorization: this.runtime.options['TOKEN'],
+      },
     });
     if (!t?.ok) {
       this.runtime.logError(
@@ -117,10 +125,13 @@ export default class AcquiaConnector implements Media.MediaConnector {
           finalQuery ? 'query=' + finalQuery + '&' : ''
         }offset=${startIndex * options.pageSize}&limit=${
           options.pageSize
-        }&expand=thumbnails,metadata`;
+        }&expand=thumbnails,metadata,file_properties`;
 
       const t = await this.runtime.fetch(url, {
         method: 'GET',
+        headers: {
+          Authorization: this.runtime.options['TOKEN'],
+        },
       });
 
       if (!t?.ok) {
@@ -181,7 +192,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
         thumbnail = thumbnails[keys[keys.length - 1]];
       }
 
-      const result = await this.runtime.fetch(thumbnail.url, { method: 'GET' });
+      const result = await this.runtime.fetch(thumbnail.url, {
+        method: 'GET',
+      });
       return result.arrayBuffer;
     } catch (error) {
       this.runtime.logError(error);
