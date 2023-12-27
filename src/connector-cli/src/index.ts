@@ -28,11 +28,13 @@ async function main() {
       'Connector file (built json) to publish to the marketplace',
       './connector.ts'
     )
-    .option('-t, --token <token>', 'Token to use for publishing')
-    .option('-e', '--environment <environment>', 'Environment to use for publishing')
-    .option('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
-    .option('-n, --name <name>', 'Name to use for publishing')
-    .option('-o, --overwrite', 'Overwrite existing connector')
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment to use for publishing'
+    )
+    .requiredOption('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
+    .requiredOption('-n, --name <name>', 'Name to use for publishing')
+    .option('-o, --overwrite', 'Overwrite existing connector', false)
     .action(runPublish);
 
   program
@@ -82,7 +84,8 @@ async function main() {
     .argument(
       '[connectorFile]',
       'Connector file (ts) to run demo for',
-      './connector.ts')
+      './connector.ts'
+    )
     .action(runDemo);
 
   program
@@ -95,12 +98,9 @@ async function main() {
     .option('-i, --iterations <iterations>')
     .action(runStressTest);
 
-  program
-      .command('login')
-      .action(runLogin);
+  program.command('login').action(runLogin);
 
   program.parse(process.argv);
-
 }
 
 try {
