@@ -1,3 +1,4 @@
+import { program } from 'commander';
 import version from '../package.json';
 import chalk from 'chalk';
 
@@ -5,7 +6,7 @@ const startTime = Date.now();
 let verboseEnabled: boolean = false;
 
 export function startCommand(command: string, options: any) {
-  if (options.verbose) {
+  if (program.opts().verbose) {
     verboseEnabled = true;
   }
 
