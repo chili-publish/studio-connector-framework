@@ -7,6 +7,9 @@ interface AcquiaAssetV2 {
     '600px': { url: string };
   };
   external_id: string;
+  file_properties: {
+    format: string;
+  };
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
   };
@@ -30,7 +33,7 @@ class Converter {
       // 0 - file
       // 1 - folder
       type: 0,
-      extension: 'png',
+      extension: item.file_properties.format.toLowerCase(),
       metaData: Object.entries(item.metadata.fields).reduce(
         (metadata, [fieldKey, fieldValue]) => {
           metadata[fieldKey] = Array.isArray(fieldValue)
@@ -117,7 +120,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
           finalQuery ? 'query=' + finalQuery + '&' : ''
         }offset=${startIndex * options.pageSize}&limit=${
           options.pageSize
-        }&expand=thumbnails,metadata`;
+        }&expand=thumbnails,metadata,file_properties`;
 
       const t = await this.runtime.fetch(url, {
         method: 'GET',
@@ -181,7 +184,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
         thumbnail = thumbnails[keys[keys.length - 1]];
       }
 
-      const result = await this.runtime.fetch(thumbnail.url, { method: 'GET' });
+      const result = await this.runtime.fetch(thumbnail.url, {
+        method: 'GET',
+      });
       return result.arrayBuffer;
     } catch (error) {
       this.runtime.logError(error);
