@@ -34,7 +34,10 @@ async function main() {
     )
     .requiredOption('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
     .requiredOption('-n, --name <name>', 'Name to use for publishing')
-    .option('-o, --overwrite', 'Overwrite existing connector', false)
+    .option(
+      '--connectorId <connectorId>',
+      'If provided, update of the existing connector is going to happen'
+    )
     .action(runPublish);
 
   program

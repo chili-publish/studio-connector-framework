@@ -8,6 +8,7 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
+    "iconUrl": "https://www.acquia.com/sites/default/files/styles/product_header_icon/public/media/image/2023-03/Acquia%20DAM%20Logo.png?itok=ckfUGC7T",
     "options": {
       "BASE_URL": "",
       "DEBUG": "0"

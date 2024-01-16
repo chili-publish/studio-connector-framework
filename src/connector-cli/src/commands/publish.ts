@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import { validateInputConnectorFile } from '../validation';
 import { DataStore } from '../authentication';
@@ -14,11 +16,39 @@ import {
   startCommand,
 } from '../logger';
 
+interface PublishCommandOptions {
+  baseUrl: string;
+  environment: string;
+  name: string;
+  connectorId?: string;
+}
+
+interface ConnectorPayload {
+  name: string;
+  description: string;
+  version: string;
+  iconUrl: string;
+  scriptTs: string;
+  script: string;
+  connectorApiVersion: string;
+}
+
+interface CreateConnectorPayload extends ConnectorPayload {
+  enabled: true;
+}
+
+type UpdateConnectorPayload = ConnectorPayload;
+
+// "iconUrl": "https://www.acquia.com/sites/default/files/styles/product_header_icon/public/media/image/2023-03/Acquia%20DAM%20Logo.png?itok=ckfUGC7T",
+
 // yarn connector-cli publish -e cp-dyx-217 -b https://devblubird.cpstaging.online/grafx -n Acquia ./src/connectors/acquia/connector.ts
 // yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia ./src/connectors/acquia/connector.ts
+// yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia --connectorId b82ec8dd-de70-4539-9e69-e10d12c38431 ./src/connectors/acquia/connector.ts
+// yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia --connectorId 123 ./src/connectors/acquia/connector.ts
+// yarn connector-cli login
 export async function runPublish(
   connectorFile: string,
-  options: any
+  options: PublishCommandOptions
 ): Promise<void> {
   startCommand('publish', { connectorFile, options });
   if (!validateInputConnectorFile(connectorFile)) {
@@ -34,7 +64,7 @@ export async function runPublish(
   const accessToken = DataStore.accessToken;
 
   // store all options as vars
-  const { baseUrl, environment, name, overwrite } = options;
+  const { baseUrl, environment, name, connectorId } = options;
 
   info('Building connector...');
 
@@ -68,17 +98,19 @@ export async function runPublish(
   };
 
   // get connector sdk version
-  const connectorApiVersion = extractConnectorSdkVersion(dir, packageJson);
+  const connectorApiVersion =
+    extractConnectorSdkVersion(dir, packageJson) ?? '';
 
   // Retrieve capabilities and configurationOptions of the connector
   const connectorInfo = await getInfoInternal(compilation);
 
-  // Create a new JSON object
-  const creationPayload = {
+  // When we want to update existing connector instead of creating a new one
+  const connectorEndpointBaseUrl = `${baseUrl}/api/experimental/environment/${environment}/connectors`;
+  const connectorPayload = {
     name,
     description,
     version,
-    enabled: true,
+    iconUrl: config.iconUrl,
     // packageName,
     // license,
     // author,
@@ -86,26 +118,7 @@ export async function runPublish(
     scriptTs: connectorTs,
     connectorApiVersion,
   };
-
-  // Object.assign(jsonObject, config);
-  // Object.assign(jsonObject, connectorInfo);
-
-  const createConnectorEndpoint = `${baseUrl}/api/experimental/environment/${environment}/connectors`;
-
-  verbose(`Deploying connector with a payload ${creationPayload}`);
-
-  info('Deploying connector -> ' + createConnectorEndpoint);
-
-  const res = await fetch(createConnectorEndpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
-    },
-    body: JSON.stringify(creationPayload),
-  });
-
-  if (res.status !== 201) {
+  const errorHandler = async (res: Response) => {
     try {
       const errorData = await res.json();
       verbose('Error during publishing: ' + JSON.stringify(errorData));
@@ -115,13 +128,29 @@ export async function runPublish(
       error(
         `Something went wrong during publishing of the connector "${name}". Run command with -v for more information`
       );
-      return;
     }
+  };
+  let publishResult = false;
+  if (connectorId) {
+    publishResult = await updateExistingConnector(
+      errorHandler,
+      connectorEndpointBaseUrl,
+      connectorId,
+      `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
+      connectorPayload
+    );
+  } else {
+    publishResult = await createNewConnector(
+      errorHandler,
+      connectorEndpointBaseUrl,
+      `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
+      { ...connectorPayload, enabled: true }
+    );
   }
 
-  const data = (await res.json()) as { id: string };
-  verbose(`Created connector payload: ${JSON.stringify(data)}`);
-  success(`Connector "${name}" is published`);
+  if (publishResult) {
+    success(`Connector "${name}" is deployed`);
+  }
 }
 
 function extractConnectorSdkVersion(dir: string, packageJson: any) {
@@ -164,4 +193,140 @@ function extractConnectorSdkVersion(dir: string, packageJson: any) {
   }
 
   return connectorApiVersion;
+}
+
+async function createNewConnector(
+  err: (res: Response) => Promise<void>,
+  connectorEndpointBaseUrl: string,
+  token: string,
+  creationPayload: CreateConnectorPayload
+): Promise<boolean> {
+  const createConnectorEndpoint = connectorEndpointBaseUrl;
+
+  verbose(`Deploying connector with a payload ${creationPayload}`);
+
+  info('Deploying connector -> ' + createConnectorEndpoint);
+
+  const res = await fetch(createConnectorEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token,
+    },
+    body: JSON.stringify(creationPayload),
+  });
+
+  if (res.status !== 201) {
+    await err(res);
+    return false;
+  }
+
+  const data = await res.json();
+  verbose(`Created connector payload: ${JSON.stringify(data)}`);
+  return true;
+}
+
+async function updateExistingConnector(
+  err: (res: Response) => Promise<void>,
+  connectorEndpointBaseUrl: string,
+  connectorId: string,
+  token: string,
+  payload: UpdateConnectorPayload
+): Promise<boolean> {
+  const getConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
+
+  info(
+    `Checking connector's existing with id ${connectorId} -> ${getConnectorEnpdoint}`
+  );
+  const existingConnectorRes = await fetch(getConnectorEnpdoint, {
+    headers: {
+      Authorization: token,
+    },
+  });
+  if (existingConnectorRes.status !== 200) {
+    warn(
+      `Connector with id ${connectorId} doesn't exist or you don't have permission to update it`
+    );
+    // When connector is not available we request the list and ask user to select connector for update
+    const id = await getConnectorForUpdate(connectorEndpointBaseUrl, token);
+    return updateExistingConnector(
+      err,
+      connectorEndpointBaseUrl,
+      id,
+      token,
+      payload
+    );
+  }
+
+  const existingConnector = await existingConnectorRes.json();
+  const updatePayload = {
+    ...existingConnector,
+    ...payload,
+  };
+
+  const updateConnectorEnpdoint = getConnectorEnpdoint;
+
+  verbose(
+    `Deploying connector with a payload ${JSON.stringify(updatePayload)}`
+  );
+
+  info('Updating connector -> ' + updateConnectorEnpdoint);
+
+  const res = await fetch(updateConnectorEnpdoint, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token,
+    },
+    body: JSON.stringify(updatePayload),
+  });
+
+  if (res.status !== 200) {
+    await err(res);
+    return false;
+  }
+
+  const data = await res.json();
+  verbose(`Updated connector payload: ${JSON.stringify(data)}`);
+  return true;
+}
+
+async function getConnectorForUpdate(
+  connectorEndpointBaseUrl: string,
+  token: string
+): Promise<string> {
+  info(`Requesting list of available connectors...`);
+  const connectorsRes = await fetch(connectorEndpointBaseUrl, {
+    headers: {
+      Authorization: token,
+    },
+  });
+
+  info(
+    `Here are the list of available connectors. Select the one you want to update`
+  );
+  const { data: connectors } = await connectorsRes.json();
+  console.table(connectors, ['id', 'name']);
+
+  const rl = readline.createInterface({ input, output });
+
+  let connectorIndex;
+
+  while (true) {
+    // Use the question method to get the user input
+    const index = Number(
+      await rl.question('Select the index of the connector to update ')
+    );
+    // Use the validation function to check the input
+    if (isNaN(index) || !connectors[index]) {
+      warn(`Index should be a number between 0 and ${connectors.length - 1}`);
+    } else {
+      connectorIndex = index;
+      break;
+    }
+  }
+
+  rl.close();
+
+  return connectors[connectorIndex].id;
 }
