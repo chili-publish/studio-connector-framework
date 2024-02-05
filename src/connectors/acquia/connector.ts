@@ -50,8 +50,6 @@ class Converter {
 export default class AcquiaConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
-    // TODO: Should be taken from configuration
-    this.runtime.options['BASE_URL'] = 'https://api.widencollective.com/';
   }
 
   runtime: Connector.ConnectorRuntimeContext;
