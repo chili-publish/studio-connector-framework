@@ -45,7 +45,7 @@ connector-cli build --outFolder ./dist
 ### Publish a connector
 
 ```sh
-connector-cli publish --token YOUR_TOKEN --endpoint YOUR_ENDPOINT --name YourConnectorName
+connector-cli publish pathToTsFile --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --name YourConnectorName
 ```
 
 ### Debug a connector
@@ -77,27 +77,32 @@ connector-cli stress --iterations 100
 To build `@chili-publish/connector-cli` from source, follow these steps:
 
 1. Clone the repository:
+
    ```sh
    git clone https://github.com/chili-publish/studio-connector-contrib.git
    cd connector-cli
    ```
 
 2. Install dependencies:
+
    ```sh
    npm install
    ```
 
    Or if you are using Yarn:
+
    ```sh
    yarn install
    ```
 
 3. Run the build script:
+
    ```sh
    npm run build
    ```
 
    Or with Yarn:
+
    ```sh
    yarn build
    ```

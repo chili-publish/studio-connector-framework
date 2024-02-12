@@ -67,6 +67,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/dot-object@^2.1.6":
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/@types/dot-object/-/dot-object-2.1.6.tgz#8820a4d36d84ead678ce2795372b963359c74114"
+  integrity sha512-G1e4SNPOuO72ZXv7wz/W2x29CzQtpxko3G9hBiHqGg/AvFIKoArCs2nbc/WPXnnUkO+1dmvX9WQCyj5gIlAzZg==
+
 "@types/express-serve-static-core@^4.17.33":
   version "4.17.41"
   resolved "https://registry.npmjs.org/@types/express-serve-static-core/-/express-serve-static-core-4.17.41.tgz"
@@ -276,10 +281,15 @@ color-name@~1.1.4:
   resolved "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz"
   integrity sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==
 
-commander@^11.1.0:
-  version "11.1.0"
-  resolved "https://registry.npmjs.org/commander/-/commander-11.1.0.tgz"
-  integrity sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==
+commander@^12.0.0:
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-12.0.0.tgz#b929db6df8546080adfd004ab215ed48cf6f2592"
+  integrity sha512-MwVNWlYjDTtOjX5PiD7o5pK0UrFU/OYgcJfjjK4RaHZETNtjJqrZa9Y9ds88+A+f+d5lv+561eZ+yCKoS3gbAA==
+
+commander@^4.0.0:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/commander/-/commander-4.1.1.tgz#9fd602bd936294e9e9ef46a3f4d6964044b18068"
+  integrity sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==
 
 concat-map@0.0.1:
   version "0.0.1"
@@ -393,6 +403,14 @@ diff@^4.0.1:
   version "4.0.2"
   resolved "https://registry.npmjs.org/diff/-/diff-4.0.2.tgz"
   integrity sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==
+
+dot-object@^2.1.4:
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/dot-object/-/dot-object-2.1.4.tgz#c6c54e9fca510b4d0ea4d65acf33726963843b5f"
+  integrity sha512-7FXnyyCLFawNYJ+NhkqyP9Wd2yzuo+7n9pGiYpkmXCTYa8Ci2U0eUNDVg5OuO5Pm6aFXI2SWN8/N/w7SJWu1WA==
+  dependencies:
+    commander "^4.0.0"
+    glob "^7.1.5"
 
 ee-first@1.1.1:
   version "1.1.1"
@@ -544,7 +562,7 @@ get-stream@^6.0.0, get-stream@^6.0.1:
   resolved "https://registry.npmjs.org/get-stream/-/get-stream-6.0.1.tgz"
   integrity sha512-ts6Wi+2j3jQjqi70w5AlN8DFnkSwC+MqmxEzdEALB2qXZYV3X/b1CTfgPLGJNMeAWxdPfU8FO1ms3NUfaHCPYg==
 
-glob@^7.0.5:
+glob@^7.0.5, glob@^7.1.5:
   version "7.2.3"
   resolved "https://registry.npmjs.org/glob/-/glob-7.2.3.tgz"
   integrity sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==

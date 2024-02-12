@@ -10,16 +10,14 @@ export function startCommand(command: string, options: any) {
     verboseEnabled = true;
   }
 
-  info(`connector-cli v${version.version}`);
-  info(
+  verbose(`Verbose logging enabled`);
+
+  verbose(`connector-cli v${version.version}`);
+  verbose(
     `Running command: '${chalk.bold(command)}' with options: ${JSON.stringify(
       options
     )}`
   );
-
-  if (verboseEnabled) {
-    info(`Verbose logging enabled`);
-  }
 }
 
 export function info(arg0: string) {

@@ -2,9 +2,13 @@ import * as fs from 'fs';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { compileToTempFile } from '../compiler/connectorCompiler';
-import { validateInputConnectorFile } from '../validation';
+import {
+  validateInputConnectorFile,
+  validateRuntimeOptions,
+} from '../validation';
 import { DataStore } from '../authentication';
 import path from 'path';
+import dot from 'dot-object';
 import { getInfoInternal } from './info';
 import {
   errorNoColor,
@@ -21,6 +25,14 @@ interface PublishCommandOptions {
   environment: string;
   name: string;
   connectorId?: string;
+  runtimeOption?: Record<string, unknown>;
+  ['proxyOption.allowedDomains']?: Array<string>;
+  ['proxyOption.forwardedHeaders']?: true;
+}
+
+interface ProxyOptions {
+  allowedDomains: Array<string>;
+  forwardedHeaders: true;
 }
 
 interface ConnectorPayload {
@@ -28,9 +40,12 @@ interface ConnectorPayload {
   description: string;
   version: string;
   iconUrl: string;
-  scriptTs: string;
   script: string;
-  connectorApiVersion: string;
+  apiVersion: string;
+  allowedDomains: Array<string>;
+  proxyOptions: {
+    forwardedHeaders: boolean;
+  };
 }
 
 interface CreateConnectorPayload extends ConnectorPayload {
@@ -39,13 +54,6 @@ interface CreateConnectorPayload extends ConnectorPayload {
 
 type UpdateConnectorPayload = ConnectorPayload;
 
-// "iconUrl": "https://www.acquia.com/sites/default/files/styles/product_header_icon/public/media/image/2023-03/Acquia%20DAM%20Logo.png?itok=ckfUGC7T",
-
-// yarn connector-cli publish -e cp-dyx-217 -b https://devblubird.cpstaging.online/grafx -n Acquia ./src/connectors/acquia/connector.ts
-// yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia ./src/connectors/acquia/connector.ts
-// yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia --connectorId b82ec8dd-de70-4539-9e69-e10d12c38431 ./src/connectors/acquia/connector.ts
-// yarn connector-cli publish -e admin -b http://localhost:8081 -n Acquia --connectorId 123 ./src/connectors/acquia/connector.ts
-// yarn connector-cli login
 export async function runPublish(
   connectorFile: string,
   options: PublishCommandOptions
@@ -57,14 +65,42 @@ export async function runPublish(
 
   const isAuthenticated = await DataStore.isAuthenticated();
   if (!isAuthenticated) {
-    warn('Please login first');
+    warn('Please login first by "connector-cli login" command');
     return;
   }
 
   const accessToken = DataStore.accessToken;
 
   // store all options as vars
-  const { baseUrl, environment, name, connectorId } = options;
+  const {
+    baseUrl,
+    environment,
+    name,
+    connectorId,
+    runtimeOption: runtimeOptions,
+    ...rawProxyOptions
+  } = options;
+
+  const proxyOptions: Partial<ProxyOptions> =
+    (dot.object(rawProxyOptions) as any)?.['proxyOption'] ?? {};
+
+  const dir = path.dirname(path.resolve(connectorFile));
+
+  // Read the package.json and extract the necessary info
+  const packageJson = require(path.join(dir, 'package.json'));
+
+  const errors = validateRuntimeOptions(
+    runtimeOptions,
+    packageJson.config.options
+  );
+  if (errors.length > 0) {
+    error(
+      `${JSON.stringify(
+        errors
+      )}.\n To see all available options execute 'connector-cli pathToConnector list-options --type="runtime-options"'`
+    );
+    return;
+  }
 
   info('Building connector...');
 
@@ -78,18 +114,7 @@ export async function runPublish(
     success('Build succeeded -> ' + compilation.tempFile);
   }
 
-  const dir = path.dirname(path.resolve(connectorFile));
-
-  // Read the package.json and extract the necessary info
-  const packageJson = require(path.join(dir, 'package.json'));
-  const {
-    name: packageName,
-    description,
-    version,
-    config,
-    license,
-    author,
-  } = packageJson;
+  const { description, version, config } = packageJson;
 
   // Read the connector.js file
   const { connectorJs, connectorTs } = {
@@ -97,9 +122,10 @@ export async function runPublish(
     connectorTs: fs.readFileSync(connectorFile, 'utf8'),
   };
 
+  //https://api.widencollective.com/
+
   // get connector sdk version
-  const connectorApiVersion =
-    extractConnectorSdkVersion(dir, packageJson) ?? '';
+  const apiVersion = extractConnectorSdkVersion(dir, packageJson) ?? '';
 
   // Retrieve capabilities and configurationOptions of the connector
   const connectorInfo = await getInfoInternal(compilation);
@@ -111,12 +137,13 @@ export async function runPublish(
     description,
     version,
     iconUrl: config.iconUrl,
-    // packageName,
-    // license,
-    // author,
+    options: runtimeOptions,
     script: connectorJs,
-    scriptTs: connectorTs,
-    connectorApiVersion,
+    apiVersion,
+    allowedDomains: proxyOptions.allowedDomains ?? ['*'],
+    proxyOptions: {
+      forwardedHeaders: !!proxyOptions.forwardedHeaders,
+    },
   };
   const errorHandler = async (res: Response) => {
     try {
