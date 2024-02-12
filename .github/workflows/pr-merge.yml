@@ -2,9 +2,9 @@
 name: Publish Connectors
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
   build-and-publish:
@@ -16,6 +16,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 18.x
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
       - name: Install dependencies
         run: yarn
       - name: Download index.json
@@ -48,8 +50,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-            name: connectors
-            path: upload/connector-repo
+          name: connectors
+          path: upload/connector-repo
       - name: Upload to Azure
         uses: azure/CLI@v1
         with:
