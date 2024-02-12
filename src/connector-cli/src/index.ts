@@ -126,7 +126,7 @@ async function main() {
       './src/connector-name'
     )
     .addOption(
-      new Option('-t, --type <type>', 'Type of options that you wanna list')
+      new Option('-t, --type <type>', 'Type of options that you want to list')
         .makeOptionMandatory(true)
         .choices(['runtime-options'])
     )

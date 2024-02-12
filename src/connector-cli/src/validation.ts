@@ -20,7 +20,7 @@ export function validateInputConnectorPath(connectorPath: string): boolean {
     ? connectorPath + '/package.json'
     : './package.json';
   if (fs.existsSync(connectorPckgJson) === false) {
-    error('You need specify a valid path to the connectors files');
+    error('You need to specify a valid path to the connectors files');
     return false;
   }
   return true;

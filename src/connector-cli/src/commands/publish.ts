@@ -122,8 +122,6 @@ export async function runPublish(
     connectorTs: fs.readFileSync(connectorFile, 'utf8'),
   };
 
-  //https://api.widencollective.com/
-
   // get connector sdk version
   const apiVersion = extractConnectorSdkVersion(dir, packageJson) ?? '';
 
