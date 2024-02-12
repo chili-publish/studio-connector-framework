@@ -1,13 +1,20 @@
 import fs from 'fs';
+import path from 'path';
 import { error, startCommand } from '../logger';
 import { info } from 'console';
 
-export async function runInit(options: any): Promise<void> {
-  startCommand('init', { options });
+export async function runInit(directory: string, options: any): Promise<void> {
+  startCommand('init', { directory, options });
+  const resultDirectory = path.resolve(directory);
+
+  if (!fs.existsSync(resultDirectory)) {
+    fs.mkdirSync(resultDirectory, { recursive: true });
+    info('Created directory -> ' + resultDirectory);
+  }
   // intialize a new node project in current folder
   // 1. check if no existing projects in current folder
-  if (fs.existsSync('./package.json')) {
-    error('package.json already exists in current folder');
+  if (fs.existsSync(path.join(resultDirectory, './package.json'))) {
+    error('package.json already exists in current folder: ' + resultDirectory);
     return;
   }
 
@@ -23,7 +30,7 @@ export async function runInit(options: any): Promise<void> {
     },
     config: {
       options: {
-        BASE_URL: '',
+        BASE_URL: null,
         DEBUG: '0',
       },
       mappings: {},
@@ -44,7 +51,10 @@ export async function runInit(options: any): Promise<void> {
   };
 
   info('Creating package.json');
-  fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
+  fs.writeFileSync(
+    path.join(resultDirectory, './package.json'),
+    JSON.stringify(packageJson, null, 2)
+  );
 
   // 3. create tsconfig.json
   const tsConfig = {
@@ -63,24 +73,39 @@ export async function runInit(options: any): Promise<void> {
   };
 
   info('Creating tsconfig.json');
-  fs.writeFileSync('./tsconfig.json', JSON.stringify(tsConfig, null, 2));
+  fs.writeFileSync(
+    path.join(resultDirectory, './tsconfig.json'),
+    JSON.stringify(tsConfig, null, 2)
+  );
 
   // 4. create src folder
-  fs.mkdirSync('./src');
+  fs.mkdirSync(path.join(resultDirectory, './src'));
 
   // 5. create src/index.ts
   const indexTs = `
-    import { MediaConnector } from '@chili-publish/studio-connectors';
+    import { Connector, Media } from '@chili-publish/studio-connectors';
 
-    export class MyConnector extends MediaConnector {
-        async onInit() {
-            // called when connector is initialized
+    export default class MyConnector implements Media.MediaConnector {
+        detail(id: string, context: Connector.Dictionary): Promise<Media.MediaDetail> {
+          throw new Error('Method not implemented.');
+        }
+        query(options: Connector.QueryOptions, context: Connector.Dictionary): Promise<Media.MediaPage> {
+            throw new Error('Method not implemented.');
+        }
+        download(id: string, previewType: Media.DownloadType, intent: Media.DownloadIntent, context: Connector.Dictionary): Promise<Connector.ArrayBufferPointer> {
+            throw new Error('Method not implemented.');
+        }
+        getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
+            throw new Error('Method not implemented.');
+        }
+        getCapabilities(): Media.MediaConnectorCapabilities {
+            throw new Error('Method not implemented.');
         }
     }
     `;
 
   info('Creating src/connector.ts');
-  fs.writeFileSync('./src/connector.ts', indexTs);
+  fs.writeFileSync(path.join(resultDirectory, './src/connector.ts'), indexTs);
 
   // 6. create tests.json
   const testsJson = `
@@ -114,7 +139,7 @@ export async function runInit(options: any): Promise<void> {
     `;
 
   info('Creating tests.json');
-  fs.writeFileSync('./tests.json', testsJson);
+  fs.writeFileSync(path.join(resultDirectory, './tests.json'), testsJson);
 
   // 7. create .gitignore
   const gitIgnore = `
@@ -123,5 +148,5 @@ export async function runInit(options: any): Promise<void> {
     `;
 
   info('Creating .gitignore');
-  fs.writeFileSync('./.gitignore', gitIgnore);
+  fs.writeFileSync(path.join(resultDirectory, './.gitignore'), gitIgnore);
 }
