@@ -1,4 +1,4 @@
-import { program } from 'commander';
+import { program, Option } from 'commander';
 import { runGetInfo } from './commands/info';
 import { runDemo, runTests } from './commands/test';
 import { runStressTest } from './commands/stress';
@@ -8,6 +8,7 @@ import { runBuild } from './commands/build';
 import { runInit } from './commands/init';
 import info from '../package.json';
 import { runLogin } from './commands/login';
+import { runListOptions } from './commands/list-options';
 
 async function main() {
   program
@@ -25,7 +26,7 @@ async function main() {
     .command('publish')
     .argument(
       '[connectorFile]',
-      'Connector file (built json) to publish to the marketplace',
+      'Connector file (built json) to publish to the environment',
       './connector.ts'
     )
     .requiredOption(
@@ -35,9 +36,23 @@ async function main() {
     .requiredOption('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
     .requiredOption('-n, --name <name>', 'Name to use for publishing')
     .option(
-      '--connectorId <connectorId>',
+      '--connectorId [connectorId]',
       'If provided, update of the existing connector is going to happen'
     )
+    .option(
+      '-ro, --runtimeOption [runtimeOptions...]',
+      'Specify runtime options for the connector, i.e "-ro Key1=Value1 -ro Key2=Value2"',
+      (currentValue, previous: Record<string, unknown>) => {
+        if (!previous) {
+          previous = {};
+        }
+        const [key, value] = currentValue.split('=');
+        previous[key] = value;
+        return previous;
+      }
+    )
+    .option('--proxyOption.allowedDomains [allowedDomains...]')
+    .option('--proxyOption.forwardedHeaders')
     .action(runPublish);
 
   program
@@ -102,6 +117,20 @@ async function main() {
     .action(runStressTest);
 
   program.command('login').action(runLogin);
+
+  program
+    .command('list-options')
+    .argument(
+      '[connectorPath]',
+      'Path to connector where "package.json" is located',
+      './src/connector-name'
+    )
+    .addOption(
+      new Option('-t, --type <type>', 'Type of options that you want to list')
+        .makeOptionMandatory(true)
+        .choices(['runtime-options'])
+    )
+    .action(runListOptions);
 
   program.parse(process.argv);
 }

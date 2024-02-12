@@ -10,11 +10,13 @@
   "config": {
     "iconUrl": "https://www.acquia.com/sites/default/files/styles/product_header_icon/public/media/image/2023-03/Acquia%20DAM%20Logo.png?itok=ckfUGC7T",
     "options": {
-      "BASE_URL": "",
+      "BASE_URL": null,
       "DEBUG": "0"
     },
+    "supportedAuth": ["OAuth2ResourceOwnerPassword", "OAuth2AuthorizationCode"],
     "mappings": {}
   },
+  "private": true,
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {

@@ -9,11 +9,13 @@
   },
   "config": {
     "options": {
-      "BASE_URL": "",
+      "BASE_URL": null,
       "DEBUG": "0"
     },
+    "supportedAuth": [],
     "mappings": {}
   },
+  "private": true,
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
