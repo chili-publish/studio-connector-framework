@@ -1,0 +1,20 @@
+# workflow to run both yarn && yarn build in the repo when pr is created
+name: Build PR
+on: [pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.x
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
+      - name: Install dependencies
+        run: yarn
+      - name: Build Cli
+        run: yarn run build-cli
+      - name: Build connectors
+        run: yarn run build-connectors

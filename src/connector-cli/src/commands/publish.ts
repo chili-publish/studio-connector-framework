@@ -53,6 +53,7 @@ interface CreateConnectorPayload extends ConnectorPayload {
 }
 
 type UpdateConnectorPayload = ConnectorPayload;
+// yarn connector-cli publish ./src/connectors/acquia/connector.ts -b https://devchili.cpstaging.online/grafx -e cp-oru-437 -n AcquiaTest -ro BASE_URL=https://api.widencollective.com/
 
 export async function runPublish(
   connectorFile: string,

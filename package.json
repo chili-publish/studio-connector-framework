@@ -5,6 +5,7 @@
   "author": "CHILI publish",
   "workspaces": [
     "src/connector-cli",
+    "src/connector-cli/debugger",
     "src/connectors/*"
   ],
   "license": "MIT",
