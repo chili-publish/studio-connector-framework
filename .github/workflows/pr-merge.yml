@@ -2,22 +2,29 @@
 name: Publish Connectors
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
   build-and-publish:
     # checkout the repo
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js 18.x
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
-          node-version: 18.x
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
       - name: Install dependencies
         run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Download index.json
         uses: azure/CLI@v1
         with:
@@ -48,8 +55,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-            name: connectors
-            path: upload/connector-repo
+          name: connectors
+          path: upload/connector-repo
       - name: Upload to Azure
         uses: azure/CLI@v1
         with:

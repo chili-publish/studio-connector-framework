@@ -19,6 +19,11 @@ async function main() {
 
   program
     .command('init')
+    .argument(
+      '[directory]',
+      'Directory where the project will be created',
+      process.cwd()
+    )
     .option('-n, --name <name>', 'Name to use for publishing')
     .action(runInit);
 
