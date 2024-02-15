@@ -46,9 +46,9 @@ jobs:
             else
                 echo "Blob does not exist."
             fi
-      - name: Build
-        run: yarn build
-      - name: Publish
+      - name: Build Cli
+        run: yarn run build-cli
+      - name: Build and Publish connectors
         run: node scripts/publish.js
       - name: copy to upload folder
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo

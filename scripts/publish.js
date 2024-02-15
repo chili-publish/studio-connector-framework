@@ -3,12 +3,13 @@ const path = require('path');
 const {execSync} = require('child_process');
 
 /*
-    This script is used to build and publish the connectors to the publish folder.
+    This script is used to build and publish the connectors to the "publish" folder.
+    We use the content of "publish" folder to deploy to marketplace
     It will:
     - Build the connector
     - Extract the connector info
     - Create a JSON file with the connector info
-    - Write the JSON file to the publish folder
+    - Write the JSON file to the "publish" folder
 */
 
 const repoRoot = findRepoRoot(__dirname);
@@ -31,7 +32,7 @@ fs.readdirSync(connectorsDir).forEach(file => {
       path.join(publishDir, `${connectorJson.name}.${connectorJson.version}.json`),
       JSON.stringify(connectorJson, null, 2),
     );
-    console.log(`Successfully processed ${name}`);
+    console.log(`Successfully processed ${connectorJson.name}`);
   }
 });
 

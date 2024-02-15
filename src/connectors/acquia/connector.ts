@@ -61,7 +61,8 @@ export default class AcquiaConnector implements Media.MediaConnector {
     const { id: assetId } = JSON.parse(id) as Pick<AcquiaAssetV2, 'id'>;
     let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
 
-    url = url + `v2/assets/${assetId}?expand=thumbnails,metadata`;
+    url =
+      url + `v2/assets/${assetId}?expand=thumbnails,metadata,file_properties`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
     });
