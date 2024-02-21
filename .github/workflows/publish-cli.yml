@@ -41,7 +41,6 @@ jobs:
           PACKAGEJSON_DIR: 'src/connector-cli'
         with:
           skip-tag: 'true'
-          skip-commit: 'true'
           skip-push: 'true'
           minor-wording: 'Feat,Feature,FEATURE'
           major-wording: 'Breaking,BREAKING'
