@@ -40,7 +40,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
           PACKAGEJSON_DIR: 'src/connector-cli'
         with:
-          skip-tag: 'true'
           skip-push: 'true'
           minor-wording: 'Feat,Feature,FEATURE'
           major-wording: 'Breaking,BREAKING'
