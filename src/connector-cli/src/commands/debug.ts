@@ -7,22 +7,23 @@ import { errorNoColor, info, startCommand, success, verbose } from '../logger';
 import ts, { ParameterDeclaration, TypeNode } from 'typescript';
 
 export async function introspectTsFile(connectorFile: string): Promise<string> {
-
   // use typescript to load the connector file
   // and get the connector class
   const program = ts.createProgram([connectorFile], {});
   const sourceFile = program.getSourceFile(connectorFile);
   const typeChecker = program.getTypeChecker();
-  
+
   let iface = '';
-  sourceFile?.statements.filter(ts.isClassDeclaration).forEach((classDeclaration) => {    
-    classDeclaration.heritageClauses?.forEach((heritageClause) => {
-      heritageClause.types.forEach((type) => {
-        var symbol = typeChecker.getTypeAtLocation(type.expression);
-        iface = symbol.symbol.escapedName.toString();
+  sourceFile?.statements
+    .filter(ts.isClassDeclaration)
+    .forEach((classDeclaration) => {
+      classDeclaration.heritageClauses?.forEach((heritageClause) => {
+        heritageClause.types.forEach((type) => {
+          var symbol = typeChecker.getTypeAtLocation(type.expression);
+          iface = symbol.symbol.escapedName.toString();
+        });
       });
     });
-  });
 
   return iface;
 }
@@ -106,7 +107,7 @@ export async function runDebugger(
 
   app.get('/bundle.js', (req, res) => {
     verbose('Serving bundle.js');
-    
+
     const binFolder = outFolder;
     // find js file in the bin folder
     const files = fs.readdirSync(binFolder);
@@ -133,8 +134,12 @@ export async function runDebugger(
   });
 
   const server = app.listen(port, async () => {
-    info(`Debugger running on port ${port}`);
-    (await import('open')).default(`http://localhost:${port}?type=${connectorType}`);
+    info(
+      `Debugger running on port ${port}. Visit http://localhost:${port}?type=${connectorType} for testing`
+    );
+    (await import('open')).default(
+      `http://localhost:${port}?type=${connectorType}`
+    );
   });
 }
 

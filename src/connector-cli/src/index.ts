@@ -24,7 +24,15 @@ async function main() {
       'Directory where the project will be created',
       process.cwd()
     )
-    .option('-n, --name <name>', 'Name to use for publishing')
+    .requiredOption(
+      '-n, --name <name>',
+      'Name of the connector. Will be used as package name'
+    )
+    .addOption(
+      new Option('-t, --type [type]', 'Type of the connector')
+        .choices(['media', 'fonts'])
+        .default('media')
+    )
     .action(runInit);
 
   program

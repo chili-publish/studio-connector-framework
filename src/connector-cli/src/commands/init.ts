@@ -3,13 +3,23 @@ import path from 'path';
 import { error, startCommand } from '../logger';
 import { info } from 'console';
 
-export async function runInit(directory: string, options: any): Promise<void> {
+interface InitCommandOptions {
+  name: string;
+  type: 'media' | 'fonts';
+}
+
+export async function runInit(
+  directory: string,
+  options: InitCommandOptions
+): Promise<void> {
   startCommand('init', { directory, options });
   const resultDirectory = path.resolve(directory);
 
+  info(`Generating "${options.name}" ${options.type} connector template...`);
+
   if (!fs.existsSync(resultDirectory)) {
+    info('Creating directory ' + resultDirectory);
     fs.mkdirSync(resultDirectory, { recursive: true });
-    info('Created directory -> ' + resultDirectory);
   }
   // intialize a new node project in current folder
   // 1. check if no existing projects in current folder
@@ -20,7 +30,7 @@ export async function runInit(directory: string, options: any): Promise<void> {
 
   // 2. create package.json
   const packageJson = {
-    name: 'publisher',
+    name: options.name,
     description: '',
     version: '1.0.0',
     author: {
@@ -29,10 +39,8 @@ export async function runInit(directory: string, options: any): Promise<void> {
       url: 'https://github.com/chili-publish',
     },
     config: {
-      options: {
-        BASE_URL: null,
-        DEBUG: '0',
-      },
+      type: options.type,
+      options: {},
       mappings: {},
     },
     license: 'MIT',

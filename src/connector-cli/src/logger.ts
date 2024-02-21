@@ -12,7 +12,7 @@ export function startCommand(command: string, options: any) {
 
   verbose(`Verbose logging enabled`);
 
-  verbose(`connector-cli v${version.version}`);
+  info(`connector-cli v${version.version}`);
   verbose(
     `Running command: '${chalk.bold(command)}' with options: ${JSON.stringify(
       options

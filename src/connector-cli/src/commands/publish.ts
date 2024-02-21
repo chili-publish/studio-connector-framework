@@ -38,6 +38,7 @@ interface ProxyOptions {
 interface ConnectorPayload {
   name: string;
   description: string;
+  type: 'media' | 'fonts';
   version: string;
   iconUrl: string;
   script: string;
@@ -134,6 +135,7 @@ export async function runPublish(
     name,
     description,
     version,
+    type: config.type,
     iconUrl: config.iconUrl,
     options: runtimeOptions,
     script: connectorJs,
