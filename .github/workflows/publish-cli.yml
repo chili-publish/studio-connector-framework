@@ -6,12 +6,6 @@ on:
       - main
     paths:
       - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
-    #   TODO: To remove before merge to main
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/connector-cli/**'
 
 jobs:
   connector-cli-npm-publish:
@@ -35,20 +29,18 @@ jobs:
         run: yarn workspace @chili-publish/connector-cli run build
       - name: Bump version
         # Current master has an issue https://github.com/phips28/gh-action-bump-version/issues/237
+        # uses: phips28/gh-action-bump-version@master
         uses: phips28/gh-action-bump-version@v10.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
           PACKAGEJSON_DIR: 'src/connector-cli'
         with:
-          skip-tag: 'true'
-          skip-commit: 'true'
-          skip-push: 'true'
           minor-wording: 'Feat,Feature,FEATURE'
           major-wording: 'Breaking,BREAKING'
           patch-wording: 'Fix,FIX'
           commit-message: 'CI: bumps version to {{version}} [skip ci]'
       - name: Publish
-        run: yarn publish src/connector-cli --dry-run
+        run: yarn publish src/connector-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}

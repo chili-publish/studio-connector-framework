@@ -1,6 +1,6 @@
 {
   "name": "studio-connector-contrib",
-  "private": "true",
+  "private": true,
   "version": "1.0.1",
   "author": "CHILI publish",
   "workspaces": [
