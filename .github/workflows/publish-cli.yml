@@ -50,3 +50,5 @@ jobs:
           commit-message: 'CI: bumps version to {{version}} [skip ci]'
       - name: Publish
         run: yarn publish src/connector-cli --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
