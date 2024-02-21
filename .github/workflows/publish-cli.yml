@@ -1,0 +1,46 @@
+name: Npm publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
+
+jobs:
+  connector-cli-npm-publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
+      - name: Install dependencies
+        run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+      - name: Build
+        run: yarn workspace @chili-publish/connector-cli run build
+      - name: Bump version
+        # Current master has an issue https://github.com/phips28/gh-action-bump-version/issues/237
+        # uses: phips28/gh-action-bump-version@master
+        uses: phips28/gh-action-bump-version@v10.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+          PACKAGEJSON_DIR: 'src/connector-cli'
+        with:
+          minor-wording: 'Feat,Feature,FEATURE'
+          major-wording: 'Breaking,BREAKING'
+          patch-wording: 'Fix,FIX'
+          commit-message: 'CI: bumps version to {{version}} [skip ci]'
+      - name: Publish
+        run: yarn publish src/connector-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}

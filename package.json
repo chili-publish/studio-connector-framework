@@ -1,6 +1,6 @@
 {
   "name": "studio-connector-contrib",
-  "private": "true",
+  "private": true,
   "version": "1.0.1",
   "author": "CHILI publish",
   "workspaces": [
@@ -16,7 +16,7 @@
     "publish-all": "node scripts/publish.js"
   },
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1.0.28",
+    "@chili-publish/connector-cli": "^1.0.50",
     "prettier": "^3.0.3"
   }
 }
