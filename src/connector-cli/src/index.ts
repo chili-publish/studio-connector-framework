@@ -39,7 +39,7 @@ async function main() {
     .command('publish')
     .argument(
       '[connectorFile]',
-      'Connector file (built json) to publish to the environment',
+      'Path to connector file (with package.json) to publish to the environment',
       './connector.ts'
     )
     .requiredOption(
