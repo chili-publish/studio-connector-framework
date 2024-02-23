@@ -37,12 +37,12 @@ export const Models: {
         {
           name: 'downloadType',
           componentType: 'list',
-          list: ['thumbnail', 'preview', 'original'],
+          list: [ 'thumbnail' , 'mediumres' , 'highres' , 'fullres' , 'original'],
         },
         {
           name: 'downloadIntent',
           componentType: 'list',
-          list: ['attachment', 'inline'],
+          list: ['web' , 'print' , 'animation'],
         },
         {
           name: 'context',
