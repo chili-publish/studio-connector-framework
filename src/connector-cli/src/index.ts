@@ -42,6 +42,11 @@ async function main() {
       'Path to connector file (with package.json) to publish to the environment',
       './connector.ts'
     )
+    .addOption(
+      new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')
+        .choices(['dev', 'prod'])
+        .default('prod')
+    )
     .requiredOption(
       '-e, --environment <environment>',
       'Environment to use for publishing'
@@ -129,7 +134,14 @@ async function main() {
     .option('-i, --iterations <iterations>')
     .action(runStressTest);
 
-  program.command('login').action(runLogin);
+  program
+    .command('login')
+    .addOption(
+      new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')
+        .choices(['dev', 'prod'])
+        .default('prod')
+    )
+    .action(runLogin);
 
   program
     .command('list-options')

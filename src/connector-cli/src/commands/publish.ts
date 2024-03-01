@@ -6,7 +6,6 @@ import {
   validateInputConnectorFile,
   validateRuntimeOptions,
 } from '../validation';
-import { DataStore } from '../authentication';
 import path from 'path';
 import dot from 'dot-object';
 import { getInfoInternal } from './info';
@@ -19,8 +18,10 @@ import {
   error,
   startCommand,
 } from '../logger';
+import { getAuthService } from '../authentication';
 
 interface PublishCommandOptions {
+  tenant: 'dev' | 'prod';
   baseUrl: string;
   environment: string;
   name: string;
@@ -64,13 +65,14 @@ export async function runPublish(
     throw new Error('Invalid connector file path: ' + connectorFile);
   }
 
-  const isAuthenticated = await DataStore.isAuthenticated();
-  if (!isAuthenticated) {
+  const authService = getAuthService(options.tenant);
+
+  if (!(await authService.isAuthenticated())) {
     warn('Please login first by "connector-cli login" command');
     return;
   }
 
-  const accessToken = DataStore.accessToken;
+  const accessToken = authService.sessionStorage.accessToken;
 
   // store all options as vars
   const {
