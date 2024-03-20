@@ -155,6 +155,11 @@ export default class AcquiaConnector implements Media.MediaConnector {
     const result = await this.runtime.fetch(thumbnail.url, {
       method: 'GET',
     });
+    if (!result.ok) {
+      throw new Error(
+        `Acquia DAM: Download failed ${result.status} - ${result.statusText}`
+      );
+    }
     return result.arrayBuffer;
   }
   getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {

@@ -25,9 +25,10 @@ jobs:
             dir=$(dirname "$changed_file")
             if [[ "$dir" == src/connectors/* ]]
             then
+              connector_name=$(basename "$dir")
               if [[ -z "$connector_changed" ]]
               then
-                connector_changed="$dir"
+                connector_changed="$connector_name"
               elif [[ "$connector_changed" != "$dir" ]]
               then
                 echo "Multiple connectors have been changed. Please change only one connector per PR."
