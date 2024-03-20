@@ -3,42 +3,45 @@ name: Validate Connector PR
 on:
   pull_request:
     paths:
-    - 'src/connectors/**'
+      - 'src/connectors/**'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out code
-      uses: actions/checkout@v2
+      - name: Check out code
+        uses: actions/checkout@v2
 
-    - name: Get changed files
-      id: files
-      uses: jitterbit/get-changed-files@v1
+      - name: Get changed files
+        id: files
+        uses: jitterbit/get-changed-files@v1
 
-    - name: Ensure only one connector is changed
-      id: check_connector
-      run: |
-        connector_changed=""
-        for changed_file in ${{ steps.files.outputs.all }}
-        do
-          dir=$(dirname "$changed_file")
-          if [[ "$dir" == src/connectors/* ]]
-          then
-            if [[ -z "$connector_changed" ]]
+      - name: Ensure only one connector is changed
+        id: check_connector
+        run: |
+          connector_changed=""
+          for changed_file in ${{ steps.files.outputs.all }}
+          do
+            dir=$(dirname "$changed_file")
+            if [[ "$dir" == src/connectors/* ]]
             then
-              connector_changed="$dir"
-            elif [[ "$connector_changed" != "$dir" ]]
-            then
-              echo "Multiple connectors have been changed. Please change only one connector per PR."
-              exit 1
+              connector_name=$(basename "$dir")
+              if [[ -z "$connector_changed" ]]
+              then
+                connector_changed="$connector_name"
+              elif [[ "$connector_changed" != "$dir" ]]
+              then
+                echo "Multiple connectors have been changed. Please change only one connector per PR."
+                exit 1
+              fi
             fi
-          fi
-        done
-        echo "::set-output name=connector::$connector_changed"
+          done
+          echo "::set-output name=connector::$connector_changed"
 
-    - name: Add labels
-      uses: actions-ecosystem/action-add-labels@v1
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        labels: ${{ steps.check_connector.outputs.connector }},connector-change
+      - name: Add labels
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            ${{ steps.check_connector.outputs.connector }}
+            connector-change
