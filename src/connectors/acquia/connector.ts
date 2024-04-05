@@ -3,9 +3,6 @@ import { Connector, Media } from '@chili-publish/studio-connectors';
 interface AcquiaAssetV2 {
   id: string;
   filename: string;
-  thumbnails: {
-    '600px': { url: string };
-  };
   external_id: string;
   file_properties: {
     format: string;
@@ -19,14 +16,21 @@ interface GetAssetsResponse {
   items: Array<AcquiaAssetV2>;
 }
 
+interface AssetId {
+  id: string;
+  eid: string;
+  filename: string;
+}
+
 class Converter {
   static assetToMedia(item: AcquiaAssetV2): Media.Media {
+    const assetId: AssetId = {
+      id: item.id,
+      eid: item.external_id,
+      filename: item.filename,
+    };
     return {
-      id: JSON.stringify({
-        id: item.id,
-        eid: item.external_id,
-        thumbnails: item.thumbnails,
-      }),
+      id: JSON.stringify(assetId),
       name: item.filename,
       // TODO: to be defined
       relativePath: '/',
@@ -58,11 +62,10 @@ export default class AcquiaConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    const { id: assetId } = JSON.parse(id) as Pick<AcquiaAssetV2, 'id'>;
+    const { id: rawAssetId } = JSON.parse(id) as AssetId;
     let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
 
-    url =
-      url + `v2/assets/${assetId}?expand=thumbnails,metadata,file_properties`;
+    url = url + `v2/assets/${rawAssetId}?expand=metadata,file_properties`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
     });
@@ -111,7 +114,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
         finalQuery ? 'query=' + finalQuery + '&' : ''
       }offset=${startIndex * options.pageSize}&limit=${
         options.pageSize
-      }&expand=thumbnails,metadata,file_properties`;
+      }&expand=metadata,file_properties`;
 
     const t = await this.runtime.fetch(url, {
       method: 'GET',
@@ -142,17 +145,43 @@ export default class AcquiaConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { thumbnails } = JSON.parse(id) as Pick<AcquiaAssetV2, 'thumbnails'>;
-    // TODO: Quality should be taken based on "previewType" argument value
-    let thumbnail = thumbnails['600px'];
+    // For backward compatibility with existing templates
+    let endpoint = this._tryThumbnail(id);
+    if (!endpoint) {
+      const { eid, filename } = JSON.parse(id) as AssetId;
+      endpoint =
+        this.ensureTrailingSlash(this.runtime.options['PREVIEW_BASE_URL']) +
+        'content/' +
+        eid;
 
-    if (!thumbnail) {
-      // take the last property of thumbnails for given asset
-      const keys = Object.keys(thumbnails);
-      thumbnail = thumbnails[keys[keys.length - 1]];
+      switch (previewType) {
+        case 'thumbnail': {
+          endpoint += '/jpeg' + '/' + filename + '?w=125';
+          break;
+        }
+        case 'mediumres': {
+          endpoint += '/png' + '/' + filename + '?w=1024';
+          break;
+        }
+        case 'highres':
+          endpoint += '/png' + '/' + filename;
+          break;
+        case 'fullres':
+          if (intent === 'print') {
+            endpoint += '/png' + '/' + filename;
+          } else {
+            endpoint += '/original' + '/' + filename + '?download=true';
+          }
+          break;
+        case 'original':
+          endpoint += '/original' + '/' + filename + '?download=true';
+          break;
+        default:
+          endpoint += '/png' + '/' + filename + '?w=1024';
+      }
     }
 
-    const result = await this.runtime.fetch(thumbnail.url, {
+    const result = await this.runtime.fetch(endpoint, {
       method: 'GET',
     });
     if (!result.ok) {
@@ -181,5 +210,19 @@ export default class AcquiaConnector implements Media.MediaConnector {
   ensureTrailingSlash(arg0: string) {
     if (!arg0) return '';
     return arg0.endsWith('/') ? arg0 : arg0 + '/';
+  }
+
+  _tryThumbnail(id: string) {
+    const { thumbnails } = JSON.parse(id) as {
+      thumbnails: { '600px': { url: string } } | undefined;
+    };
+    let thumbnail = thumbnails?.['600px'];
+
+    if (!thumbnail && thumbnails) {
+      // take the last property of thumbnails for given asset
+      const keys = Object.keys(thumbnails);
+      thumbnail = thumbnails[keys[keys.length - 1]];
+    }
+    return thumbnail?.url;
   }
 }
