@@ -1,6 +1,7 @@
 import React from 'react';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { Parameter } from '../Helpers/DataModel';
+import { ParameterListInput } from './ParameterListInput';
 
 export const ParameterInput = ({
   parentParameter,
@@ -23,6 +24,14 @@ export const ParameterInput = ({
       return;
     }
     onChange(parameter.name, parameter, event.target?.value);
+  };
+
+  const handleListChange = (value: string[]) => {
+    if (parentParameter !== undefined) {
+      onChange(parentParameter?.name + '.' + parameter.name, parameter, value);
+      return;
+    }
+    onChange(parameter.name, parameter, value);
   };
 
   switch (parameter.componentType) {
@@ -71,7 +80,7 @@ export const ParameterInput = ({
           </div>
         </>
       );
-    case 'list':
+    case 'select':
       return (
         <>
           {/* <h3 className="text-lg font-semibold mb-4">{parameter.name}</h3> */}
@@ -84,17 +93,36 @@ export const ParameterInput = ({
             </label>
             <select
               id="name"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               name={parameter.name}
               onChange={handleInputChange}
-              value={parameter.value ?? ''}
+              value={parameter.value}
             >
-              {parameter.list?.map((item) => (
+              <option value="" selected disabled>
+                [Select]
+              </option>
+              {parameter.options?.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
             </select>
+          </div>
+        </>
+      );
+
+    case 'list':
+      return (
+        <>
+          <h3 className="capitalize text-lg font-semibold mb-4">
+            {parameter.name}
+          </h3>
+          <div className="w-fulkl">
+            <ParameterListInput
+              parameter={parameter}
+              onChange={handleListChange}
+              parentParameter={parameter}
+            />
           </div>
         </>
       );

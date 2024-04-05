@@ -56,6 +56,9 @@ interface CreateConnectorPayload extends ConnectorPayload {
 
 type UpdateConnectorPayload = ConnectorPayload;
 
+// yarn connector-cli publish src/connectors/acquia/connector.ts -e admin -b http://localhost:8081/grafx -n VS -ro BASE_URL=https://api.widencollective.com
+// yarn connector-cli publish src/connectors/acquia/connector.ts -t dev -e cp-qeb-191 -b https://cp-qeb-191.cpstaging.online/grafx -n Acquia(Sitecore) -ro BASE_URL=https://api.widencollective.com
+
 export async function runPublish(
   connectorFile: string,
   options: PublishCommandOptions

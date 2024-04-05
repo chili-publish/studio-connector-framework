@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { ParameterInput } from './ParameterInput';
-import { DataModel, Parameter } from '../Helpers/DataModel';
+import {
+  DataModel,
+  InvokableDataModel,
+  Parameter,
+  SettableDataModel,
+} from '../Helpers/DataModel';
 import JsonObjectRenderer from './JsonObjectRenderer';
 import ArrayBufferImage from './ImageFromBuffer';
 
@@ -24,7 +29,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     });
   };
 
-  const handleInvoke = async () => {
+  const normalizeValues = () => {
     // in the values we will find something like {"orderType.id": "dsfadf","orderType.name": "dsfaasdf","orderId": "dasfadsf"}
     // we want to flatten this to {"orderType": {"id": "dsfadf","name": "dsfaasdf"},"orderId": "dasfadsf"}
     const flattenedValues: { [key: string]: any } = {};
@@ -45,27 +50,43 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
 
     // order flattenedValues by their occurance in dataModel.parameters
     // this is needed because the dataModel.parameters are in the correct order
-    const sortedKeys = Object.keys(flattenedValues).sort((a: any, b: any) => {
-      const aIndex = dataModel.parameters.findIndex((p) => p.name === a);
-      const bIndex = dataModel.parameters.findIndex((p) => p.name === b);
-      return aIndex - bIndex;
-    });
+    const sortedKeys = Object.keys(flattenedValues)
+      .filter(
+        (key) => dataModel.parameters.findIndex((p) => p.name === key) >= 0
+      )
+      .sort((a: any, b: any) => {
+        const aIndex = dataModel.parameters.findIndex((p) => p.name === a);
+        const bIndex = dataModel.parameters.findIndex((p) => p.name === b);
+        return aIndex - bIndex;
+      });
 
     // now we can create an array of values in the correct order
     // this is needed because the dataModel.invoke function expects the values in the correct order
     const sortedValues = sortedKeys.map((key) => flattenedValues[key]);
+    return sortedValues;
+  };
+
+  const handleInvoke = async () => {
+    const normalizedValues = normalizeValues();
     try {
-      const result = await dataModel.invoke(sortedValues);
+      const result = await (dataModel as InvokableDataModel).invoke(
+        normalizedValues
+      );
       setResult(result);
       console.log('result', result);
     } catch (error) {
       setResult({
         message: `failed to invoke ${
           dataModel.name
-        }: with parameters ${JSON.stringify(sortedValues)}: ${error}`,
+        }: with parameters ${JSON.stringify(normalizedValues)}: ${error}`,
         error: `${error}`,
       });
     }
+  };
+
+  const handleSet = () => {
+    const normalizedValues = normalizeValues();
+    (dataModel as SettableDataModel).set(normalizedValues);
   };
 
   const inputRender = (
@@ -84,7 +105,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
           </div>
         ))}
       </div>
-      {dataModel.isInvokable === false ? null : (
+      {!(dataModel as InvokableDataModel).invoke ? null : (
         <div className="flex flex-row py-8">
           <button
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
@@ -94,24 +115,39 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
           </button>
         </div>
       )}
+      {!(dataModel as SettableDataModel).set ? null : (
+        <div className="flex flex-row py-8">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
+            onClick={handleSet}
+          >
+            Set
+          </button>
+        </div>
+      )}
     </form>
   );
 
   let resultRender = null;
 
   if (result !== undefined) {
-    if (dataModel.returnJson || dataModel.returnJsonArray) {
+    if (result.error) {
       resultRender = <JsonObjectRenderer data={result} />;
-    } else if (dataModel.returnsImage) {
-      resultRender = (
-        <ArrayBufferImage buffer={result.id} width={'100%'} height={'100%'} />
-      );
+    } else {
+      const invokableDataModel = dataModel as InvokableDataModel;
+      if (invokableDataModel.returnJson || invokableDataModel.returnJsonArray) {
+        resultRender = <JsonObjectRenderer data={result} />;
+      } else if (invokableDataModel.returnsImage) {
+        resultRender = (
+          <ArrayBufferImage buffer={result.id} width={'100%'} height={'100%'} />
+        );
+      }
     }
   }
 
   return (
-    <div className="flex-1">
-      <div className="bg-white p-0">
+    <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="bg-white p-0 flex flex-col flex-1 overflow-y-auto">
         <div className="mb-4 border-b pb-4">
           <h1 className="capitalize  text-xl font-semibold">
             {dataModel.name}
