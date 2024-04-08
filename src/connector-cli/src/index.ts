@@ -112,7 +112,7 @@ async function main() {
       'Connector file (ts) to run test suite for',
       './connector.ts'
     )
-    .option('-t, --testFile <testFile>')
+    .requiredOption('-t, --testFile <testFile>')
     .action(runTests);
 
   program

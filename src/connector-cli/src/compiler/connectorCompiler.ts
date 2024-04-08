@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export async function compileToTempFile(
   connectorFile: string,
@@ -20,7 +21,7 @@ export async function compileToTempFile(
   let randomNumber = Math.floor(Math.random() * 10000);
   let filename = `file_${timestamp}_${randomNumber}`;
 
-  const tempFileUsed = tempFile ?? `/tmp/${filename}.js`;
+  const tempFileUsed = path.resolve(tempFile ?? `/tmp/${filename}.js`);
 
   fs.writeFileSync(tempFileUsed, compileResult.script);
 
@@ -85,7 +86,31 @@ export async function compile(
   };
 }
 
-export type AnyCompilationResult = TempFileCompilationResult | InMemoryCompilationResult;
+export async function introspectTsFile(connectorFile: string): Promise<string> {
+  // use typescript to load the connector file
+  // and get the connector class
+  const program = ts.createProgram([connectorFile], {});
+  const sourceFile = program.getSourceFile(connectorFile);
+  const typeChecker = program.getTypeChecker();
+
+  let iface = '';
+  sourceFile?.statements
+    .filter(ts.isClassDeclaration)
+    .forEach((classDeclaration) => {
+      classDeclaration.heritageClauses?.forEach((heritageClause) => {
+        heritageClause.types.forEach((type) => {
+          var symbol = typeChecker.getTypeAtLocation(type.expression);
+          iface = symbol.symbol.escapedName.toString();
+        });
+      });
+    });
+
+  return iface;
+}
+
+export type AnyCompilationResult =
+  | TempFileCompilationResult
+  | InMemoryCompilationResult;
 
 export type TempFileCompilationResult = CompilationResult & {
   tempFile: string;
@@ -95,7 +120,7 @@ export type InMemoryCompilationResult = CompilationResult & {
   script: string;
 };
 
-export type CompilationResult = {  
+export type CompilationResult = {
   errors: {
     line: string;
     error: string;

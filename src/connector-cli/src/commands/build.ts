@@ -4,9 +4,14 @@ import path from 'path';
 import { validateInputConnectorFile } from '../validation';
 import { errorNoColor, info, startCommand, success, verbose } from '../logger';
 
+interface BuildCommandOptions {
+  watch?: boolean;
+  outFolder?: string;
+}
+
 export async function runBuild(
   connectorFile: string,
-  options: any
+  options: BuildCommandOptions
 ): Promise<void> {
   startCommand('build', { connectorFile, options });
 
@@ -21,7 +26,7 @@ export async function runBuild(
   const connectorFolder = path.dirname(connectorFile);
 
   // if no outfolder, user the directory of the connector file and create subfolder 'out'
-  const out = outFolder || `${connectorFolder}/out`;
+  const out = path.resolve(outFolder || `${connectorFolder}/out`);
 
   // if outfolder does not exist, create it
   if (!fs.existsSync(out)) {
@@ -37,7 +42,7 @@ export async function runBuild(
   }
 
   // write to out/connector.js
-  fs.writeFileSync(`${out}/connector.js`, compilation.script);
+  fs.writeFileSync(path.join(out, 'connector.js'), compilation.script);
   verbose(`Written to ${out}/connector.js`);
 
   success('Build succeeded');
@@ -46,22 +51,25 @@ export async function runBuild(
     info(
       'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
     );
-    const watcher = fs.watchFile(connectorFile, async function () {
-      info('Rebuilding...');
-      const compilation = await compile(connectorFile);
-      if (compilation.errors.length > 0) {
-        errorNoColor(compilation.formattedDiagnostics);
-        return;
-      } else {
-        success('Build succeeded -> ' + `${out}/connector.js`);
+    const watcher = fs.watchFile(
+      path.resolve(connectorFile),
+      async function () {
+        info('Rebuilding...');
+        const compilation = await compile(connectorFile);
+        if (compilation.errors.length > 0) {
+          errorNoColor(compilation.formattedDiagnostics);
+          return;
+        } else {
+          success('Build succeeded -> ' + `${out}/connector.js`);
+        }
+
+        // write to out/connector.js
+        fs.writeFileSync(path.join(out, 'connector.js'), compilation.script);
+
+        info('');
+        info('Watching for changes... (press ctrl+c to exit)');
       }
-
-      // write to out/connector.js
-      fs.writeFileSync(`${out}/connector.js`, compilation.script);
-
-      info('');
-      info('Watching for changes... (press ctrl+c to exit)');
-    });
+    );
 
     // wait for user to press ctrl+c
     await new Promise((resolve) => {

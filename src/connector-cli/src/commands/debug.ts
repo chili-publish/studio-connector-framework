@@ -2,31 +2,11 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { validateInputConnectorFile } from '../validation';
-import { compileToTempFile } from '../compiler/connectorCompiler';
+import {
+  compileToTempFile,
+  introspectTsFile,
+} from '../compiler/connectorCompiler';
 import { errorNoColor, info, startCommand, success, verbose } from '../logger';
-import ts, { ParameterDeclaration, TypeNode } from 'typescript';
-
-export async function introspectTsFile(connectorFile: string): Promise<string> {
-  // use typescript to load the connector file
-  // and get the connector class
-  const program = ts.createProgram([connectorFile], {});
-  const sourceFile = program.getSourceFile(connectorFile);
-  const typeChecker = program.getTypeChecker();
-
-  let iface = '';
-  sourceFile?.statements
-    .filter(ts.isClassDeclaration)
-    .forEach((classDeclaration) => {
-      classDeclaration.heritageClauses?.forEach((heritageClause) => {
-        heritageClause.types.forEach((type) => {
-          var symbol = typeChecker.getTypeAtLocation(type.expression);
-          iface = symbol.symbol.escapedName.toString();
-        });
-      });
-    });
-
-  return iface;
-}
 
 export async function runDebugger(
   connectorFile: string,
@@ -44,7 +24,7 @@ export async function runDebugger(
     info(
       'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
     );
-    fs.watchFile(connectorFile, async function () {
+    fs.watchFile(path.resolve(connectorFile), async function () {
       info('Rebuilding...');
 
       const watchCompilation = await compileToTempFile(

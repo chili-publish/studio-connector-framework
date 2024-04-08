@@ -8,7 +8,6 @@ import {
 } from '../validation';
 import path from 'path';
 import dot from 'dot-object';
-import { getInfoInternal } from './info';
 import {
   errorNoColor,
   info,
@@ -19,6 +18,7 @@ import {
   startCommand,
 } from '../logger';
 import { getAuthService } from '../authentication';
+import { getInfoInternal } from '../execution-util';
 
 interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
@@ -121,8 +121,8 @@ export async function runPublish(
 
   // Read the connector.js file
   const { connectorJs, connectorTs } = {
-    connectorJs: fs.readFileSync(compilation.tempFile, 'utf8'),
-    connectorTs: fs.readFileSync(connectorFile, 'utf8'),
+    connectorJs: fs.readFileSync(path.resolve(compilation.tempFile), 'utf8'),
+    connectorTs: fs.readFileSync(path.resolve(connectorFile), 'utf8'),
   };
 
   // get connector sdk version

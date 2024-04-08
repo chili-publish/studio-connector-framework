@@ -4,6 +4,8 @@ on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      cli_changed: ${{ steps.git_diff.outputs.cli_changed }}
     strategy:
       matrix:
         node-version: [18]
@@ -19,7 +21,44 @@ jobs:
         run: yarn
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
-      - name: Build Cli
+      - name: Build CLI
         run: yarn run build-cli
       - name: Build connectors
         run: yarn run build-connectors
+      - name: Check for changes in src/connector-cli/**/*
+        id: git_diff
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep 'src/connector-cli/'
+          then
+            echo "::set-output name=cli_changed::true"
+          fi
+      - name: Prepare artifact
+        if: steps.git_diff.outputs.cli_changed == 'true'
+        run: 
+          path=upload/connector-cli/dev-packages/$CI_REF_NAME
+          # Remove trailing "/merge" if it exists
+          path=${path%"/merge"}
+          # Create the directory structure without appending "/merge" and place the tarball inside
+          mkdir -p "$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
+      - name: Upload build artifacts
+        if: steps.git_diff.outputs.cli_changed == 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cli-build
+          path: upload/
+  deploy-cli:
+    needs: build
+    if: steps.git_diff.outputs.cli_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build CLI artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: cli-build
+          path: upload/
+      - name: Upload CLI to Blob Storage
+        uses: azure/CLI@v1
+        with:
+            inlineScript: |
+                  az storage blob upload-batch -d sdk -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true    
+
