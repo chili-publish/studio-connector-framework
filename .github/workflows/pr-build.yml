@@ -40,17 +40,18 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          path=./upload/connector-cli/dev-packages/$PR_NUMBER
+          path=upload/connector-cli/dev-packages/$PR_NUMBER
           # Remove trailing "/merge" if it exists
           path=${path%"/merge"}
+          ls -la
           # Create the directory structure without appending "/merge" and place the tarball inside
-          mkdir -p "$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
+          mkdir -p "src/connector-cli/$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
       - name: Upload CLI build artifacts
         if: steps.git_diff.outputs.cli_changed == 'true'
         uses: actions/upload-artifact@v2
         with:
           name: cli-build
-          path: upload/
+          path: src/connector-cli/upload/
   deploy-cli:
     needs: build
     if: needs.build.outputs.cli_changed == 'true'
@@ -60,9 +61,9 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: cli-build
-          path: upload/
+          path: connector-cli/upload/
       - name: Upload CLI to Blob Storage
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload-batch -d sdk -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
+            az storage blob upload-batch -d sdk -s connector-cli/upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
