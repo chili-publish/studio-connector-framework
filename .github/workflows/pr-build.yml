@@ -48,7 +48,7 @@ jobs:
           path: upload/
   deploy-cli:
     needs: build
-    if: steps.git_diff.outputs.cli_changed == 'true'
+    if: needs.build.outputs.cli_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download build CLI artifact
