@@ -37,8 +37,10 @@ jobs:
           fi
       - name: Prepare artifact
         if: steps.git_diff.outputs.cli_changed == 'true'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          path=upload/connector-cli/dev-packages/$CI_REF_NAME
+          path=upload/connector-cli/dev-packages/$PR_NUMBER
           echo $path
           # Remove trailing "/merge" if it exists
           path=${path%"/merge"}
