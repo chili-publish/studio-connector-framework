@@ -11,6 +11,8 @@ jobs:
         node-version: [18]
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetches all history for all branches and tags
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
@@ -28,7 +30,8 @@ jobs:
       - name: Check for changes in src/connector-cli/**/*
         id: git_diff
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep 'src/connector-cli/'
+          git fetch --depth=1 origin main # Ensures the main branch is up to date
+          if git diff --name-only origin/main...HEAD | grep 'src/connector-cli/'
           then
             echo "::set-output name=cli_changed::true"
           fi
@@ -40,7 +43,7 @@ jobs:
           path=${path%"/merge"}
           # Create the directory structure without appending "/merge" and place the tarball inside
           mkdir -p "$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
-      - name: Upload build artifacts
+      - name: Upload CLI build artifacts
         if: steps.git_diff.outputs.cli_changed == 'true'
         uses: actions/upload-artifact@v2
         with:
