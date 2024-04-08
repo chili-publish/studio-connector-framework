@@ -39,8 +39,10 @@ jobs:
         if: steps.git_diff.outputs.cli_changed == 'true'
         run: |
           path=upload/connector-cli/dev-packages/$CI_REF_NAME
+          echo $path
           # Remove trailing "/merge" if it exists
           path=${path%"/merge"}
+          $echo path
           # Create the directory structure without appending "/merge" and place the tarball inside
           mkdir -p "$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
       - name: Upload CLI build artifacts
