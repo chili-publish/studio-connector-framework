@@ -65,15 +65,15 @@ export const Models: {
           componentType: 'complex',
           complex: [
             {
-              name: 'token',
-              componentType: 'text',
-            },
-            {
               name: 'filter',
               componentType: 'list',
             },
             {
               name: 'collection',
+              componentType: 'text',
+            },
+            {
+              name: 'pageToken',
               componentType: 'text',
             },
             {

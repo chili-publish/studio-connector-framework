@@ -6,6 +6,7 @@ interface AcquiaAssetV2 {
   external_id: string;
   file_properties: {
     format: string;
+    format_type: string;
   };
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
@@ -20,6 +21,7 @@ interface AssetId {
   id: string;
   eid: string;
   filename: string;
+  fileType: 'image' | 'pdf' | unknown;
 }
 
 class Converter {
@@ -28,6 +30,7 @@ class Converter {
       id: item.id,
       eid: item.external_id,
       filename: item.filename,
+      fileType: item.file_properties.format_type.toLowerCase(),
     };
     return {
       id: JSON.stringify(assetId),
@@ -37,7 +40,7 @@ class Converter {
       // 0 - file
       // 1 - folder
       type: 0,
-      extension: item.file_properties.format.toLowerCase(),
+      extension: Converter.formatToExtension(item.file_properties.format),
       metaData: Object.entries(item.metadata.fields).reduce(
         (metadata, [fieldKey, fieldValue]) => {
           metadata[fieldKey] = Array.isArray(fieldValue)
@@ -48,6 +51,14 @@ class Converter {
         {} as Connector.Dictionary
       ),
     };
+  }
+
+  static formatToExtension(format: string): string {
+    // Acquia identifies Pdf files with following format but we need file extenstion type
+    if (format === 'PdfDocument') {
+      return 'pdf';
+    }
+    return format.toLowerCase();
   }
 }
 
@@ -148,37 +159,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
     // For backward compatibility with existing templates
     let endpoint = this._tryThumbnail(id);
     if (!endpoint) {
-      const { eid, filename } = JSON.parse(id) as AssetId;
-      endpoint =
-        this.ensureTrailingSlash(this.runtime.options['PREVIEW_BASE_URL']) +
-        'content/' +
-        eid;
-
-      switch (previewType) {
-        case 'thumbnail': {
-          endpoint += '/jpeg' + '/' + filename + '?w=125';
-          break;
-        }
-        case 'mediumres': {
-          endpoint += '/png' + '/' + filename + '?w=1024';
-          break;
-        }
-        case 'highres':
-          endpoint += '/png' + '/' + filename;
-          break;
-        case 'fullres':
-          if (intent === 'print') {
-            endpoint += '/png' + '/' + filename;
-          } else {
-            endpoint += '/original' + '/' + filename + '?download=true';
-          }
-          break;
-        case 'original':
-          endpoint += '/original' + '/' + filename + '?download=true';
-          break;
-        default:
-          endpoint += '/png' + '/' + filename + '?w=1024';
-      }
+      endpoint = this._tryPreviewUrl(id, { previewType, intent });
     }
 
     const result = await this.runtime.fetch(endpoint, {
@@ -224,5 +205,50 @@ export default class AcquiaConnector implements Media.MediaConnector {
       thumbnail = thumbnails[keys[keys.length - 1]];
     }
     return thumbnail?.url;
+  }
+
+  _tryPreviewUrl(
+    id: string,
+    {
+      previewType,
+      intent,
+    }: { previewType: Media.DownloadType; intent: Media.DownloadIntent }
+  ) {
+    const { eid, filename, fileType } = JSON.parse(id) as AssetId;
+    let endpoint =
+      this.ensureTrailingSlash(this.runtime.options['PREVIEW_BASE_URL']) +
+      'content/' +
+      eid;
+
+    switch (previewType) {
+      case 'thumbnail': {
+        endpoint += '/jpeg' + '/' + filename + '?w=125';
+        break;
+      }
+      case 'mediumres': {
+        endpoint += '/png' + '/' + filename + '?w=1024';
+        break;
+      }
+      case 'highres':
+        endpoint += '/png' + '/' + filename;
+        break;
+      case 'fullres':
+        if (intent === 'print') {
+          if (fileType === 'image' || fileType === 'pdf') {
+            endpoint += '/original' + '/' + filename + '?download=true';
+          } else {
+            endpoint += '/png' + '/' + filename + '?w=1024';
+          }
+        } else {
+          endpoint += '/original' + '/' + filename + '?download=true';
+        }
+        break;
+      case 'original':
+        endpoint += '/original' + '/' + filename + '?download=true';
+        break;
+      default:
+        endpoint += '/png' + '/' + filename + '?w=1024';
+    }
+    return endpoint;
   }
 }
