@@ -47,14 +47,14 @@ export async function runInit(
     main: 'out/connector.js',
     dependencies: {
       typescript: '^5.2.2',
-      '@chili-publish/studio-connectors': '*',
+      '@chili-publish/studio-connectors': '^1',
     },
     scripts: {
       build: 'yarn connector-cli build',
       test: 'yarn connector-cli test -t tests.json && yarn connector-cli stress',
     },
     devDependencies: {
-      '@chili-publish/connector-cli': '*',
+      '@chili-publish/connector-cli': '^1',
     },
   };
 

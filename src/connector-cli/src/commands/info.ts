@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { validateInputConnectorFile } from '../validation';
 import { errorNoColor, info, startCommand, success } from '../logger';
-import { getInfoInternal } from '../execution-util';
+import { getInfoInternal } from '../utils/execution-util';
 
 interface GetInfoCommandOptions {
   out?: string;

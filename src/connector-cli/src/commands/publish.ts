@@ -18,7 +18,7 @@ import {
   startCommand,
 } from '../logger';
 import { getAuthService } from '../authentication';
-import { getInfoInternal } from '../execution-util';
+import { getInstalledPackageVersion } from '../utils/version-reader';
 
 interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
@@ -99,7 +99,9 @@ export async function runPublish(
   if (errors.length > 0) {
     error(
       `${JSON.stringify(
-        errors
+        errors,
+        null,
+        2
       )}.\n To see all available options execute 'connector-cli pathToConnector list-options --type="runtime-options"'`
     );
     return;
@@ -126,10 +128,13 @@ export async function runPublish(
   };
 
   // get connector sdk version
-  const apiVersion = extractConnectorSdkVersion(dir, packageJson) ?? '';
+  const apiVersion = getInstalledPackageVersion(
+    '@chili-publish/studio-connectors',
+    dir
+  );
 
   // Retrieve capabilities and configurationOptions of the connector
-  const connectorInfo = await getInfoInternal(compilation);
+  // const connectorInfo = await getInfoInternal(compilation);
 
   // When we want to update existing connector instead of creating a new one
   const connectorEndpointBaseUrl = `${baseUrl}/api/experimental/environment/${environment}/connectors`;
@@ -150,7 +155,9 @@ export async function runPublish(
   const errorHandler = async (res: Response) => {
     try {
       const errorData = await res.json();
-      verbose('Error during publishing: ' + JSON.stringify(errorData));
+      verbose(
+        'Error during publishing: \n' + JSON.stringify(errorData, null, 2)
+      );
     } catch (e) {
       verbose('Error during publishing: ' + res.statusText);
     } finally {
@@ -182,48 +189,6 @@ export async function runPublish(
   }
 }
 
-function extractConnectorSdkVersion(dir: string, packageJson: any) {
-  // in the package.json get the version of the @chili-publish/studio-connectors package
-  const studioConnectorsVersion =
-    packageJson.dependencies['@chili-publish/studio-connectors'];
-  if (!studioConnectorsVersion) {
-    error(
-      `@chili-publish/studio-connectors not found in ${path.join(
-        dir,
-        'package.json'
-      )}`
-    );
-    return;
-  }
-
-  let connectorApiVersion = '';
-
-  // the dependency could be a version, or tarball
-  if (studioConnectorsVersion.startsWith('file:')) {
-    // get the tarball name
-    const tarball = studioConnectorsVersion.replace('file:', '');
-    // regex matchh version number
-    const regex = /v([0-9]+\.[0-9]+\.[0-9]+)\.tgz/;
-    const match = regex.exec(tarball);
-    if (!match) {
-      console.error(`Failed to extract version from ${tarball}`);
-      return;
-    }
-    connectorApiVersion = match[1];
-  } else {
-    // regex matchh version number
-    const regex = /([0-9]+\.[0-9]+\.[0-9]+)/;
-    const match = regex.exec(studioConnectorsVersion);
-    if (!match) {
-      error(`Failed to extract version from ${studioConnectorsVersion}`);
-      return;
-    }
-    connectorApiVersion = match[1];
-  }
-
-  return connectorApiVersion;
-}
-
 async function createNewConnector(
   err: (res: Response) => Promise<void>,
   connectorEndpointBaseUrl: string,
@@ -232,7 +197,13 @@ async function createNewConnector(
 ): Promise<boolean> {
   const createConnectorEndpoint = connectorEndpointBaseUrl;
 
-  verbose(`Deploying connector with a payload ${creationPayload}`);
+  verbose(
+    `Deploying connector with a payload\n ${JSON.stringify(
+      creationPayload,
+      null,
+      2
+    )}\n`
+  );
 
   info('Deploying connector -> ' + createConnectorEndpoint);
 
@@ -251,7 +222,7 @@ async function createNewConnector(
   }
 
   const data = await res.json();
-  verbose(`Created connector payload: ${JSON.stringify(data)}`);
+  verbose(`Created connector payload:\n ${JSON.stringify(data, null, 2)}\n`);
   return true;
 }
 
@@ -296,7 +267,11 @@ async function updateExistingConnector(
   const updateConnectorEnpdoint = getConnectorEnpdoint;
 
   verbose(
-    `Deploying connector with a payload ${JSON.stringify(updatePayload)}`
+    `Deploying connector with a payload\n ${JSON.stringify(
+      updatePayload,
+      null,
+      2
+    )}\n`
   );
 
   info('Updating connector -> ' + updateConnectorEnpdoint);
@@ -316,7 +291,7 @@ async function updateExistingConnector(
   }
 
   const data = await res.json();
-  verbose(`Updated connector payload: ${JSON.stringify(data)}`);
+  verbose(`Updated connector payload: \n ${JSON.stringify(data, null, 2)}\n`);
   return true;
 }
 

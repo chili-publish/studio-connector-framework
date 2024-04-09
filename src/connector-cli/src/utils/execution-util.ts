@@ -1,5 +1,5 @@
-import { TempFileCompilationResult } from './compiler/connectorCompiler';
-import { evalSync, initRuntime } from './qjs/qjs';
+import { TempFileCompilationResult } from '../compiler/connectorCompiler';
+import { evalSync, initRuntime } from '../qjs/qjs';
 
 export async function getInfoInternal(compilation: TempFileCompilationResult) {
   const vm = await initRuntime(compilation.tempFile, {});
