@@ -8,7 +8,7 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
       <div className="flex-1 p-8">
         <div className="bg-white shadow rounded-lg p-6">
           <div className="text-gray-600">
-            Select a connector method from the sidebar
+            Select a connector "method" of "configuration" from the sidebar
           </div>
         </div>
       </div>
@@ -16,8 +16,8 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
   }
 
   return (
-    <div className="flex-1 p-8">
-      <div className="bg-white shadow rounded-lg p-6">
+    <div className="flex-1 p-8 flex flex-col overflow-y-auto">
+      <div className="bg-white shadow rounded-lg p-6 flex flex-col flex-1 overflow-y-auto">
         <div className="mb-4 border-b pb-4">
           <h1 className="text-xl font-semibold">
             {Models.ConnectorMetadata?.name}

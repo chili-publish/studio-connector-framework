@@ -1,8 +1,8 @@
 export const cache = new Map<string, ArrayBuffer>();
 
 export interface Header {
-  HttpHeader: string;
-  HttpValue: string;
+  name: string;
+  value: string;
 }
 
 export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
@@ -17,15 +17,20 @@ export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
   });
 }
 
-export async function initRuntime(globalHeaders: Header[]) {
+export async function initRuntime(
+  globalHeaders: Header[],
+  runtimeOptions: Record<string, unknown>,
+  authorization: Header
+) {
   // proxy the fetch function to be able to inject headers
   const fetch = async (url: string, options: any) => {
     const headers = {
       ...options.headers,
       ...globalHeaders.reduce(
-        (acc, curr) => ({ ...acc, [curr.HttpHeader]: curr.HttpValue }),
+        (acc, curr) => ({ ...acc, [curr.name]: curr.value }),
         {}
       ),
+      [authorization.name]: authorization.value,
     };
     const response = await window.fetch(url, { ...options, headers });
 
@@ -49,7 +54,7 @@ export async function initRuntime(globalHeaders: Header[]) {
   };
 
   const runtime = {
-    options: {},
+    options: runtimeOptions,
     logError: console.error,
     platform: {},
     sdkVersion: '1.0.0',
@@ -57,9 +62,12 @@ export async function initRuntime(globalHeaders: Header[]) {
   };
 
   // get the current base url and append connector.js to it
-  const url = `${window.location.origin}/connector.js`;
+  // When in dev mode use GraFx connector
+  const url = import.meta.env.DEV
+    ? 'https://stgrafxstudiodevpublic.blob.core.windows.net/editor/1.4.1/web/assets/packages/runtime_assets/assets/connectors/grafx_media/code.js'
+    : `${window.location.origin}/connector.js`;
   // fetch the connector js code as a module
-  const mod = await import(url);
+  const mod = await import(/* @vite-ignore */ url);
   // get the default export from the module
   const connector = new mod.default(runtime);
 
