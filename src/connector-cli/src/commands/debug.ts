@@ -8,9 +8,14 @@ import {
 } from '../compiler/connectorCompiler';
 import { errorNoColor, info, startCommand, success, verbose } from '../logger';
 
+interface DebuggerCommandOptions {
+  port: number;
+  watch?: true;
+}
+
 export async function runDebugger(
   connectorFile: string,
-  options: any
+  options: DebuggerCommandOptions
 ): Promise<void> {
   startCommand('debug', { connectorFile, options });
   if (!validateInputConnectorFile(connectorFile)) {
@@ -44,7 +49,7 @@ export async function runDebugger(
   }
 
   const app = express();
-  const port = options.port ?? 3300;
+  const port = options.port;
   const indexTemplate = debuggerHandleBarTemplate;
 
   // recursive (3 deep) find parent folder with subfolder 'out'

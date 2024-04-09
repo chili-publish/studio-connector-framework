@@ -28,7 +28,7 @@ export async function runGetInfo(
   }
 
   const properties =
-    '\n' + JSON.stringify(await getInfoInternal(compilation)) + '\n';
+    '\n' + JSON.stringify(await getInfoInternal(compilation), null, 2) + '\n';
 
   if (options.out) {
     fs.writeFileSync(path.resolve(options.out), properties);

@@ -1,11 +1,14 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
+import { verbose } from '../logger';
 
 export async function compileToTempFile(
   connectorFile: string,
   tempFile?: string | undefined
 ): Promise<TempFileCompilationResult> {
+  verbose(`Compile connector "${connectorFile}"`);
   const compileResult = await compile(connectorFile);
 
   if (compileResult.errors.length > 0) {
@@ -17,12 +20,28 @@ export async function compileToTempFile(
   }
 
   // Get the current timestamp
-  let timestamp = new Date().getTime();
-  let randomNumber = Math.floor(Math.random() * 10000);
-  let filename = `file_${timestamp}_${randomNumber}`;
+  if (!tempFile) {
+    const timestamp = new Date().getTime();
+    const randomNumber = Math.floor(Math.random() * 10000);
+    const filename = `file_${timestamp}_${randomNumber}`;
+    tempFile = path.join(os.tmpdir(), `${filename}.js`);
+  } else {
+    verbose(
+      `Use provided temporary file "${tempFile}" to store compiled results`
+    );
+  }
 
-  const tempFileUsed = path.resolve(tempFile ?? `/tmp/${filename}.js`);
+  const tempFileUsed = path.resolve(tempFile);
 
+  if (!fs.existsSync(path.dirname(tempFileUsed))) {
+    verbose(
+      `Creating temporary directory "${path.dirname(
+        tempFileUsed
+      )}" for compiled files...`
+    );
+    fs.mkdirSync(path.dirname(tempFileUsed), { recursive: true });
+  }
+  verbose(`Write compiled results to "${tempFileUsed}" file`);
   fs.writeFileSync(tempFileUsed, compileResult.script);
 
   return {

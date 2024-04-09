@@ -91,8 +91,11 @@ async function main() {
       'Connector file (ts) to run debug server for',
       './connector.ts'
     )
-    .option('-p, --port <port>')
-    .option('-w, --watch')
+    .option('-p, --port [port]', 'Port to run debug application', '3300')
+    .option(
+      '-w, --watch',
+      "Enable watch mode to reload connector's code when changed"
+    )
     .action(runDebugger);
 
   program
@@ -148,7 +151,7 @@ async function main() {
     .argument(
       '[connectorPath]',
       'Path to connector where "package.json" is located',
-      './src/connector-name'
+      './'
     )
     .addOption(
       new Option('-t, --type <type>', 'Type of options that you want to list')
