@@ -6,9 +6,9 @@ import { verbose } from '../logger';
 
 export async function compileToTempFile(
   connectorFile: string,
-  tempFile?: string | undefined
+  tempFile?: string
 ): Promise<TempFileCompilationResult> {
-  verbose(`Compile connector "${connectorFile}"`);
+  verbose(`Compile connector ${connectorFile} to temporary file`);
   const compileResult = await compile(connectorFile);
 
   if (compileResult.errors.length > 0) {
@@ -33,15 +33,7 @@ export async function compileToTempFile(
 
   const tempFileUsed = path.resolve(tempFile);
 
-  if (!fs.existsSync(path.dirname(tempFileUsed))) {
-    verbose(
-      `Creating temporary directory "${path.dirname(
-        tempFileUsed
-      )}" for compiled files...`
-    );
-    fs.mkdirSync(path.dirname(tempFileUsed), { recursive: true });
-  }
-  verbose(`Write compiled results to "${tempFileUsed}" file`);
+  verbose(`Write compiled results to ${tempFileUsed}`);
   fs.writeFileSync(tempFileUsed, compileResult.script);
 
   return {
