@@ -1,12 +1,17 @@
 export type DataModel = {
   name: string;
   parameters: Parameter[];
+};
+
+export type InvokableDataModel = DataModel & {
   returnsImage: boolean;
   returnJson: boolean;
   returnJsonArray: boolean;
-  isAsync: boolean;
-  isInvokable: boolean;
   invoke: (values: any[]) => Promise<any>;
+};
+
+export type SettableDataModel = DataModel & {
+  set: (values: any[]) => void;
 };
 
 export type ConnectorMetadata = {
@@ -18,21 +23,32 @@ export type ConnectorMetadata = {
 export type SimpleParameter = {
   value?: any | undefined;
   name: string;
-  componentType: 'text' | 'boolean' | 'dictionary';
+  componentType: 'text' | 'boolean' | 'list';
 };
 
-export type ListParameter = {
-  componentType: 'list';
-  list: string[] | undefined;
+export type SelectParameter = {
   value?: any | undefined;
   name: string;
+  componentType: 'select';
+  options: string[] | undefined;
 };
 
-export type Parameter = SimpleParameter | ComplexParameter | ListParameter;
+export type DictionaryParameter = {
+  value?: any | undefined;
+  name: string;
+  componentType: 'dictionary';
+  rectrictModification?: boolean;
+};
+
+export type Parameter =
+  | SimpleParameter
+  | ComplexParameter
+  | SelectParameter
+  | DictionaryParameter;
 
 export type ComplexParameter = {
   value?: any | undefined;
   name: string;
   componentType: 'text' | 'boolean' | 'complex';
-  complex: SimpleParameter[] | undefined;
+  complex: Array<SimpleParameter | DictionaryParameter> | undefined;
 };

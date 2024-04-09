@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 import { DataModel } from './Helpers/DataModel';
-import { initRuntime } from './Helpers/ConnectorRuntime';
+import { Header, initRuntime } from './Helpers/ConnectorRuntime';
 // import react
 import { useEffect } from 'react';
 import { Models } from './Helpers/Models';
@@ -15,8 +15,14 @@ function App() {
   const [connector, setConnector] = useState<any>(null);
   const [error, setError] = useState<string | undefined>(undefined);
 
+  const [globalHeaders, setGlobalHeaders] = useState<Header[]>([]);
+  const [authorization, setAuthorization] = useState<Header>({} as any);
+  const [runtimeOptions, setRuntimeOptinos] = useState<Record<string, unknown>>(
+    {}
+  );
+
   useEffect(() => {
-    initRuntime([])
+    initRuntime(globalHeaders, runtimeOptions, authorization)
       .then((connector) => {
         Models.ConnectorInstance = connector;
         setConnector(connector);
@@ -28,7 +34,7 @@ function App() {
         setLoading(false);
         console.log('error', err);
       });
-  }, []);
+  }, [globalHeaders, runtimeOptions, authorization]);
 
   function onModelChanged(model: DataModel): void {
     setDataModel(model);
@@ -41,6 +47,24 @@ function App() {
   if (error) {
     return <div>Error: {error}</div>;
   }
+
+  Models.updateConfiguration = (
+    name: 'headers' | 'options',
+    value: unknown
+  ) => {
+    switch (name) {
+      case 'headers':
+        setAuthorization(
+          (value as { authorization: Header; other: Header[] }).authorization
+        );
+        setGlobalHeaders(
+          (value as { authorization: Header; other: Header[] }).other
+        );
+        break;
+      case 'options':
+        setRuntimeOptinos(value as Record<string, unknown>);
+    }
+  };
 
   Models.ConnectorMetadata = {
     name: connector.constructor.name,
