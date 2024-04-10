@@ -17,7 +17,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
       - name: Check version correctness
         env:
           GITHUB_REF: ${{ github.ref }}
@@ -44,7 +45,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
         run: |
-          npm publish @chili-publish/connector-cli --dry-run --access=public
+          npm publish @chili-publish/connector-cli --registry=https://registry.npmjs.org --dry-run --access=public
       # - name: Publish
       #   run: yarn publish src/connector-cli --access=public
       #   env:
