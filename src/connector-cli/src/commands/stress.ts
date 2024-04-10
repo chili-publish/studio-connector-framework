@@ -1,5 +1,4 @@
 import { initRuntime, evalSync, evalAsync } from '../qjs/qjs';
-import fs from 'fs';
 import { validateInputConnectorFile } from '../validation';
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import { errorNoColor, info, startCommand, success, warn } from '../logger';

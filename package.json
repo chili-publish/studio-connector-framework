@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build-cli": "cd ./src/connector-cli/ && yarn && yarn build",
+    "build-cli": "yarn workspace @chili-publish/connector-cli run build",
     "refresh-cli": "yarn upgrade @chili-publish/connector-cli",
     "build-connectors": "yarn workspaces run build",
     "publish-all": "node scripts/publish.js"

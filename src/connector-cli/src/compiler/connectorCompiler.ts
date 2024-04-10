@@ -1,10 +1,14 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import { verbose } from '../logger';
 
 export async function compileToTempFile(
   connectorFile: string,
-  tempFile?: string | undefined
+  tempFile?: string
 ): Promise<TempFileCompilationResult> {
+  verbose(`Compile connector ${connectorFile} to temporary file`);
   const compileResult = await compile(connectorFile);
 
   if (compileResult.errors.length > 0) {
@@ -16,12 +20,20 @@ export async function compileToTempFile(
   }
 
   // Get the current timestamp
-  let timestamp = new Date().getTime();
-  let randomNumber = Math.floor(Math.random() * 10000);
-  let filename = `file_${timestamp}_${randomNumber}`;
+  if (!tempFile) {
+    const timestamp = new Date().getTime();
+    const randomNumber = Math.floor(Math.random() * 10000);
+    const filename = `file_${timestamp}_${randomNumber}`;
+    tempFile = path.join(os.tmpdir(), `${filename}.js`);
+  } else {
+    verbose(
+      `Use provided temporary file "${tempFile}" to store compiled results`
+    );
+  }
 
-  const tempFileUsed = tempFile ?? `/tmp/${filename}.js`;
+  const tempFileUsed = path.resolve(tempFile);
 
+  verbose(`Write compiled results to ${tempFileUsed}`);
   fs.writeFileSync(tempFileUsed, compileResult.script);
 
   return {
@@ -85,7 +97,31 @@ export async function compile(
   };
 }
 
-export type AnyCompilationResult = TempFileCompilationResult | InMemoryCompilationResult;
+export async function introspectTsFile(connectorFile: string): Promise<string> {
+  // use typescript to load the connector file
+  // and get the connector class
+  const program = ts.createProgram([connectorFile], {});
+  const sourceFile = program.getSourceFile(connectorFile);
+  const typeChecker = program.getTypeChecker();
+
+  let iface = '';
+  sourceFile?.statements
+    .filter(ts.isClassDeclaration)
+    .forEach((classDeclaration) => {
+      classDeclaration.heritageClauses?.forEach((heritageClause) => {
+        heritageClause.types.forEach((type) => {
+          var symbol = typeChecker.getTypeAtLocation(type.expression);
+          iface = symbol.symbol.escapedName.toString();
+        });
+      });
+    });
+
+  return iface;
+}
+
+export type AnyCompilationResult =
+  | TempFileCompilationResult
+  | InMemoryCompilationResult;
 
 export type TempFileCompilationResult = CompilationResult & {
   tempFile: string;
@@ -95,7 +131,7 @@ export type InMemoryCompilationResult = CompilationResult & {
   script: string;
 };
 
-export type CompilationResult = {  
+export type CompilationResult = {
   errors: {
     line: string;
     error: string;

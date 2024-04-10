@@ -1,22 +1,26 @@
-import { compileToTempFile } from '../compiler/connectorCompiler';
+import {
+  compileToTempFile,
+  introspectTsFile,
+} from '../compiler/connectorCompiler';
 import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
 import { validateInputConnectorFile } from '../validation';
 import { assertResult } from '../tests/asserts';
 import { TestModels } from '../tests/testConfiguration';
 import Chalk from 'chalk';
 import fs from 'fs';
+import path from 'path';
 import { error, errorNoColor, info, startCommand, success } from '../logger';
 import chalk from 'chalk';
-import { introspectTsFile } from './debug';
+
+type DemoCommandOptions = unknown;
 
 export async function runDemo(
   connectorFile: string,
-  options: any
+  options: DemoCommandOptions
 ): Promise<void> {
-
   introspectTsFile(connectorFile);
 
-  startCommand('test', { connectorFile, options });
+  startCommand('demo', { connectorFile, options });
 
   if (!validateInputConnectorFile(connectorFile)) {
     return;
@@ -31,10 +35,7 @@ export async function runDemo(
     success('Build succeeded -> ' + compilation.tempFile);
   }
 
-  const vm = await initRuntime(
-    compilation.tempFile,
-    {}
-  );
+  const vm = await initRuntime(compilation.tempFile, {});
 
   let urlsUsed: string[] = [];
 
@@ -67,8 +68,7 @@ export async function runDemo(
 
   try {
     const testResult = await evalAsync(vm, script);
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
   }
 
@@ -76,14 +76,14 @@ export async function runDemo(
 
   let dummyTestConfiguration: TestModels.TestConfiguration = {
     setup: {
-      runtime_options: {}
+      runtime_options: {},
     },
     tests: [
       {
-        id: "default_query",
-        description: "default_query",
-        name: "default_query",
-        method: "query",
+        id: 'default_query',
+        description: 'default_query',
+        name: 'default_query',
+        method: 'query',
         arguments: {
           queryOptions: {
             collection: null,
@@ -91,41 +91,43 @@ export async function runDemo(
             pageSize: 1,
             pageToken: null,
             sortBy: null,
-            sortOrder: null
+            sortOrder: null,
           },
-          context: {}
+          context: {},
         },
         asserts: {
           fetch: urlsUsed.map<TestModels.Fetch>((url) => {
             return {
               url: url,
-              method: "GET",
+              method: 'GET',
               count: 1,
               response: {
                 status: 200,
-                headers: [
-                  [
-                    "content-type",
-                    "application/json"
-                  ]
-                ],
-                body: {}
-              }
+                headers: [['content-type', 'application/json']],
+                body: {},
+              },
             };
-          })
-        }
-      }
-    ]
-  }
+          }),
+        },
+      },
+    ],
+  };
 
   // write dummyTestConfiguration to ./tests.generated.json formatted json
-  fs.writeFileSync('./tests.generated.json', JSON.stringify(dummyTestConfiguration, null, 2));
+  fs.writeFileSync(
+    './tests.generated.json',
+    JSON.stringify(dummyTestConfiguration, null, 2)
+  );
   return;
+}
+
+interface TestsCommandOptions {
+  testFile: string;
 }
 
 export async function runTests(
   connectorFile: string,
-  options: any
+  options: TestsCommandOptions
 ): Promise<void> {
   startCommand('test', { connectorFile, options });
 
@@ -133,9 +135,9 @@ export async function runTests(
     return;
   }
 
-  const testFile = options.testFile;
+  const { testFile } = options;
 
-  if (!testFile || fs.existsSync(testFile) === false) {
+  if (fs.existsSync(path.resolve(testFile)) === false) {
     error('testFile is required');
     return;
   }
@@ -151,7 +153,7 @@ export async function runTests(
 
   // parse the test file (its a json)
   const testConfig: TestModels.TestConfiguration = JSON.parse(
-    fs.readFileSync(testFile, 'utf8')
+    fs.readFileSync(path.resolve(testFile), 'utf8')
   );
   const vm = await initRuntime(
     compilation.tempFile,
