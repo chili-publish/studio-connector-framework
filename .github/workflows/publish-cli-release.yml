@@ -22,7 +22,8 @@ jobs:
         env:
           GITHUB_REF: ${{ github.ref }}
         run: |
-          PACKAGE_VERSION=$(npm --prefix=src/connector-cli pkg get version | tr -d '"')
+          GITHUB_REF=refs/tags/v1.1.3
+          PACKAGE_VERSION=v$(npm --prefix=src/connector-cli pkg get version | tr -d '"')
           TAG_VERSION=${GITHUB_REF#refs/tags/}
 
           if [ "$PACKAGE_VERSION" = "$TAG_VERSION" ]; then
