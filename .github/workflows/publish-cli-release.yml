@@ -14,7 +14,7 @@ jobs:
         with:
           token: ${{ secrets.PACKAGE_SECRET }}
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://npm.pkg.github.com'
@@ -41,6 +41,12 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Build
         run: yarn workspace @chili-publish/connector-cli run build
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@chili-publish'
       - name: Dry publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
