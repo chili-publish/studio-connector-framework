@@ -1,0 +1,50 @@
+name: Publish CLI to NPM (Release)
+# on:
+#   release:
+#     types: [published]
+on: ['push']
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PACKAGE_SECRET }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+      - name: Check version correctness
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          PACKAGE_VERSION=$(npm pkg get version | tr -d '"')
+          TAG_VERSION=${GITHUB_REF#refs/tags/}
+
+          if [ "$PACKAGE_VERSION" = "$TAG_VERSION" ]; then
+              echo "The package.json version matches the tag version."
+          else
+              echo "The package.json version does not match the tag version."
+              echo "package.json version: $PACKAGE_VERSION"
+              echo "Tag version: $TAG_VERSION"
+              exit 1
+          fi
+      - name: Install dependencies
+        run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+      - name: Build
+        run: yarn workspace @chili-publish/connector-cli run build
+      - name: Dry publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        run: |
+          npm publish @chili-publish/connector-cli --dry-run --access=public
+      # - name: Publish
+      #   run: yarn publish src/connector-cli --access=public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

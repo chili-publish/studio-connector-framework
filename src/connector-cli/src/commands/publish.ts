@@ -136,8 +136,12 @@ export async function runPublish(
   // Retrieve capabilities and configurationOptions of the connector
   // const connectorInfo = await getInfoInternal(compilation);
 
-  // When we want to update existing connector instead of creating a new one
-  const connectorEndpointBaseUrl = `${baseUrl}/api/experimental/environment/${environment}/connectors`;
+  const connectorEndpointBaseUrl = new URL(baseUrl);
+  if (!connectorEndpointBaseUrl.pathname.endsWith('/')) {
+    connectorEndpointBaseUrl.pathname += '/';
+  }
+  connectorEndpointBaseUrl.pathname += `api/experimental/environment/${environment}/connectors`;
+
   const connectorPayload = {
     name,
     description,
@@ -170,7 +174,7 @@ export async function runPublish(
   if (connectorId) {
     publishResult = await updateExistingConnector(
       errorHandler,
-      connectorEndpointBaseUrl,
+      connectorEndpointBaseUrl.href,
       connectorId,
       `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
       connectorPayload
@@ -178,7 +182,7 @@ export async function runPublish(
   } else {
     publishResult = await createNewConnector(
       errorHandler,
-      connectorEndpointBaseUrl,
+      connectorEndpointBaseUrl.href,
       `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
       { ...connectorPayload, enabled: true }
     );
