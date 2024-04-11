@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ParameterInput } from './ParameterInput';
 import {
   DataModel,
@@ -10,24 +10,23 @@ import JsonObjectRenderer from './JsonObjectRenderer';
 import ArrayBufferImage from './ImageFromBuffer';
 
 export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
-  const [values, setValues] = useState<any>(undefined);
+  const [values, setValues] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<any>(undefined);
 
-  const handleInputChange = (
-    changedName: string,
-    parameter: Parameter,
-    newValue: any
-  ) => {
-    const value = newValue;
-    const name = changedName;
+  const handleInputChange = useCallback(
+    (changedName: string, parameter: Parameter, newValue: any) => {
+      const value = newValue;
+      const name = changedName;
 
-    parameter.value = value;
+      parameter.value = value;
 
-    setValues({
-      ...values,
-      [name]: value,
-    });
-  };
+      setValues((val) => ({
+        ...val,
+        [name]: value,
+      }));
+    },
+    []
+  );
 
   const normalizeValues = () => {
     // in the values we will find something like {"orderType.id": "dsfadf","orderType.name": "dsfaasdf","orderId": "dasfadsf"}
@@ -48,22 +47,12 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
       flattenedValues[parent][child] = value;
     }
 
-    // order flattenedValues by their occurance in dataModel.parameters
-    // this is needed because the dataModel.parameters are in the correct order
-    const sortedKeys = Object.keys(flattenedValues)
-      .filter(
-        (key) => dataModel.parameters.findIndex((p) => p.name === key) >= 0
-      )
-      .sort((a: any, b: any) => {
-        const aIndex = dataModel.parameters.findIndex((p) => p.name === a);
-        const bIndex = dataModel.parameters.findIndex((p) => p.name === b);
-        return aIndex - bIndex;
-      });
-
-    // now we can create an array of values in the correct order
-    // this is needed because the dataModel.invoke function expects the values in the correct order
-    const sortedValues = sortedKeys.map((key) => flattenedValues[key]);
-    return sortedValues;
+    // Extract from "values" only required params an pass them in
+    // appropriate order
+    return dataModel.parameters.reduce<unknown[]>((v, param, index) => {
+      v[index] = flattenedValues[param.name];
+      return v;
+    }, []);
   };
 
   const handleInvoke = async () => {

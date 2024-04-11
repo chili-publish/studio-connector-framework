@@ -33,6 +33,14 @@ export type SelectParameter = {
   options: string[] | undefined;
 };
 
+export type NumberParameter = {
+  value?: number | undefined;
+  name: string;
+  componentType: 'number';
+  min?: number;
+  max?: number;
+};
+
 export type DictionaryParameter = {
   value?: any | undefined;
   name: string;
@@ -44,11 +52,14 @@ export type Parameter =
   | SimpleParameter
   | ComplexParameter
   | SelectParameter
-  | DictionaryParameter;
+  | DictionaryParameter
+  | NumberParameter;
 
 export type ComplexParameter = {
   value?: any | undefined;
   name: string;
   componentType: 'text' | 'boolean' | 'complex';
-  complex: Array<SimpleParameter | DictionaryParameter> | undefined;
+  complex:
+    | Array<SimpleParameter | DictionaryParameter | NumberParameter>
+    | undefined;
 };

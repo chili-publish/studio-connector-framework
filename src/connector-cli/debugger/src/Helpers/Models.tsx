@@ -65,10 +65,6 @@ export const Models: {
           componentType: 'complex',
           complex: [
             {
-              name: 'token',
-              componentType: 'text',
-            },
-            {
               name: 'filter',
               componentType: 'list',
             },
@@ -78,6 +74,20 @@ export const Models: {
             },
             {
               name: 'pageSize',
+              componentType: 'number',
+              min: 0,
+              value: 0,
+            },
+            {
+              name: 'pageToken',
+              componentType: 'text',
+            },
+            {
+              name: 'sortOrder',
+              componentType: 'text',
+            },
+            {
+              name: 'sortBy',
               componentType: 'text',
             },
           ],
