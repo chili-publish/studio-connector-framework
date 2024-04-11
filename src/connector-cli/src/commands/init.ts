@@ -103,10 +103,14 @@ export async function runInit(
             throw new Error('Method not implemented.');
         }
         getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
-            throw new Error('Method not implemented.');
+            return []
         }
         getCapabilities(): Media.MediaConnectorCapabilities {
-            throw new Error('Method not implemented.');
+            return {
+              query: false,
+              detail: false,
+              filtering: false
+            }
         }
     }
     `;
