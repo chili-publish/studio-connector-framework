@@ -46,6 +46,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@chili-publish'
       - name: Publish
-        run: npm publish @chili-publish/connector-cli --access=public
+        run: yarn publish src/connector-cli --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
