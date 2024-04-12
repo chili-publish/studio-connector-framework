@@ -3,12 +3,10 @@ import { Connector, Media } from '@chili-publish/studio-connectors';
 interface AcquiaAssetV2 {
   id: string;
   filename: string;
-  thumbnails: {
-    '600px': { url: string };
-  };
   external_id: string;
   file_properties: {
     format: string;
+    format_type: string;
   };
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
@@ -19,21 +17,30 @@ interface GetAssetsResponse {
   items: Array<AcquiaAssetV2>;
 }
 
+interface AssetId {
+  id: string;
+  eid: string;
+  filename: string;
+  fileType: 'image' | 'pdf' | unknown;
+}
+
 class Converter {
   static assetToMedia(item: AcquiaAssetV2): Media.Media {
+    const assetId: AssetId = {
+      id: item.id,
+      eid: item.external_id,
+      filename: item.filename,
+      fileType: item.file_properties.format_type.toLowerCase(),
+    };
     return {
-      id: JSON.stringify({
-        id: item.id,
-        eid: item.external_id,
-        thumbnails: item.thumbnails,
-      }),
+      id: JSON.stringify(assetId),
       name: item.filename,
       // TODO: to be defined
       relativePath: '/',
       // 0 - file
       // 1 - folder
       type: 0,
-      extension: item.file_properties.format.toLowerCase(),
+      extension: Converter.formatToExtension(item.file_properties.format),
       metaData: Object.entries(item.metadata.fields).reduce(
         (metadata, [fieldKey, fieldValue]) => {
           metadata[fieldKey] = Array.isArray(fieldValue)
@@ -44,6 +51,14 @@ class Converter {
         {} as Connector.Dictionary
       ),
     };
+  }
+
+  static formatToExtension(format: string): string {
+    // Acquia identifies Pdf files with following format but we need file extenstion type
+    if (format === 'PdfDocument') {
+      return 'pdf';
+    }
+    return format.toLowerCase();
   }
 }
 
@@ -58,11 +73,10 @@ export default class AcquiaConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    const { id: assetId } = JSON.parse(id) as Pick<AcquiaAssetV2, 'id'>;
+    const { id: rawAssetId } = JSON.parse(id) as AssetId;
     let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
 
-    url =
-      url + `v2/assets/${assetId}?expand=thumbnails,metadata,file_properties`;
+    url = url + `v2/assets/${rawAssetId}?expand=metadata,file_properties`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
     });
@@ -111,7 +125,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
         finalQuery ? 'query=' + finalQuery + '&' : ''
       }offset=${startIndex * options.pageSize}&limit=${
         options.pageSize
-      }&expand=thumbnails,metadata,file_properties`;
+      }&expand=metadata,file_properties`;
 
     const t = await this.runtime.fetch(url, {
       method: 'GET',
@@ -142,17 +156,13 @@ export default class AcquiaConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { thumbnails } = JSON.parse(id) as Pick<AcquiaAssetV2, 'thumbnails'>;
-    // TODO: Quality should be taken based on "previewType" argument value
-    let thumbnail = thumbnails['600px'];
-
-    if (!thumbnail) {
-      // take the last property of thumbnails for given asset
-      const keys = Object.keys(thumbnails);
-      thumbnail = thumbnails[keys[keys.length - 1]];
+    // For backward compatibility with existing templates
+    let endpoint = this._tryThumbnail(id);
+    if (!endpoint) {
+      endpoint = this._tryPreviewUrl(id, { previewType, intent });
     }
 
-    const result = await this.runtime.fetch(thumbnail.url, {
+    const result = await this.runtime.fetch(endpoint, {
       method: 'GET',
     });
     if (!result.ok) {
@@ -181,5 +191,64 @@ export default class AcquiaConnector implements Media.MediaConnector {
   ensureTrailingSlash(arg0: string) {
     if (!arg0) return '';
     return arg0.endsWith('/') ? arg0 : arg0 + '/';
+  }
+
+  _tryThumbnail(id: string) {
+    const { thumbnails } = JSON.parse(id) as {
+      thumbnails: { '600px': { url: string } } | undefined;
+    };
+    let thumbnail = thumbnails?.['600px'];
+
+    if (!thumbnail && thumbnails) {
+      // take the last property of thumbnails for given asset
+      const keys = Object.keys(thumbnails);
+      thumbnail = thumbnails[keys[keys.length - 1]];
+    }
+    return thumbnail?.url;
+  }
+
+  _tryPreviewUrl(
+    id: string,
+    {
+      previewType,
+      intent,
+    }: { previewType: Media.DownloadType; intent: Media.DownloadIntent }
+  ) {
+    const { eid, filename, fileType } = JSON.parse(id) as AssetId;
+    let endpoint =
+      this.ensureTrailingSlash(this.runtime.options['PREVIEW_BASE_URL']) +
+      'content/' +
+      eid;
+
+    switch (previewType) {
+      case 'thumbnail': {
+        endpoint += '/jpeg' + '/' + filename + '?w=125';
+        break;
+      }
+      case 'mediumres': {
+        endpoint += '/png' + '/' + filename + '?w=1024';
+        break;
+      }
+      case 'highres':
+        endpoint += '/png' + '/' + filename;
+        break;
+      case 'fullres':
+        if (intent === 'print') {
+          if (fileType === 'image' || fileType === 'pdf') {
+            endpoint += '/original' + '/' + filename + '?download=true';
+          } else {
+            endpoint += '/png' + '/' + filename + '?w=1024';
+          }
+        } else {
+          endpoint += '/original' + '/' + filename + '?download=true';
+        }
+        break;
+      case 'original':
+        endpoint += '/original' + '/' + filename + '?download=true';
+        break;
+      default:
+        endpoint += '/png' + '/' + filename + '?w=1024';
+    }
+    return endpoint;
   }
 }
