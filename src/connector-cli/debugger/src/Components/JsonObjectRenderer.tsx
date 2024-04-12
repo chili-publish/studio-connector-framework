@@ -7,7 +7,7 @@ interface Props {
 const PrettyPrintJson: React.FC<any> = ({ data }) => {
   // (destructured) data could be a prop for example
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1">
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );

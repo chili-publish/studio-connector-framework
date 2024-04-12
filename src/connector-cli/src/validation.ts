@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { error } from './logger';
+import { error, verbose } from './logger';
 
 export function validateInputConnectorFile(connectorFile: string): boolean {
-  connectorFile = connectorFile || './connector.ts';
-  if (!connectorFile || fs.existsSync(connectorFile) === false) {
+  const pathToConnectorFile = path.resolve(connectorFile);
+  verbose(`Checking connector's file in path ${pathToConnectorFile}`);
+  if (fs.existsSync(pathToConnectorFile) === false) {
     error('connectorFile is required');
     return false;
   }
@@ -16,11 +17,12 @@ export function validateInputConnectorFile(connectorFile: string): boolean {
 }
 
 export function validateInputConnectorPath(connectorPath: string): boolean {
-  const connectorPckgJson = connectorPath
-    ? connectorPath + '/package.json'
-    : './package.json';
-  if (fs.existsSync(connectorPckgJson) === false) {
-    error('You need to specify a valid path to the connectors files');
+  const connectorPckgJson = connectorPath + '/package.json';
+  verbose(
+    `Checking connector's "package.json" in ${path.resolve(connectorPckgJson)}`
+  );
+  if (fs.existsSync(path.resolve(connectorPckgJson)) === false) {
+    error('You need to specify a valid path to the connector');
     return false;
   }
   return true;

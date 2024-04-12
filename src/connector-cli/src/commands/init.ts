@@ -47,14 +47,14 @@ export async function runInit(
     main: 'out/connector.js',
     dependencies: {
       typescript: '^5.2.2',
-      '@chili-publish/studio-connectors': '*',
+      '@chili-publish/studio-connectors': '^1',
     },
     scripts: {
       build: 'yarn connector-cli build',
       test: 'yarn connector-cli test -t tests.json && yarn connector-cli stress',
     },
     devDependencies: {
-      '@chili-publish/connector-cli': '*',
+      '@chili-publish/connector-cli': '^1',
     },
   };
 
@@ -67,16 +67,18 @@ export async function runInit(
   // 3. create tsconfig.json
   const tsConfig = {
     compilerOptions: {
-      target: 'es2017',
-      module: 'commonjs',
-      outDir: './out',
-      rootDir: './src',
-      strict: true,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      forceConsistentCasingInFileNames: true,
+      lib: ['ES2020'],
+      noEmitHelpers: true,
+      module: 'ES2020',
+      outDir: 'out',
+      target: 'ES2020',
+      moduleResolution: 'Node',
+      preserveConstEnums: false,
+      esModuleInterop: false,
+      removeComments: true,
+      declaration: false,
     },
-    include: ['src/**/*'],
+    include: ['connector.ts'],
     exclude: ['node_modules', 'out'],
   };
 
@@ -86,11 +88,8 @@ export async function runInit(
     JSON.stringify(tsConfig, null, 2)
   );
 
-  // 4. create src folder
-  fs.mkdirSync(path.join(resultDirectory, './src'));
-
-  // 5. create src/index.ts
-  const indexTs = `
+  // 4. create connector.ts
+  const connectorTs = `
     import { Connector, Media } from '@chili-publish/studio-connectors';
 
     export default class MyConnector implements Media.MediaConnector {
@@ -104,18 +103,22 @@ export async function runInit(
             throw new Error('Method not implemented.');
         }
         getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
-            throw new Error('Method not implemented.');
+            return []
         }
         getCapabilities(): Media.MediaConnectorCapabilities {
-            throw new Error('Method not implemented.');
+            return {
+              query: false,
+              detail: false,
+              filtering: false
+            }
         }
     }
     `;
 
-  info('Creating src/connector.ts');
-  fs.writeFileSync(path.join(resultDirectory, './src/connector.ts'), indexTs);
+  info('Creating ./connector.ts');
+  fs.writeFileSync(path.join(resultDirectory, './connector.ts'), connectorTs);
 
-  // 6. create tests.json
+  // 5. create tests.json
   const testsJson = `
     {
         "setup": {
@@ -149,7 +152,7 @@ export async function runInit(
   info('Creating tests.json');
   fs.writeFileSync(path.join(resultDirectory, './tests.json'), testsJson);
 
-  // 7. create .gitignore
+  // 6. create .gitignore
   const gitIgnore = `
     node_modules
     out

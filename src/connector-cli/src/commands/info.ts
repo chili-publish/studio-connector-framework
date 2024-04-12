@@ -1,12 +1,17 @@
-import { AnyCompilationResult, TempFileCompilationResult, compileToTempFile } from '../compiler/connectorCompiler';
-import { initRuntime, evalSync } from '../qjs/qjs';
+import { compileToTempFile } from '../compiler/connectorCompiler';
 import fs from 'fs';
+import path from 'path';
 import { validateInputConnectorFile } from '../validation';
-import { errorNoColor, info, startCommand, success, verbose } from '../logger';
+import { errorNoColor, info, startCommand, success } from '../logger';
+import { getInfoInternal } from '../utils/execution-util';
+
+interface GetInfoCommandOptions {
+  out?: string;
+}
 
 export async function runGetInfo(
   connectorFile: string,
-  options: any
+  options: GetInfoCommandOptions
 ): Promise<void> {
   startCommand('info', { connectorFile, options });
   if (!validateInputConnectorFile(connectorFile)) {
@@ -22,30 +27,13 @@ export async function runGetInfo(
     success('Build succeeded -> ' + compilation.tempFile);
   }
 
-  const properties = '\n'+ JSON.stringify(await getInfoInternal(compilation)) + '\n';
+  const properties =
+    '\n' + JSON.stringify(await getInfoInternal(compilation), null, 2) + '\n';
 
   if (options.out) {
-    fs.writeFileSync(options.out ? options.out : './out.json', properties);
-    info(`Written to ${options.out ? options.out : './out.json'}`);
+    fs.writeFileSync(path.resolve(options.out), properties);
+    info(`Written to ${options.out}`);
   } else {
     process.stdout.write(properties);
   }
-}
-
-export async function getInfoInternal(compilation: TempFileCompilationResult) {
-  const vm = await initRuntime(compilation.tempFile, {});
-
-  const capabilities = evalSync(vm, 'loadedConnector.getCapabilities()');
-  const configurationOptions = evalSync(
-    vm,
-    'loadedConnector.getConfigurationOptions();'
-  );
-
-  const properties = 
-      {
-        capabilities,
-        configurationOptions,
-      };
-
-  return properties;
 }

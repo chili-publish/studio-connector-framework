@@ -43,19 +43,28 @@ async function main() {
       './connector.ts'
     )
     .addOption(
-      new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
         .choices(['dev', 'prod'])
         .default('prod')
     )
     .requiredOption(
       '-e, --environment <environment>',
-      'Environment to use for publishing'
+      'Environment name to use for publishing, i.e. "cp-qeb-191"'
     )
-    .requiredOption('-b, --baseUrl <baseurl>', 'Endpoint to use for publishing')
-    .requiredOption('-n, --name <name>', 'Name to use for publishing')
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environemnt API endpoint to use for publishing, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '-n, --name <name>',
+      'Connector name to use for publishing, i.e. "MyConnector"'
+    )
     .option(
       '--connectorId [connectorId]',
-      'If provided, update of the existing connector is going to happen'
+      'If provided, command will update existing connector instead of creating a new one'
     )
     .option(
       '-ro, --runtimeOption [runtimeOptions...]',
@@ -91,8 +100,11 @@ async function main() {
       'Connector file (ts) to run debug server for',
       './connector.ts'
     )
-    .option('-p, --port <port>')
-    .option('-w, --watch')
+    .option('-p, --port [port]', 'Port to run debug application', '3300')
+    .option(
+      '-w, --watch',
+      "Enable watch mode to reload connector's code when changed"
+    )
     .action(runDebugger);
 
   program
@@ -112,7 +124,7 @@ async function main() {
       'Connector file (ts) to run test suite for',
       './connector.ts'
     )
-    .option('-t, --testFile <testFile>')
+    .requiredOption('-t, --testFile <testFile>')
     .action(runTests);
 
   program
@@ -148,7 +160,7 @@ async function main() {
     .argument(
       '[connectorPath]',
       'Path to connector where "package.json" is located',
-      './src/connector-name'
+      './'
     )
     .addOption(
       new Option('-t, --type <type>', 'Type of options that you want to list')

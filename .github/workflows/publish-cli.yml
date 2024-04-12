@@ -1,4 +1,4 @@
-name: Npm publish
+name: Publish CLI to NPM (Private)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
 
 jobs:
-  connector-cli-npm-publish:
+  publish:
     runs-on: ubuntu-latest
     strategy:
       matrix:
