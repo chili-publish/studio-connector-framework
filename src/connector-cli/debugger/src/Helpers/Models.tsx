@@ -73,10 +73,6 @@ export const Models: {
               componentType: 'text',
             },
             {
-              name: 'pageToken',
-              componentType: 'text',
-            },
-            {
               name: 'pageSize',
               componentType: 'number',
               min: 0,
