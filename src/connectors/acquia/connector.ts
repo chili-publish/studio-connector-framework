@@ -226,11 +226,11 @@ export default class AcquiaConnector implements Media.MediaConnector {
         break;
       }
       case 'mediumres': {
-        endpoint += '/png' + '/' + filename + '?w=1024';
+        endpoint += '/png' + '/' + filename + '?w=400';
         break;
       }
       case 'highres':
-        endpoint += '/png' + '/' + filename;
+        endpoint += '/png' + '/' + filename + '?w=1024';
         break;
       case 'fullres':
         if (intent === 'print') {
@@ -247,7 +247,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
         endpoint += '/original' + '/' + filename + '?download=true';
         break;
       default:
-        endpoint += '/png' + '/' + filename + '?w=1024';
+        endpoint += '/png' + '/' + filename + '?w=400';
     }
     return endpoint;
   }
