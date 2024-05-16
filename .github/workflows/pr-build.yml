@@ -1,0 +1,69 @@
+# workflow to run both yarn && yarn build in the repo when pr is created
+name: Build PR
+on: [pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      cli_changed: ${{ steps.git_diff.outputs.cli_changed }}
+    strategy:
+      matrix:
+        node-version: [18]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetches all history for all branches and tags
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
+      - name: Install dependencies
+        run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+      - name: Build CLI
+        run: yarn run build-cli
+      - name: Build connectors
+        run: yarn run build-connectors
+      - name: Check for changes in src/connector-cli/**/*
+        id: git_diff
+        run: |
+          git fetch --depth=1 origin main # Ensures the main branch is up to date
+          if git diff --name-only origin/main...HEAD | grep 'src/connector-cli/'
+          then
+            echo "::set-output name=cli_changed::true"
+          fi
+      - name: Prepare artifact
+        if: steps.git_diff.outputs.cli_changed == 'true'
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          path=upload/connector-cli/dev-packages/$PR_NUMBER
+          # Remove trailing "/merge" if it exists
+          path=${path%"/merge"}
+          ls -la
+          # Create the directory structure without appending "/merge" and place the tarball inside
+          mkdir -p "src/connector-cli/$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
+      - name: Upload CLI build artifacts
+        if: steps.git_diff.outputs.cli_changed == 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cli-build
+          path: src/connector-cli/upload/
+  deploy-cli:
+    needs: build
+    if: needs.build.outputs.cli_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build CLI artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: cli-build
+          path: connector-cli/upload/
+      - name: Upload CLI to Blob Storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch -d sdk -s connector-cli/upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true

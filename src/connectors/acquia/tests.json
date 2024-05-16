@@ -1,0 +1,50 @@
+{
+  "setup": {
+    "runtime_options": {
+      "ENV_API_URL": "https://api.test.com"
+    }
+  },
+  "tests": [
+    {
+      "id": "1",
+      "name": "Test 1",
+      "descr": "Test 1 Description",
+      "method": "query",
+      "arguments": {
+        "options": {},
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://chili-publish.com/",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "items": [
+                  {
+                    "id": "1",
+                    "name": "Test 1",
+                    "url": "./test1.pdf",
+                    "width": 100,
+                    "height": 100,
+                    "dpi": 300,
+                    "type": "pdf",
+                    "context": {
+                      "category": "test"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

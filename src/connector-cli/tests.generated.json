@@ -1,0 +1,43 @@
+{
+  "setup": {
+    "runtime_options": {}
+  },
+  "tests": [
+    {
+      "id": "default_query",
+      "description": "default_query",
+      "name": "default_query",
+      "method": "query",
+      "arguments": {
+        "queryOptions": {
+          "collection": null,
+          "filter": null,
+          "pageSize": 1,
+          "pageToken": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "api/rest/asset/search/query?start=0&max=1&sort=date-added-reversed&searchdocuments=false&options=preconversions,downloadUrl&metadata=&query=",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": [
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              "body": {}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

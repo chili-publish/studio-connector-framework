@@ -1,0 +1,8 @@
+node_modules
+out
+yarn-error.log
+publish
+.npmrc
+
+#Mac OS
+.DS_Store
