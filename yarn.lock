@@ -218,8 +218,8 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-contrib/studio-connector-contrib/src/connector-cli":
-  version "1.1.4"
+"@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
+  version "1.1.5"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -708,7 +708,7 @@ acorn@^8.4.1:
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.11.2.tgz"
   integrity sha512-nc0Axzp/0FILLEVsm4fNwLCwMttvhEI263QtVPQcbpfZZ3ts0hLsZGOpE6czNlid7CJ9MlyH8reXkpsf3YUY4w==
 
-"acquia@file:/home/runner/work/studio-connector-contrib/studio-connector-contrib/src/connectors/acquia":
+"acquia@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/acquia":
   version "1.0.0"
   resolved "file:src/connectors/acquia"
   dependencies:
@@ -1069,7 +1069,7 @@ csstype@^3.0.2:
   resolved "https://registry.npmjs.org/csstype/-/csstype-3.1.3.tgz"
   integrity sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==
 
-"dall-e@file:/home/runner/work/studio-connector-contrib/studio-connector-contrib/src/connectors/dall-e":
+"dall-e@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/dall-e":
   version "1.0.0"
   resolved "file:src/connectors/dall-e"
   dependencies:
@@ -2994,7 +2994,7 @@ vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-"vite-react-typescript-starter@file:/home/runner/work/studio-connector-contrib/studio-connector-contrib/src/connector-cli/debugger":
+"vite-react-typescript-starter@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli/debugger":
   version "0.0.0"
   resolved "file:src/connector-cli/debugger"
   dependencies:
