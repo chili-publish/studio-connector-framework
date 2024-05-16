@@ -233,14 +233,15 @@ export default class AcquiaConnector implements Media.MediaConnector {
         endpoint += '/png' + '/' + filename + '?w=1024';
         break;
       case 'fullres':
-        if (intent === 'print') {
-          if (fileType === 'image' || fileType === 'pdf') {
-            endpoint += '/original' + '/' + filename + '?download=true';
-          } else {
-            endpoint += '/png' + '/' + filename + '?w=1024';
-          }
+        if (
+          intent === 'print' &&
+          (fileType === 'image' || fileType === 'pdf')
+        ) {
+          // TODO: Uncomment after https://chilipublishintranet.atlassian.net/browse/GRAFX-3314
+          // endpoint += '/original' + '/' + filename + '?download=true';
+          endpoint += '/png' + '/' + filename;
         } else {
-          endpoint += '/original' + '/' + filename + '?download=true';
+          endpoint += '/png' + '/' + filename;
         }
         break;
       case 'original':
