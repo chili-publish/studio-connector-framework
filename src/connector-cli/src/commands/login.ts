@@ -1,5 +1,5 @@
 import { AccessToken, Authentication, getAuthService } from '../authentication';
-import { error, info, startCommand, verbose } from '../logger';
+import { startCommand, info, error, verbose } from '../core';
 
 interface LoginCommandOptions {
   tenant: 'dev' | 'prod';
@@ -41,14 +41,15 @@ async function executeDeviceFlowAndGenerateAccessToken(
     const deviceCode = await authService.getDeviceCode();
 
     info(
-      `Please visit ${deviceCode.verification_uri_complete} and enter the code ${deviceCode.user_code} to authenticate.`
+      `Please visit "${deviceCode.verification_uri_complete}" and enter the code ${deviceCode.user_code} to authenticate.`
     );
     info('Waiting for authentication... Ctrl+C to cancel.');
 
     let retryCount = 0;
 
     const retryPromise = new Promise<AccessToken>((resolve, reject) => {
-      const interval = setInterval(async () => {
+      let timeout: NodeJS.Timeout, interval: NodeJS.Timeout;
+      interval = setInterval(async () => {
         try {
           retryCount++;
           if (retryCount > deviceCode.expires_in / deviceCode.interval) {
@@ -60,11 +61,18 @@ async function executeDeviceFlowAndGenerateAccessToken(
           );
           const accessToken = await authService.getAccessToken(deviceCode);
           clearInterval(interval);
+          clearTimeout(timeout);
           resolve(accessToken);
         } catch (error) {
           // ignore
         }
       }, deviceCode.interval * 1000);
+
+      // Login timeout
+      timeout = setTimeout(() => {
+        clearInterval(interval);
+        reject(new Error('Authorization timeot!'));
+      }, 30 * 1000);
     });
 
     const accessToken = await retryPromise;
@@ -72,7 +80,7 @@ async function executeDeviceFlowAndGenerateAccessToken(
 
     return accessToken;
   } catch (e) {
-    error('CLI authentication failed.');
+    error(`CLI authentication failed. ${(e as Error).message}`);
     return undefined;
   }
 }

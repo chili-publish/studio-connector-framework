@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { verbose } from '../logger';
+import { verbose } from '../core';
 
 export async function compileToTempFile(
   connectorFile: string,

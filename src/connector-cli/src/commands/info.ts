@@ -1,9 +1,14 @@
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import fs from 'fs';
 import path from 'path';
-import { validateInputConnectorFile } from '../validation';
-import { errorNoColor, info, startCommand, success } from '../logger';
 import { getInfoInternal } from '../utils/execution-util';
+import {
+  startCommand,
+  validateInputConnectorFile,
+  errorNoColor,
+  success,
+  info,
+} from '../core';
 
 interface GetInfoCommandOptions {
   out?: string;

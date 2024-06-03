@@ -1,9 +1,17 @@
-import { validateInputConnectorPath } from '../validation';
-import path from 'path';
-import { info, startCommand } from '../logger';
+import {
+  startCommand,
+  validateInputConnectorPath,
+  info,
+  readConnectorConfig,
+} from '../core';
+
+export enum ListCommandTypeOption {
+  RuntimeOptions = 'runtime-options',
+  SupportedAuth = 'supported-auth',
+}
 
 interface ListCommandOptions {
-  type: 'runtime-options';
+  type: ListCommandTypeOption;
 }
 
 export async function runListOptions(
@@ -18,19 +26,16 @@ export async function runListOptions(
   // store all options as vars
   const { type } = options;
 
-  const dir = path.resolve(connectorPath);
-  const packageJson = require(path.join(dir, 'package.json'));
-
-  const { config } = packageJson;
+  const connectorConfig = readConnectorConfig(connectorPath);
 
   switch (type) {
     case 'runtime-options': {
-      if (!config?.options) {
+      if (Object.values(connectorConfig.options).length === 0) {
         info('No runtime options specified for this connector');
         return;
       }
 
-      const formattedOptinos = Object.entries(config.options).map(
+      const formattedOptinos = Object.entries(connectorConfig.options).map(
         ([key, value]) => {
           const required = value === null || value === undefined;
           return {
@@ -42,6 +47,24 @@ export async function runListOptions(
       );
 
       console.table(formattedOptinos, ['name', 'required', 'default']);
+      break;
+    }
+    case 'supported-auth': {
+      if (
+        !connectorConfig.supportedAuth ||
+        Object.values(connectorConfig.supportedAuth).length === 0
+      ) {
+        info('No supported authentication specified for this connector');
+        return;
+      }
+
+      const formattedOptinos = connectorConfig.supportedAuth.map((auth) => {
+        return {
+          type: auth,
+        };
+      });
+
+      console.table(formattedOptinos, ['type']);
       break;
     }
     default:

@@ -2,23 +2,23 @@ import * as fs from 'fs';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { compileToTempFile } from '../compiler/connectorCompiler';
-import {
-  validateInputConnectorFile,
-  validateRuntimeOptions,
-} from '../validation';
 import path from 'path';
 import dot from 'dot-object';
-import {
-  errorNoColor,
-  info,
-  success,
-  verbose,
-  warn,
-  error,
-  startCommand,
-} from '../logger';
 import { getAuthService } from '../authentication';
 import { getInstalledPackageVersion } from '../utils/version-reader';
+import {
+  startCommand,
+  validateInputConnectorFile,
+  warn,
+  validateRuntimeOptions,
+  error,
+  info,
+  errorNoColor,
+  success,
+  verbose,
+  httpErrorHandler,
+  readConnectorConfig,
+} from '../core';
 
 interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
@@ -41,7 +41,7 @@ interface ConnectorPayload {
   description: string;
   type: 'media' | 'fonts';
   version: string;
-  iconUrl: string;
+  iconUrl?: string;
   script: string;
   apiVersion: string;
   allowedDomains: Array<string>;
@@ -55,6 +55,11 @@ interface CreateConnectorPayload extends ConnectorPayload {
 }
 
 type UpdateConnectorPayload = ConnectorPayload;
+
+interface PublishRequestSuccessResult {
+  id: string;
+  name: string;
+}
 
 export async function runPublish(
   connectorFile: string,
@@ -92,10 +97,9 @@ export async function runPublish(
   // Read the package.json and extract the necessary info
   const packageJson = require(path.join(dir, 'package.json'));
 
-  const errors = validateRuntimeOptions(
-    runtimeOptions,
-    packageJson.config.options
-  );
+  const config = readConnectorConfig(path.dirname(path.resolve(connectorFile)));
+
+  const errors = validateRuntimeOptions(runtimeOptions, config.options);
   if (errors.length > 0) {
     error(
       `${JSON.stringify(
@@ -119,7 +123,7 @@ export async function runPublish(
     success('Build succeeded -> ' + compilation.tempFile);
   }
 
-  const { description, version, config } = packageJson;
+  const { description, version } = packageJson;
 
   // Read the connector.js file
   const { connectorJs, connectorTs } = {
@@ -156,24 +160,9 @@ export async function runPublish(
       forwardedHeaders: !!proxyOptions.forwardedHeaders,
     },
   };
-  const errorHandler = async (res: Response) => {
-    try {
-      const errorData = await res.json();
-      verbose(
-        'Error during publishing: \n' + JSON.stringify(errorData, null, 2)
-      );
-    } catch (e) {
-      verbose('Error during publishing: ' + res.statusText);
-    } finally {
-      error(
-        `Something went wrong during publishing of the connector "${name}". Run command with -v for more information`
-      );
-    }
-  };
-  let publishResult = false;
+  let publishResult: { id: string; name: string } | null = null;
   if (connectorId) {
     publishResult = await updateExistingConnector(
-      errorHandler,
       connectorEndpointBaseUrl.href,
       connectorId,
       `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
@@ -181,7 +170,6 @@ export async function runPublish(
     );
   } else {
     publishResult = await createNewConnector(
-      errorHandler,
       connectorEndpointBaseUrl.href,
       `${accessToken?.token.token_type} ${accessToken?.token.access_token}`,
       { ...connectorPayload, enabled: true }
@@ -189,16 +177,15 @@ export async function runPublish(
   }
 
   if (publishResult) {
-    success(`Connector "${name}" is deployed`);
+    success(`Connector "${name}" is deployed`, publishResult);
   }
 }
 
 async function createNewConnector(
-  err: (res: Response) => Promise<void>,
   connectorEndpointBaseUrl: string,
   token: string,
   creationPayload: CreateConnectorPayload
-): Promise<boolean> {
+): Promise<PublishRequestSuccessResult | null> {
   const createConnectorEndpoint = connectorEndpointBaseUrl;
 
   verbose(
@@ -221,22 +208,24 @@ async function createNewConnector(
   });
 
   if (res.status !== 201) {
-    await err(res);
-    return false;
+    await httpErrorHandler(res);
+    return null;
   }
 
   const data = await res.json();
   verbose(`Created connector payload:\n ${JSON.stringify(data, null, 2)}\n`);
-  return true;
+  return {
+    id: data.id,
+    name: data.name,
+  };
 }
 
 async function updateExistingConnector(
-  err: (res: Response) => Promise<void>,
   connectorEndpointBaseUrl: string,
   connectorId: string,
   token: string,
   payload: UpdateConnectorPayload
-): Promise<boolean> {
+): Promise<PublishRequestSuccessResult | null> {
   const getConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
 
   info(
@@ -254,7 +243,6 @@ async function updateExistingConnector(
     // When connector is not available we request the list and ask user to select connector for update
     const id = await getConnectorForUpdate(connectorEndpointBaseUrl, token);
     return updateExistingConnector(
-      err,
       connectorEndpointBaseUrl,
       id,
       token,
@@ -290,13 +278,16 @@ async function updateExistingConnector(
   });
 
   if (res.status !== 200) {
-    await err(res);
-    return false;
+    await httpErrorHandler(res);
+    return null;
   }
 
   const data = await res.json();
   verbose(`Updated connector payload: \n ${JSON.stringify(data, null, 2)}\n`);
-  return true;
+  return {
+    id: data.id,
+    name: data.name,
+  };
 }
 
 async function getConnectorForUpdate(

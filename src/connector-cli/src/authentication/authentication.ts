@@ -1,4 +1,4 @@
-import { errorNoColor, info, verbose, warn } from '../logger';
+import { errorNoColor, info, verbose, warn } from '../core';
 import { SessionStorage } from './session-storage';
 
 type AuthConfig = {

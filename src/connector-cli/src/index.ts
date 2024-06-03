@@ -8,14 +8,19 @@ import { runBuild } from './commands/build';
 import { runInit } from './commands/init';
 import info from '../package.json';
 import { runLogin } from './commands/login';
-import { runListOptions } from './commands/list-options';
+import { ListCommandTypeOption, runListOptions } from './commands/list-options';
+import { runSetAuth } from './commands/set-auth';
+import { withErrorHandlerAction } from './core';
+import { Tenant } from './core/types/types';
+import { SupportedAuth as AuthenticationType } from './core/types/gen-types';
+import { AuthenticationUsage } from './commands/set-auth/types';
 
-async function main() {
+function main() {
   program
     .name('connector-cli')
     .version(info.version)
     .description('Tool to manage connector test/publish process')
-    .option('-v, --verbose', 'Enable verbose logging');
+    .option('--verbose', 'Enable verbose logging');
 
   program
     .command('init')
@@ -47,8 +52,8 @@ async function main() {
         '-t, --tenant [tenant]',
         'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
       )
-        .choices(['dev', 'prod'])
-        .default('prod')
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
     )
     .requiredOption(
       '-e, --environment <environment>',
@@ -150,8 +155,8 @@ async function main() {
     .command('login')
     .addOption(
       new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')
-        .choices(['dev', 'prod'])
-        .default('prod')
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
     )
     .action(runLogin);
 
@@ -165,9 +170,58 @@ async function main() {
     .addOption(
       new Option('-t, --type <type>', 'Type of options that you want to list')
         .makeOptionMandatory(true)
-        .choices(['runtime-options'])
+        .choices(Object.values(ListCommandTypeOption))
     )
     .action(runListOptions);
+
+  program
+    .command('set-auth')
+    .argument(
+      '[connectorPath]',
+      'Path to connector where "package.json" is located',
+      './'
+    )
+    .addOption(
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
+    )
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment name to use for operation, i.e. "cp-qeb-191"'
+    )
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environemnt API endpoint to use for operation, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '--connectorId <connectorId>',
+      'Id of the connector to perform operation'
+    )
+    .addOption(
+      new Option(
+        '-au, --usage <usage>',
+        'Specify in which execution environment corresponding authentication going to be used'
+      )
+        .choices(Object.values(AuthenticationUsage))
+        .makeOptionMandatory(true)
+    )
+    .addOption(
+      new Option(
+        '-at, --type <type>',
+        'Specify the type of configured authentication'
+      )
+        .choices(Object.values(AuthenticationType))
+        .makeOptionMandatory(true)
+    )
+    .requiredOption(
+      '--auth-data-file <auth-data-file>',
+      'Path to the file (json or yaml) that contains authentication information for the specified "--type"'
+    )
+    .action(withErrorHandlerAction(runSetAuth));
 
   program.parse(process.argv);
 }
@@ -175,5 +229,5 @@ async function main() {
 try {
   main();
 } catch (error) {
-  console.log(error);
+  console.error(error);
 }

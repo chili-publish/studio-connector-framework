@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { error, startCommand } from '../logger';
-import { info } from 'console';
+import { startCommand, info, error } from '../core';
 
 interface InitCommandOptions {
   name: string;

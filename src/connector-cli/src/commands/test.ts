@@ -3,14 +3,20 @@ import {
   introspectTsFile,
 } from '../compiler/connectorCompiler';
 import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
-import { validateInputConnectorFile } from '../validation';
 import { assertResult } from '../tests/asserts';
 import { TestModels } from '../tests/testConfiguration';
 import Chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
-import { error, errorNoColor, info, startCommand, success } from '../logger';
 import chalk from 'chalk';
+import {
+  validateInputConnectorFile,
+  error,
+  errorNoColor,
+  info,
+  startCommand,
+  success,
+} from '../core';
 
 type DemoCommandOptions = unknown;
 

@@ -1,5 +1,5 @@
 import { program } from 'commander';
-import version from '../package.json';
+import version from '../../package.json';
 import chalk from 'chalk';
 
 const startTime = Date.now();
@@ -28,8 +28,11 @@ export function errorNoColor(arg0: string) {
   console.error(formatMessage(arg0));
 }
 
-export function success(arg0: string) {
-  console.info(chalk.green(formatMessage(arg0)));
+export function success(arg0: string, data: Record<string, unknown>): void;
+export function success(arg0: string): void;
+export function success(arg0: string, data?: Record<string, unknown>) {
+  const message = data ? `${arg0}\n${JSON.stringify(data)}` : arg0;
+  console.info(chalk.green(formatMessage(message)));
 }
 
 export function warn(arg0: string) {

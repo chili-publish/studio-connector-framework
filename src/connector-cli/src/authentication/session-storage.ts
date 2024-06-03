@@ -1,4 +1,4 @@
-import { LocalStorage } from '../localstorage';
+import { LocalStorage } from './localstorage';
 import { AccessToken } from './authentication';
 
 export type RegisteredAccessToken = {
@@ -14,7 +14,7 @@ export class SessionStorage {
   get accessToken(): RegisteredAccessToken | null {
     return JSON.parse(this.storage.getItem(this.sessionKey));
   }
-  set accessToken(value: RegisteredAccessToken) {
+  set accessToken(value: RegisteredAccessToken | null) {
     this.storage.setItem(this.sessionKey, JSON.stringify(value));
   }
 }

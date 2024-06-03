@@ -16,8 +16,8 @@
       "DEBUG": "0"
     },
     "supportedAuth": [
-      "OAuth2ResourceOwnerPassword",
-      "OAuth2AuthorizationCode"
+      "oAuth2ResourceOwnerPassword",
+      "oAuth2AuthorizationCode"
     ],
     "mappings": {}
   },

@@ -1,5 +1,4 @@
-import { Dictionary, QueryOptions } from "@chili-publish/studio-connectors/dist/Connector.Shared";
-import { DownloadIntent, DownloadType } from "@chili-publish/studio-connectors/dist/MediaConnector";
+import { Connector, Media } from '@chili-publish/studio-connectors';
 
 export module TestModels {
   export interface TestConfiguration {
@@ -28,14 +27,14 @@ export module TestModels {
 
   export interface DownloadArguments {
     id: string;
-    download_type: DownloadType;
-    download_intent: DownloadIntent;
-    context: Dictionary;
+    download_type: Media.DownloadType;
+    download_intent: Media.DownloadIntent;
+    context: Connector.Dictionary;
   }
 
   export interface QueryArguments {
-    queryOptions: QueryOptions;
-    context: Dictionary;
+    queryOptions: Connector.QueryOptions;
+    context: Connector.Dictionary;
   }
 
   export interface Asserts {
@@ -96,7 +95,11 @@ export module TestModels {
       return this;
     }
 
-    setArguments(callback: (args: TestModels.DownloadArguments | TestModels.QueryArguments) => void) {
+    setArguments(
+      callback: (
+        args: TestModels.DownloadArguments | TestModels.QueryArguments
+      ) => void
+    ) {
       callback(this.test.arguments);
       return this;
     }

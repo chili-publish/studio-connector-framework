@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$defs": {
+    "AuthorizatoinServerMetadata": {
+      "type": "object",
+      "properties": {
+        "authorization_endpoint": {
+          "type": "string"
+        },
+        "token_endpoint": {
+          "type": "string"
+        },
+        "token_endpoint_auth_methods_supported": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["client_secret_basic", "client_secret_post"]
+          }
+        }
+      },
+      "required": [
+        "authorization_endpoint",
+        "token_endpoint",
+        "token_endpoint_auth_methods_supported"
+      ],
+      "additionalProperties": false
+    },
+    "SpecCustomization": {
+      "type": "object",
+      "properties": {
+        "requestContentType": {
+          "type": "string",
+          "enum": ["applicationJson", "formUrlEncoded"]
+        },
+        "codeParameterName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "clientId": {
+      "type": "string"
+    },
+    "clientSecret": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "authorizationServerMetadata": {
+      "$ref": "#/$defs/AuthorizatoinServerMetadata"
+    },
+    "specCustomization": {
+      "$ref": "#/$defs/SpecCustomization"
+    }
+  },
+  "required": [
+    "name",
+    "clientId",
+    "clientSecret",
+    "authorizationServerMetadata"
+  ],
+  "additionalProperties": false
+}
