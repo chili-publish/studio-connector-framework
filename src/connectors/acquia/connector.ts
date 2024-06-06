@@ -186,6 +186,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
       detail: true,
       query: true,
       filtering: true,
+      metadata: true,
     };
   }
   ensureTrailingSlash(arg0: string) {

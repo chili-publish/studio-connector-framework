@@ -22,16 +22,19 @@ jobs:
           connector_changed=""
           for changed_file in ${{ steps.files.outputs.all }}
           do
-            dir=$(dirname "$changed_file")
-            if [[ "$dir" == src/connectors/* ]]
+            # Extract the first tree segments of the path (e.g., src/connectors/connector-name)
+            connector_path=$(echo "$changed_file" | cut -d'/' -f1-3)
+
+            if [[ "$connector_path" == src/connectors/* ]]
             then
-              connector_name=$(basename "$dir")
+              # Extract the connector name (e.g., connector-name)
+              connector_name=$(echo "$connector_path" | cut -d'/' -f3)
               if [[ -z "$connector_changed" ]]
               then
                 connector_changed="$connector_name"
-              elif [[ "$connector_changed" != "$dir" ]]
+              elif [[ "$connector_changed" != "$connector_name" ]]
               then
-                echo "Multiple connectors have been changed. Please change only one connector per PR."
+                echo "Multiple connectors have been changed: $connector_changed and $connector_name. Please change only one connector per PR."
                 exit 1
               fi
             fi

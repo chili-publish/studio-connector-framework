@@ -218,10 +218,10 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@chili-publish/studio-connectors@^1", "@chili-publish/studio-connectors@^1.3.3":
-  version "1.7.4"
-  resolved "https://registry.yarnpkg.com/@chili-publish/studio-connectors/-/studio-connectors-1.7.4.tgz#e968e2e79b666857ce96b238c1627eb9b875e107"
-  integrity sha512-RNTFHmzLgklX42+7r3lux6hHa7SxzkPzbuN1MrygAtmSCaEUIjh5oy8x8eUOIYB6FHLtQ5Ok+5Zl9Vg1BViMGQ==
+"@chili-publish/studio-connectors@^1", "@chili-publish/studio-connectors@^1.10.1":
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/@chili-publish/studio-connectors/-/studio-connectors-1.10.1.tgz#20f4891ed45b91b9070a27b405e6259f62a3d6ae"
+  integrity sha512-onu6Z26wmLxQgUMLGutMytYhMKbZngkjM/oXefqGNH4qWmWuzgeg6HN3L9FhWoNZMRPLLSPARNjwoPArUPacSA==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
