@@ -34,7 +34,7 @@ jobs:
                 connector_changed="$connector_name"
               elif [[ "$connector_changed" != "$connector_name" ]]
               then
-                echo "Multiple connectors have been changed. Please change only one connector per PR."
+                echo "Multiple connectors have been changed: $connector_changed and $connector_name. Please change only one connector per PR."
                 exit 1
               fi
             fi
@@ -48,7 +48,3 @@ jobs:
           labels: |
             ${{ steps.check_connector.outputs.connector }}
             connector-change
-
-
-
-            echo ".githubworkflow/workspace.test" | cut -d'/' -f1-3
