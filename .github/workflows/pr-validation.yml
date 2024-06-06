@@ -22,12 +22,9 @@ jobs:
           connector_changed=""
           for changed_file in ${{ steps.files.outputs.all }}
           do
-            # Skip if the changed file is the root yarn.lock
-            if [[ "$changed_file" == "yarn.lock" ]]; then
-              continue
-            fi
-            
             dir=$(dirname "$changed_file")
+            echo $dir
+            echo "!!!!"
             if [[ "$dir" == src/connectors/* ]]
             then
               connector_name=$(basename "$dir")
@@ -37,6 +34,7 @@ jobs:
               elif [[ "$connector_changed" != "$dir" ]]
               then
                 echo "Multiple connectors have been changed. Please change only one connector per PR."
+                echo 
                 exit 1
               fi
             fi
