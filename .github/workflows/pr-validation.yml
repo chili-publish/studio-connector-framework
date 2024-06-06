@@ -23,10 +23,10 @@ jobs:
           for changed_file in ${{ steps.files.outputs.all }}
           do
             dir=$(dirname "$changed_file")
-            echo $dir
-            echo "!!!!"
             if [[ "$dir" == src/connectors/* ]]
             then
+              echo $dir
+              echo "!!!!"
               connector_name=$(basename "$dir")
               if [[ -z "$connector_changed" ]]
               then
