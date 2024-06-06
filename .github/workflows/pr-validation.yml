@@ -22,6 +22,11 @@ jobs:
           connector_changed=""
           for changed_file in ${{ steps.files.outputs.all }}
           do
+            # Skip if the changed file is the root yarn.lock
+            if [[ "$changed_file" == "yarn.lock" ]]; then
+              continue
+            fi
+            
             dir=$(dirname "$changed_file")
             if [[ "$dir" == src/connectors/* ]]
             then
