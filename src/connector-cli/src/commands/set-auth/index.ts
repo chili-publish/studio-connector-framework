@@ -81,7 +81,7 @@ export async function runSetAuth(
       usage,
       ...authData,
     },
-    accessToken.token.access_token
+    `${accessToken?.token.token_type} ${accessToken?.token.access_token}`
   );
 
   success(`"${type}" authentication is applied.`, { id: connectorId });

@@ -24,6 +24,6 @@ export async function setAuthentication(
   });
 
   if (!res.ok) {
-    httpErrorHandler(res);
+    await httpErrorHandler(res);
   }
 }
