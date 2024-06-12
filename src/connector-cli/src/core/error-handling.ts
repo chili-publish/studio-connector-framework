@@ -26,7 +26,7 @@ export async function httpErrorHandler(res: Response) {
   } catch (e) {
     verbose('Error during HTTP request: ' + res.statusText);
   } finally {
-    error(
+    throw new ExecutionError(
       `Something went wrong during HTTP request. Execute command with --verbose flag for more information about error`
     );
   }

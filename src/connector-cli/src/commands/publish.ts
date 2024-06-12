@@ -19,6 +19,7 @@ import {
   httpErrorHandler,
   readConnectorConfig,
 } from '../core';
+import { ExecutionError } from '../core/types';
 
 interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
@@ -208,7 +209,15 @@ async function createNewConnector(
   });
 
   if (res.status !== 201) {
-    await httpErrorHandler(res);
+    try {
+      await httpErrorHandler(res);
+    } catch (e) {
+      if (e instanceof ExecutionError) {
+        error(e.message);
+      } else {
+        throw e;
+      }
+    }
     return null;
   }
 
@@ -278,7 +287,15 @@ async function updateExistingConnector(
   });
 
   if (res.status !== 200) {
-    await httpErrorHandler(res);
+    try {
+      await httpErrorHandler(res);
+    } catch (e) {
+      if (e instanceof ExecutionError) {
+        error(e.message);
+      } else {
+        throw e;
+      }
+    }
     return null;
   }
 
