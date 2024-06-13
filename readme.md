@@ -1,21 +1,27 @@
-# Connector Contrib
+# Connector Framework
 
-This repository is a placeholder for the soon-to-be connector repository.
+Repository represents a monorepo with `connector-cli` and marketplace `connectors`
 
-The idea is that we will host opensourced connectors in this repo and provide
-all tools and cicd to automate as much as possible in the process of publishing a new connector.
+## Connector-cli
 
-## root package.json
+In `src/connector-cli` we created a CLI tool that is able to run a connector in a standalone mode. This isolated runtime simplifies the development lifecycle. It offers a suite of commands to initialize projects, build and test code, and deploy your connectors with ease.
 
-Inspect the root package.json to see how to build / setup
+See the [readme](src/connector-cli/readme.md) of the package for more info.
 
-## connector-cli
+## Connectors
 
-In `src/connector-cli` we created a cli tool that is able to run a connector in standalone mode. This isolated runtime gives us the opportunity to run tests, while mocking network requests, etc.
+In `src/connectors` we collect all `marketplace` connectors that we or our partners implemented
 
-See the readme in the connector-cli folder for more info.
- 
-### Updating / adding a connector:
+## Development setup
+
+```sh
+yarn # to install dependencies
+yarn run build-cli # to build local version of the CLI
+```
+
+NOTE: Inspect root package.json for more commands to run
+
+## Updating / adding a connector:
 
 - Open PR
 

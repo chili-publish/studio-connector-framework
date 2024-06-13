@@ -1,12 +1,18 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { validateInputConnectorFile } from '../validation';
 import {
   compileToTempFile,
   introspectTsFile,
 } from '../compiler/connectorCompiler';
-import { errorNoColor, info, startCommand, success, verbose } from '../logger';
+import {
+  startCommand,
+  validateInputConnectorFile,
+  info,
+  errorNoColor,
+  success,
+  verbose,
+} from '../core';
 
 interface DebuggerCommandOptions {
   port: number;

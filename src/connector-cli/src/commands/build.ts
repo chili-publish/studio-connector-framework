@@ -1,8 +1,14 @@
 import * as fs from 'fs';
 import { compile } from '../compiler/connectorCompiler';
 import path from 'path';
-import { validateInputConnectorFile } from '../validation';
-import { errorNoColor, info, startCommand, success, verbose } from '../logger';
+import {
+  startCommand,
+  validateInputConnectorFile,
+  verbose,
+  errorNoColor,
+  success,
+  info,
+} from '../core';
 
 interface BuildCommandOptions {
   watch?: boolean;

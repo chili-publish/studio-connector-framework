@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { error } from '../logger';
+import { error } from '../core';
 
 export function getInstalledPackageVersion(
   packageName: string,

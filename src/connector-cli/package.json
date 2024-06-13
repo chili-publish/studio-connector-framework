@@ -16,6 +16,7 @@
     "commander": "^12.0.0",
     "dot-object": "^2.1.4",
     "express": "^4.19.2",
+    "js-yaml": "^4.1.0",
     "open": "^9.1.0",
     "prettier": "^3.0.3",
     "quickjs-emscripten": "^0.23.0",
@@ -26,15 +27,18 @@
     "@types/handlebars": "^4.1.0",
     "@types/node": "^20.8.6",
     "@types/dot-object": "^2.1.6",
+    "@types/js-yaml": "^4.0.9",
     "copyfiles": "2.4.1",
     "prettier": "^3.0.3",
     "ts-node": "^10.9.1",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "quicktype": "23.0.0"
   },
   "scripts": {
     "build": "rimraf ./out &&  yarn run tsc && yarn --cwd ./debugger build && copyfiles -Vf ./debugger/dist/assets/* ./out/",
     "debugger": "yarn run ts-node src/index.ts login && yarn run ts-node src/index.ts publish ../connectors/acquia/connector.ts",
     "update": "yarn build && npm version patch && yarn pack",
-    "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'"
+    "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'",
+    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json ./resources/schemas/*.json -o src/core/types/gen-types.ts"
   }
 }

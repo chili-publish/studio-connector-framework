@@ -1,7 +1,13 @@
-import { initRuntime, evalSync, evalAsync } from '../qjs/qjs';
-import { validateInputConnectorFile } from '../validation';
+import { initRuntime, evalAsync } from '../qjs/qjs';
 import { compileToTempFile } from '../compiler/connectorCompiler';
-import { errorNoColor, info, startCommand, success, warn } from '../logger';
+import {
+  startCommand,
+  validateInputConnectorFile,
+  errorNoColor,
+  success,
+  info,
+  warn,
+} from '../core';
 
 export async function runStressTest(
   connectorFile: string,
