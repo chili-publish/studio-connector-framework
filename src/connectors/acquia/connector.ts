@@ -74,14 +74,17 @@ export default class AcquiaConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     const { id: rawAssetId } = JSON.parse(id) as AssetId;
-    let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
+    let url = this.ensureTrailingSlash(
+      this.runtime.options['BASE_URL'] as string
+    );
 
     url = url + `v2/assets/${rawAssetId}?expand=metadata,file_properties`;
     const t = await this.runtime.fetch(url, {
       method: 'GET',
     });
     if (!t.ok) {
-      throw new Error(
+      throw new ConnectorHttpError(
+        t.status,
         `Acquia DAM: Detail failed ${t.status} - ${t.statusText}`
       );
     }
@@ -99,7 +102,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
     // TODO: implement the options.sort and append to query in a proper way
 
-    let url = this.ensureTrailingSlash(this.runtime.options['BASE_URL']);
+    let url = this.ensureTrailingSlash(
+      this.runtime.options['BASE_URL'] as string
+    );
 
     // mediaId will be used for filtering, so we need to parse it.
     // filtering could also be just a string, so we need to handle that as well (try/catch)
@@ -132,7 +137,10 @@ export default class AcquiaConnector implements Media.MediaConnector {
     });
 
     if (!t.ok) {
-      throw new Error(`Acquia DAM: Query failed ${t.status} - ${t.statusText}`);
+      throw new ConnectorHttpError(
+        t.status,
+        `Acquia DAM: Query failed ${t.status} - ${t.statusText}`
+      );
     }
 
     const data: GetAssetsResponse = JSON.parse(t.text);
@@ -166,7 +174,8 @@ export default class AcquiaConnector implements Media.MediaConnector {
       method: 'GET',
     });
     if (!result.ok) {
-      throw new Error(
+      throw new ConnectorHttpError(
+        result.status,
         `Acquia DAM: Download failed ${result.status} - ${result.statusText}`
       );
     }
@@ -217,7 +226,9 @@ export default class AcquiaConnector implements Media.MediaConnector {
   ) {
     const { eid, filename, fileType } = JSON.parse(id) as AssetId;
     let endpoint =
-      this.ensureTrailingSlash(this.runtime.options['PREVIEW_BASE_URL']) +
+      this.ensureTrailingSlash(
+        this.runtime.options['PREVIEW_BASE_URL'] as string
+      ) +
       'content/' +
       eid;
 
