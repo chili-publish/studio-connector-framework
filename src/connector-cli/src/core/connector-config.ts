@@ -3,11 +3,12 @@ import fs from 'fs';
 import { verbose } from './logger';
 import { Convert, ExecutionError, SupportedAuth } from './types';
 
-export function readConnectorConfig(connectorDirectoryPath: string) {
-  const packageJsonPath = path.join(
-    path.resolve(connectorDirectoryPath),
-    'package.json'
-  );
+export function readConnectorConfig(connectorDirectoryPathOrFile: string) {
+  let dir = connectorDirectoryPathOrFile;
+  if (connectorDirectoryPathOrFile.endsWith('.ts')) {
+    dir = path.dirname(path.resolve(connectorDirectoryPathOrFile));
+  }
+  const packageJsonPath = path.join(path.resolve(dir), 'package.json');
   verbose(`Reading connector configuration from ${packageJsonPath}`);
   if (!fs.existsSync(packageJsonPath)) {
     throw new ExecutionError(

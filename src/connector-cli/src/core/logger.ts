@@ -45,7 +45,7 @@ export function error(arg0: string) {
 
 export function verbose(arg0: string) {
   if (verboseEnabled) {
-    info(formatMessage(arg0));
+    info(arg0);
   }
 }
 

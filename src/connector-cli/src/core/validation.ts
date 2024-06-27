@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { error, verbose } from './logger';
+import { ExecutionError } from './types';
 
 export function validateInputConnectorFile(connectorFile: string): boolean {
   const pathToConnectorFile = path.resolve(connectorFile);
@@ -50,5 +51,13 @@ export function validateRuntimeOptions(
       return errors;
     }, errMessages);
   }
-  return errMessages;
+  if (errMessages.length > 0) {
+    throw new ExecutionError(
+      `${JSON.stringify(
+        errMessages,
+        null,
+        2
+      )}.\n To see all available options execute 'connector-cli pathToConnector list-options --type="runtime-options"'`
+    );
+  }
 }
