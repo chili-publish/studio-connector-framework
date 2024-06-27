@@ -5,7 +5,7 @@ Tarball can be downloaded from https://cdnepgrafxstudiodev.azureedge.net/sdk/con
 To use in local project, change package.json to use local tarball
 
 ```json
-"dependencies": {
+"devDependencies": {
     "@chili-publish/connector-cli": "https://cdnepgrafxstudiodev.azureedge.net/sdk/connector-cli/dev-packages/<<ISSUE_NUMBER>>/connector-cli.tgz"
 }
 ```
