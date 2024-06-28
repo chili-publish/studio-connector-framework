@@ -85,9 +85,9 @@ function main() {
     )
     .requiredOption(
       '--proxyOption.allowedDomains <allowedDomains...>',
-      'Specify array of hosts (without request schema) to which connector can make a request.' +
-        ' You can use "*" for dynamic part of URL.' +
-        ' Example: --proxyOption.allowedDomains "main-domain.com", --proxyOption.allowedDomains "*.sub-domain.com"'
+      'Specify an array of hosts (without the request schema) that the connector can make request to.' +
+        ' You can use "*" to denote dynamic parts of the URL.' +
+        ' Example usage: --proxyOption.allowedDomains "main-domain.com", --proxyOption.allowedDomains "*.sub-domain.com"'
     )
     .option('--proxyOption.forwardedHeaders')
     .action(withErrorHandlerAction(runPublish));

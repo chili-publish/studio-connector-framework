@@ -14,7 +14,7 @@ export function validateAllowedDomains(domains: Array<string>) {
   if (allDomains.length > 0) {
     verbose('Incorrect domains: ' + JSON.stringify(allDomains));
     throw new ExecutionError(
-      'Some of "allowedDomains" uses "*" as value. This is prohibited. You can specify "*" only as part of host. Execute command with --verbose for more information or use -h for command for details about arguments'
+      'Some "allowedDomains" use "*" as the entire value, which is prohibited. You can only use "*" as part of a host. Execute command with --verbose for more information or use -h for command for details about arguments'
     );
   }
   const useProtocol = domains.filter(
@@ -23,7 +23,7 @@ export function validateAllowedDomains(domains: Array<string>) {
   if (useProtocol.length > 0) {
     verbose('Incorrect domains: ' + JSON.stringify(useProtocol));
     throw new ExecutionError(
-      'Some of "allowedDomains" starts from request schema ("http://" or "https://") in their values. You should specify host without it. Execute command with --verbose for more information or use -h for command for details about arguments'
+      'Some "allowedDomains" start with a request schema ("http://" or "https://"), which is not allowed. You should specify the host without it. Execute the command with --verbose for more information or use -h for command for details about arguments.'
     );
   }
 }

@@ -68,7 +68,7 @@ export async function runPublish(
   const { description, version, apiVersion } =
     extractPackageInfo(connectorFile);
 
-  info('Compile connector...');
+  info('Compiling connector...');
 
   const { connectorJs } = await compileConnector(connectorFile);
 
