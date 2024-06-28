@@ -1,8 +1,6 @@
-import { getAuthService, RegisteredAccessToken } from '../../authentication';
 import {
   startCommand,
   validateInputConnectorPath,
-  warn,
   success,
   info,
   readConnectorConfig,
@@ -19,6 +17,7 @@ import {
   SupportedAuth as AuthenticationType,
 } from '../../core/types';
 import { AuthenticationUsage } from './types';
+import { readAccessToken } from '../../core/read-access-token';
 
 interface SetAuthenticationCommandOptions {
   tenant: Tenant;
@@ -39,15 +38,7 @@ export async function runSetAuth(
     return;
   }
 
-  const authService = getAuthService(options.tenant);
-
-  if (!(await authService.isAuthenticated())) {
-    warn('Please login first by "connector-cli login" command');
-    return;
-  }
-
-  const accessToken = authService.sessionStorage
-    .accessToken as RegisteredAccessToken;
+  const accessToken = await readAccessToken(options.tenant);
 
   // store all options as vars
   const { baseUrl, environment, connectorId, usage, type, authDataFile } =
@@ -81,7 +72,7 @@ export async function runSetAuth(
       usage,
       ...authData,
     },
-    `${accessToken.token.token_type} ${accessToken.token.access_token}`
+    accessToken
   );
 
   success(`"${type}" authentication is applied.`, { id: connectorId });

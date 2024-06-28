@@ -18,8 +18,8 @@ import { AuthenticationUsage } from './commands/set-auth/types';
 function main() {
   program
     .name('connector-cli')
-    .version(info.version)
-    .description('Tool to manage connector test/publish process')
+    .version(info.version, '-v, --version')
+    .description('Tool to manage connector build, test and deploy process')
     .option('--verbose', 'Enable verbose logging');
 
   program
@@ -83,9 +83,14 @@ function main() {
         return previous;
       }
     )
-    .option('--proxyOption.allowedDomains [allowedDomains...]')
+    .requiredOption(
+      '--proxyOption.allowedDomains <allowedDomains...>',
+      'Specify an array of hosts (without the request schema) that the connector can make request to.' +
+        ' You can use "*" to denote dynamic parts of the URL.' +
+        ' Example usage: --proxyOption.allowedDomains "main-domain.com", --proxyOption.allowedDomains "*.sub-domain.com"'
+    )
     .option('--proxyOption.forwardedHeaders')
-    .action(runPublish);
+    .action(withErrorHandlerAction(runPublish));
 
   program
     .command('build')

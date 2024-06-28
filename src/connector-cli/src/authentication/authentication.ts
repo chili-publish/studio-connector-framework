@@ -1,4 +1,4 @@
-import { errorNoColor, info, verbose, warn } from '../core';
+import { errorNoColor, info, success, verbose, warn } from '../core';
 import { SessionStorage } from './session-storage';
 
 type AuthConfig = {
@@ -25,6 +25,7 @@ export class Authentication {
   ) {}
 
   async isAuthenticated() {
+    info('Checking authentication information...');
     const accessToken = this.sessionStorage.accessToken;
     // if no access token, return false
     if (!accessToken) {
@@ -38,24 +39,24 @@ export class Authentication {
     );
     // if access token is expired, return false
     if (!expiryDate || expiryDate < new Date()) {
-      warn('Access token expired.');
+      warn('Access token is expired.');
       return false;
     }
 
     // try to get the user info
     var userInfo = await fetch(this.config.baseUrl + '/userinfo', {
       headers: {
-        Authorization: `Bearer ${accessToken.token.access_token}`,
+        Authorization: `${accessToken.token.token_type} ${accessToken.token.access_token}`,
       },
     });
 
     // if user info fails, return false
     if (userInfo.status !== 200) {
-      warn('Failed to get user info.');
+      warn('Failed to get the user info.');
       return false;
     }
 
-    info('User is authenticated => ' + (await userInfo.json()).name);
+    success('User is authenticated => ' + (await userInfo.json()).name);
 
     return true;
   }
