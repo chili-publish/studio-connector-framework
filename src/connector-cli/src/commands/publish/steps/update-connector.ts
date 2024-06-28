@@ -81,16 +81,20 @@ async function getConnectorForUpdate(
   token: string
 ): Promise<string> {
   info(`Requesting the list of available connectors...`);
-  const connectorsRes = await fetch(connectorEndpointBaseUrl, {
+  const res = await fetch(connectorEndpointBaseUrl, {
     headers: {
       Authorization: token,
     },
   });
 
+  if (!res.ok) {
+    await httpErrorHandler(res);
+  }
+
   info(
     `Received the list of available connectors. Please select the one you want to update:`
   );
-  const { data: connectors } = await connectorsRes.json();
+  const { data: connectors } = await res.json();
   console.table(connectors, ['id', 'name']);
 
   const rl = readline.createInterface({ input, output });
