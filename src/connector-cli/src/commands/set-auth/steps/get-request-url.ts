@@ -10,7 +10,7 @@ export function getRequestUrl(
   if (!connectorEndpointBaseUrl.pathname.endsWith('/')) {
     connectorEndpointBaseUrl.pathname += '/';
   }
-  connectorEndpointBaseUrl.pathname += `api/experimental/environment/${environment}/connectors/${connectorId}`;
+  connectorEndpointBaseUrl.pathname += `api/v1/environment/${environment}/connectors/${connectorId}`;
   switch (type) {
     case SupportedAuth.Chili: {
       connectorEndpointBaseUrl.pathname += '/auth/chili';

@@ -72,7 +72,7 @@ async function executeDeviceFlowAndGenerateAccessToken(
       timeout = setTimeout(() => {
         clearInterval(interval);
         reject(new Error('Authorization timeot!'));
-      }, 30 * 1000);
+      }, 60 * 1000);
     });
 
     const accessToken = await retryPromise;
