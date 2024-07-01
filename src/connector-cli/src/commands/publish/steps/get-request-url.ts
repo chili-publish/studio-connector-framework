@@ -3,6 +3,6 @@ export function getRequestUrl(baseUrl: string, environment: string) {
   if (!connectorEndpointBaseUrl.pathname.endsWith('/')) {
     connectorEndpointBaseUrl.pathname += '/';
   }
-  connectorEndpointBaseUrl.pathname += `api/experimental/environment/${environment}/connectors`;
+  connectorEndpointBaseUrl.pathname += `api/v1/environment/${environment}/connectors`;
   return connectorEndpointBaseUrl.toString();
 }
