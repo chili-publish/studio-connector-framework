@@ -2,6 +2,7 @@ import { Option, program } from 'commander';
 import info from '../package.json';
 import { runBuild } from './commands/build';
 import { runDebugger } from './commands/debug';
+import { runDelete } from './commands/delete';
 import { runGetInfo } from './commands/info';
 import { runInit } from './commands/init';
 import { runLogin } from './commands/login';
@@ -228,6 +229,31 @@ function main() {
       'Path to the file (json or yaml) that contains authentication information for the specified "--type"'
     )
     .action(withErrorHandlerAction(runSetAuth));
+
+  program
+    .command('delete')
+    .description('Remove the published connector from environment')
+    .addOption(
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
+    )
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment name to use for operation, i.e. "cp-qeb-191"'
+    )
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environemnt API endpoint to use for operation, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '--connectorId <connectorId>',
+      'Id of the connector to perform operation'
+    )
+    .action(withErrorHandlerAction(runDelete));
 
   program.parse(process.argv);
 }

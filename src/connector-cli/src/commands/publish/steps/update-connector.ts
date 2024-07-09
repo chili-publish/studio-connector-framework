@@ -1,5 +1,4 @@
-import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
+import { selectAvailableConnector } from '../../../common/select-available-connector';
 import { httpErrorHandler, info, success, verbose, warn } from '../../../core';
 import { UpdateConnectorPayload } from '../types';
 
@@ -25,7 +24,7 @@ export async function updateExistingConnector(
       `Connector with id ${connectorId} doesn't exist or you don't have permission to update it`
     );
     // When connector is not available we request the list and ask user to select connector for update
-    const id = await getConnectorForUpdate(connectorEndpointBaseUrl, token);
+    const id = await selectAvailableConnector(connectorEndpointBaseUrl, token);
     return updateExistingConnector(
       connectorEndpointBaseUrl,
       id,
@@ -74,48 +73,4 @@ export async function updateExistingConnector(
   };
 
   success(`Connector "${result.name}" is updated`, result);
-}
-
-async function getConnectorForUpdate(
-  connectorEndpointBaseUrl: string,
-  token: string
-): Promise<string> {
-  info(`Requesting the list of available connectors...`);
-  const res = await fetch(connectorEndpointBaseUrl, {
-    headers: {
-      Authorization: token,
-    },
-  });
-
-  if (!res.ok) {
-    await httpErrorHandler(res);
-  }
-
-  info(
-    `Received the list of available connectors. Please select the one you want to update:`
-  );
-  const { data: connectors } = await res.json();
-  console.table(connectors, ['id', 'name']);
-
-  const rl = readline.createInterface({ input, output });
-
-  let connectorIndex;
-
-  while (true) {
-    // Use the question method to get the user input
-    const index = Number(
-      await rl.question('Select the index of the connector to update ')
-    );
-    // Use the validation function to check the input
-    if (isNaN(index) || !connectors[index]) {
-      warn(`Index should be a number between 0 and ${connectors.length - 1}`);
-    } else {
-      connectorIndex = index;
-      break;
-    }
-  }
-
-  rl.close();
-
-  return connectors[connectorIndex].id;
 }

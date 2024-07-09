@@ -1,4 +1,5 @@
 import dot from 'dot-object';
+import { buildRequestUrl } from '../../common/build-request-url';
 import {
   info,
   readConnectorConfig,
@@ -10,7 +11,6 @@ import { getConnectorProjectFileInfo } from '../../utils/connector-project';
 import { compileConnector } from './steps/compile';
 import { createNewConnector } from './steps/create-connector';
 import { extractPackageInfo } from './steps/extract-package-info';
-import { getRequestUrl } from './steps/get-request-url';
 import { updateExistingConnector } from './steps/update-connector';
 import { validateAllowedDomains } from './steps/validate-allowed-domains';
 import { ProxyOptions } from './types';
@@ -77,7 +77,7 @@ export async function runPublish(
   // const connectorInfo = await getInfoInternal(compilation);
 
   info('Build full request URL...');
-  const requestUrl = getRequestUrl(baseUrl, environment);
+  const requestUrl = buildRequestUrl(baseUrl, environment);
 
   const connectorPayload = {
     name,
@@ -94,7 +94,7 @@ export async function runPublish(
     },
   };
 
-  const result = connectorId
+  connectorId
     ? await updateExistingConnector(
         requestUrl,
         connectorId,
