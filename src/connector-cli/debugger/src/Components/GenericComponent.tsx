@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
-import { ParameterInput } from './ParameterInput';
 import {
   DataModel,
   InvokableDataModel,
   Parameter,
   SettableDataModel,
 } from '../Helpers/DataModel';
-import JsonObjectRenderer from './JsonObjectRenderer';
 import ArrayBufferImage from './ImageFromBuffer';
+import JsonObjectRenderer from './JsonObjectRenderer';
+import { ParameterInput } from './ParameterInput';
 
 export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
   const [values, setValues] = useState<Record<string, unknown>>({});
@@ -62,7 +62,6 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
         normalizedValues
       );
       setResult(result);
-      console.log('result', result);
     } catch (error) {
       setResult({
         message: `failed to invoke ${

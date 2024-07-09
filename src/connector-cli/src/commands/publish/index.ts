@@ -1,20 +1,19 @@
 import dot from 'dot-object';
 import {
-  startCommand,
-  validateInputConnectorFile,
-  validateRuntimeOptions,
   info,
-  success,
   readConnectorConfig,
+  startCommand,
+  validateRuntimeOptions,
 } from '../../core';
-import { compileConnector } from './steps/compile';
-import { getRequestUrl } from './steps/get-request-url';
-import { createNewConnector } from './steps/create-connector';
-import { updateExistingConnector } from './steps/update-connector';
-import { ProxyOptions } from './types';
-import { extractPackageInfo } from './steps/extract-package-info';
 import { readAccessToken } from '../../core/read-access-token';
+import { getConnectorProjectFileInfo } from '../../utils/connector-project';
+import { compileConnector } from './steps/compile';
+import { createNewConnector } from './steps/create-connector';
+import { extractPackageInfo } from './steps/extract-package-info';
+import { getRequestUrl } from './steps/get-request-url';
+import { updateExistingConnector } from './steps/update-connector';
 import { validateAllowedDomains } from './steps/validate-allowed-domains';
+import { ProxyOptions } from './types';
 
 interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
@@ -28,13 +27,10 @@ interface PublishCommandOptions {
 }
 
 export async function runPublish(
-  connectorFile: string,
+  projectPath: string,
   options: PublishCommandOptions
 ): Promise<void> {
-  startCommand('publish', { connectorFile, options });
-  if (!validateInputConnectorFile(connectorFile)) {
-    throw new Error('Invalid connector file path: ' + connectorFile);
-  }
+  startCommand('publish', { projectPath, options });
 
   const accessToken = await readAccessToken(options.tenant);
 
@@ -53,7 +49,10 @@ export async function runPublish(
     dot.object(rawProxyOptions) as any
   )?.['proxyOption'] ?? { allowedDomains: [] };
 
-  const config = readConnectorConfig(connectorFile);
+  const { connectorFile, projectDir, packageJson } =
+    getConnectorProjectFileInfo(projectPath);
+
+  const config = readConnectorConfig(packageJson);
 
   info('Validating allowed domains option...');
 
@@ -65,8 +64,10 @@ export async function runPublish(
 
   info('Extracting package information...');
 
-  const { description, version, apiVersion } =
-    extractPackageInfo(connectorFile);
+  const { description, version, apiVersion } = extractPackageInfo(
+    projectDir,
+    packageJson
+  );
 
   info('Compiling connector...');
 

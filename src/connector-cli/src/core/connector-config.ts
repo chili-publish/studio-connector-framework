@@ -1,20 +1,7 @@
-import path from 'path';
-import fs from 'fs';
 import { verbose } from './logger';
 import { Convert, ExecutionError, SupportedAuth } from './types';
 
-export function readConnectorConfig(connectorDirectoryPathOrFile: string) {
-  let dir = connectorDirectoryPathOrFile;
-  if (connectorDirectoryPathOrFile.endsWith('.ts')) {
-    dir = path.dirname(path.resolve(connectorDirectoryPathOrFile));
-  }
-  const packageJsonPath = path.join(path.resolve(dir), 'package.json');
-  verbose(`Reading connector configuration from ${packageJsonPath}`);
-  if (!fs.existsSync(packageJsonPath)) {
-    throw new ExecutionError(
-      `Specified connector directory ${packageJsonPath} doesn't contain "package.json"`
-    );
-  }
+export function readConnectorConfig(packageJsonPath: string) {
   const packageJson = require(packageJsonPath);
   const { config } = packageJson;
 

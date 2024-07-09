@@ -1,18 +1,14 @@
 import express from 'express';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import reload from 'reload';
 import {
   compileToTempFile,
   introspectTsFile,
 } from '../compiler/connectorCompiler';
-import {
-  startCommand,
-  validateInputConnectorFile,
-  info,
-  errorNoColor,
-  success,
-  verbose,
-} from '../core';
+import { info, startCommand, verbose } from '../core';
+import { ExecutionError } from '../core/types';
+import { getConnectorProjectFileInfo } from '../utils/connector-project';
 
 interface DebuggerCommandOptions {
   port: number;
@@ -20,50 +16,51 @@ interface DebuggerCommandOptions {
 }
 
 export async function runDebugger(
-  connectorFile: string,
+  projectPath: string,
   options: DebuggerCommandOptions
 ): Promise<void> {
-  startCommand('debug', { connectorFile, options });
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
+  startCommand('debug', { projectPath, options });
+
+  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
 
   const connectorType = await introspectTsFile(connectorFile);
   const compilation = await compileToTempFile(connectorFile);
+  if (compilation.errors.length > 0) {
+    throw new ExecutionError(compilation.formattedDiagnostics);
+  }
+
+  const app = express();
+  const reloadTrigger = await reload(app);
+  const port = options.port;
+  const indexTemplate = debuggerHandleBarTemplate;
 
   if (options.watch) {
     info(
       'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
     );
-    fs.watchFile(path.resolve(connectorFile), async function () {
-      info('Rebuilding...');
+    fs.watchFile(connectorFile, async function () {
+      info('Recompiling...');
 
       const watchCompilation = await compileToTempFile(
         connectorFile,
         compilation.tempFile
       );
-      if (watchCompilation.errors.length > 0) {
-        errorNoColor(watchCompilation.formattedDiagnostics);
-        return;
-      } else {
-        success('Build succeeded -> ' + compilation.tempFile);
-      }
 
-      info('');
+      if (watchCompilation.errors.length > 0) {
+        throw new ExecutionError(watchCompilation.formattedDiagnostics);
+      }
+      verbose('Compiled -> ' + watchCompilation.tempFile);
+      reloadTrigger.reload();
       info('Watching for changes... (press ctrl+c to exit)');
     });
   }
-
-  const app = express();
-  const port = options.port;
-  const indexTemplate = debuggerHandleBarTemplate;
 
   // recursive (3 deep) find parent folder with subfolder 'out'
   function findOutFolder(folder: string, depth: number): string | undefined {
     if (depth === 5) {
       return undefined;
     }
-    info('Looking for out folder in ' + folder);
+    verbose('Looking for CLI out folder in ' + folder);
     const outFolder = path.join(folder, 'out');
     if (fs.existsSync(outFolder)) {
       return outFolder;
@@ -74,11 +71,10 @@ export async function runDebugger(
   const outFolder = findOutFolder(__dirname, 0);
 
   if (!outFolder) {
-    errorNoColor('Could not find out folder');
-    return;
+    throw new ExecutionError('Output folder for CLI tool can not be detected');
   }
 
-  info('Detected out folder: ' + outFolder);
+  verbose('Detected out folder: ' + outFolder);
 
   // make sure connectorFile is absolute path
   const tempConnectorBuild = path.resolve(compilation.tempFile);
@@ -125,12 +121,14 @@ export async function runDebugger(
   });
 
   const server = app.listen(port, async () => {
-    info(
-      `Debugger running on port ${port}. Visit http://localhost:${port}?type=${connectorType} for testing`
-    );
-    (await import('open')).default(
-      `http://localhost:${port}?type=${connectorType}`
-    );
+    const debugURL = `http://localhost:${port}?type=${connectorType}`;
+    info(`Debugger running on port ${port}. Visit "${debugURL}" for testing`);
+    (await import('open')).default(debugURL);
+  });
+
+  process.on('SIGINT', async () => {
+    verbose('Closing websocket connection');
+    await reloadTrigger.closeServer();
   });
 }
 
@@ -144,6 +142,7 @@ const debuggerHandleBarTemplate = `
 </head>
 <body>
     <div id="root"></div>
+    <script src="/reload/reload.js"></script>
     <script src="bundle.js"></script>
     <script type="module" src="connector.js"></script>
 </body>

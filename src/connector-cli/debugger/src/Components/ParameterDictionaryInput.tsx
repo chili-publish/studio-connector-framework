@@ -36,7 +36,14 @@ export const ParameterDictionaryInput = ({
 
   const handleRemove = (index: number) => {
     // remove the item from the list
-    setItems(items.filter((item, i) => i !== index));
+    const newItems = items.filter((item, i) => i !== index);
+    setItems(newItems);
+    // convert newItems to an object
+    const newItemsObject: { [key: string]: any } = {};
+    newItems.forEach((item) => {
+      newItemsObject[item.key] = item.value;
+    });
+    onChange(parameter.name, parameter, newItemsObject);
   };
 
   const handleKeyChange = (

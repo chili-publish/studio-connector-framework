@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
-import { DataModel } from './Helpers/DataModel';
-import { Header, initRuntime } from './Helpers/ConnectorRuntime';
-// import react
-import { useEffect } from 'react';
-import { Models } from './Helpers/Models';
 import { MainContent } from './Components/MainContent';
 import { Sidebar } from './Components/Sidebar';
+import { Header, initRuntime } from './Helpers/ConnectorRuntime';
+import { DataModel } from './Helpers/DataModel';
+import { Models } from './Helpers/Models';
 
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
@@ -32,11 +30,65 @@ function App() {
       .catch((err) => {
         setError('Could not fetch connector');
         setLoading(false);
-        console.log('error', err);
+        console.error('error', err);
       });
   }, [globalHeaders, runtimeOptions, authorization]);
 
+  useEffect(() => {
+    Models.updateConfiguration = (
+      name: 'headers' | 'options',
+      value: unknown
+    ) => {
+      switch (name) {
+        case 'headers':
+          setAuthorization(
+            (value as { authorization: Header; other: Header[] }).authorization
+          );
+          setGlobalHeaders(
+            (value as { authorization: Header; other: Header[] }).other
+          );
+          sessionStorage.setItem('http-headers', JSON.stringify(value));
+          break;
+        case 'options': {
+          setRuntimeOptinos(value as Record<string, unknown>);
+          sessionStorage.setItem('runtime-options', JSON.stringify(value));
+        }
+      }
+    };
+
+    // Read saved configuration from session storage
+    if (!!sessionStorage.getItem('runtime-options')) {
+      Models.updateConfiguration(
+        'options',
+        JSON.parse(sessionStorage.getItem('runtime-options')!)
+      );
+    }
+    if (!!sessionStorage.getItem('http-headers')) {
+      Models.updateConfiguration(
+        'headers',
+        JSON.parse(sessionStorage.getItem('http-headers')!)
+      );
+    }
+  }, []);
+
   function onModelChanged(model: DataModel): void {
+    console.log(model);
+    // TODO: Implement better way of propagation stored values to the component params
+    if (
+      model.name === 'Runtime options' &&
+      Object.keys(runtimeOptions).length !== 0
+    ) {
+      model.parameters[0].value = runtimeOptions;
+    }
+    if (
+      model.name === 'headers' &&
+      (authorization.name || authorization.value)
+    ) {
+      model.parameters[0].value = { [authorization.name]: authorization.value };
+    }
+    if (model.name === 'headers' && Object.keys(globalHeaders).length !== 0) {
+      model.parameters[1].value = globalHeaders;
+    }
     setDataModel(model);
   }
 
@@ -47,24 +99,6 @@ function App() {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
-  Models.updateConfiguration = (
-    name: 'headers' | 'options',
-    value: unknown
-  ) => {
-    switch (name) {
-      case 'headers':
-        setAuthorization(
-          (value as { authorization: Header; other: Header[] }).authorization
-        );
-        setGlobalHeaders(
-          (value as { authorization: Header; other: Header[] }).other
-        );
-        break;
-      case 'options':
-        setRuntimeOptinos(value as Record<string, unknown>);
-    }
-  };
 
   Models.ConnectorMetadata = {
     name: connector.constructor.name,

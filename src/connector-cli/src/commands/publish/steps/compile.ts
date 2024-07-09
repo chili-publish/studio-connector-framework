@@ -1,8 +1,8 @@
-import path from 'node:path';
 import fs from 'node:fs';
-import { ExecutionError } from '../../../core/types';
-import { verbose } from '../../../core';
+import path from 'node:path';
 import { compileToTempFile } from '../../../compiler/connectorCompiler';
+import { verbose } from '../../../core';
+import { ExecutionError } from '../../../core/types';
 
 export async function compileConnector(connectorFile: string) {
   // Compile connector
@@ -14,7 +14,7 @@ export async function compileConnector(connectorFile: string) {
 
   verbose('Compiled -> ' + compilation.tempFile);
 
-  // Read the connector.js file
+  // Read the output file and connector file
   return {
     connectorJs: fs.readFileSync(path.resolve(compilation.tempFile), 'utf8'),
     connectorTs: fs.readFileSync(path.resolve(connectorFile), 'utf8'),

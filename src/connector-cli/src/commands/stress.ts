@@ -1,32 +1,24 @@
-import { initRuntime, evalAsync } from '../qjs/qjs';
 import { compileToTempFile } from '../compiler/connectorCompiler';
-import {
-  startCommand,
-  validateInputConnectorFile,
-  errorNoColor,
-  success,
-  info,
-  warn,
-} from '../core';
+import { info, startCommand, success, warn } from '../core';
+import { ExecutionError } from '../core/types';
+import { evalAsync, initRuntime } from '../qjs/qjs';
+import { getConnectorProjectFileInfo } from '../utils/connector-project';
 
 export async function runStressTest(
-  connectorFile: string,
+  projectPath: string,
   options: any
 ): Promise<void> {
-  startCommand('stress', { connectorFile, options });
+  startCommand('stress', { projectPath, options });
 
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
+  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
 
   const compilation = await compileToTempFile(connectorFile);
 
   if (compilation.errors.length > 0) {
-    errorNoColor(compilation.formattedDiagnostics);
-    return;
-  } else {
-    success('Build succeeded -> ' + compilation.tempFile);
+    throw new ExecutionError(compilation.formattedDiagnostics);
   }
+
+  success('Build succeeded -> ' + compilation.tempFile);
 
   const vm = await initRuntime(compilation.tempFile, {});
 
