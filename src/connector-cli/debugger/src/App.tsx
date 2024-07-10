@@ -6,6 +6,9 @@ import { Header, initRuntime } from './Helpers/ConnectorRuntime';
 import { DataModel } from './Helpers/DataModel';
 import { Models } from './Helpers/Models';
 
+const httpHeadersStorageKey = 'connector-cli-http-headers';
+const runtimeSettingsStorageKey = 'connector-cli-runtime-settings';
+
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
 
@@ -41,32 +44,36 @@ function App() {
     ) => {
       switch (name) {
         case 'headers':
-          setAuthorization(
-            (value as { authorization: Header; other: Header[] }).authorization
-          );
-          setGlobalHeaders(
-            (value as { authorization: Header; other: Header[] }).other
-          );
-          sessionStorage.setItem('http-headers', JSON.stringify(value));
+          const val: { authorization: Header; other: Header[] } = value as {
+            authorization: Header;
+            other: Header[];
+          };
+          setAuthorization(val.authorization);
+          setGlobalHeaders(val.other);
+
+          sessionStorage.setItem(httpHeadersStorageKey, JSON.stringify(val));
           break;
         case 'options': {
           setRuntimeOptions(value as Record<string, unknown>);
-          sessionStorage.setItem('runtime-options', JSON.stringify(value));
+          sessionStorage.setItem(
+            runtimeSettingsStorageKey,
+            JSON.stringify(value)
+          );
         }
       }
     };
 
     // Read saved configuration from session storage
-    if (!!sessionStorage.getItem('runtime-options')) {
+    if (!!sessionStorage.getItem(runtimeSettingsStorageKey)) {
       Models.updateConfiguration(
         'options',
-        JSON.parse(sessionStorage.getItem('runtime-options')!)
+        JSON.parse(sessionStorage.getItem(runtimeSettingsStorageKey)!)
       );
     }
-    if (!!sessionStorage.getItem('http-headers')) {
+    if (!!sessionStorage.getItem(httpHeadersStorageKey)) {
       Models.updateConfiguration(
         'headers',
-        JSON.parse(sessionStorage.getItem('http-headers')!)
+        JSON.parse(sessionStorage.getItem(httpHeadersStorageKey)!)
       );
     }
   }, []);

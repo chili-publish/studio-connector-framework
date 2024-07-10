@@ -21,20 +21,20 @@ export type ConnectorMetadata = {
 };
 
 export type SimpleParameter = {
-  value?: any | undefined;
+  value?: any;
   name: string;
   componentType: 'text' | 'boolean' | 'list';
 };
 
 export type SelectParameter = {
-  value?: any | undefined;
+  value?: any;
   name: string;
   componentType: 'select';
-  options: string[] | undefined;
+  options?: string[];
 };
 
 export type NumberParameter = {
-  value?: number | undefined;
+  value?: number;
   name: string;
   componentType: 'number';
   min?: number;
@@ -42,7 +42,7 @@ export type NumberParameter = {
 };
 
 export type DictionaryParameter = {
-  value?: any | undefined;
+  value?: any;
   name: string;
   componentType: 'dictionary';
   rectrictModification?: boolean;
@@ -56,10 +56,8 @@ export type Parameter =
   | NumberParameter;
 
 export type ComplexParameter = {
-  value?: any | undefined;
+  value?: any;
   name: string;
-  componentType: 'text' | 'boolean' | 'complex';
-  complex:
-    | Array<SimpleParameter | DictionaryParameter | NumberParameter>
-    | undefined;
+  componentType: 'complex';
+  complex: Array<SimpleParameter | DictionaryParameter | NumberParameter>;
 };
