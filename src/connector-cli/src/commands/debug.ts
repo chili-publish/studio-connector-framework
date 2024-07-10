@@ -6,7 +6,7 @@ import {
   compileToTempFile,
   introspectTsFile,
 } from '../compiler/connectorCompiler';
-import { info, startCommand, verbose } from '../core';
+import { error, info, startCommand, verbose } from '../core';
 import { ExecutionError } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
 
@@ -26,7 +26,11 @@ export async function runDebugger(
   const connectorType = await introspectTsFile(connectorFile);
   const compilation = await compileToTempFile(connectorFile);
   if (compilation.errors.length > 0) {
-    throw new ExecutionError(compilation.formattedDiagnostics);
+    if (options.watch) {
+      error(compilation.formattedDiagnostics);
+    } else {
+      throw new ExecutionError(compilation.formattedDiagnostics);
+    }
   }
 
   const app = express();
@@ -38,7 +42,8 @@ export async function runDebugger(
     info(
       'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
     );
-    fs.watchFile(connectorFile, async function () {
+    const watcher = fs.watch(connectorFile, async function (event, filename) {
+      verbose(`Triggers watch callback for ${event}, ${filename}`);
       info('Recompiling...');
 
       const watchCompilation = await compileToTempFile(
@@ -47,11 +52,25 @@ export async function runDebugger(
       );
 
       if (watchCompilation.errors.length > 0) {
-        throw new ExecutionError(watchCompilation.formattedDiagnostics);
+        error(watchCompilation.formattedDiagnostics);
+      } else {
+        verbose('Compiled -> ' + watchCompilation.tempFile);
+        info('Reloading browser tab...');
+        reloadTrigger.reload();
       }
-      verbose('Compiled -> ' + watchCompilation.tempFile);
-      reloadTrigger.reload();
       info('Watching for changes... (press ctrl+c to exit)');
+    });
+
+    process.on('SIGINT', async () => {
+      verbose('Destroy debug for "SIGINT"');
+      verbose('Stop watching the connector file: ' + connectorFile);
+      watcher.close();
+    });
+
+    process.on('exit', async () => {
+      verbose('Destroy debug for "exit"');
+      verbose('Stop watching the connector file: ' + connectorFile);
+      watcher.close();
     });
   }
 
@@ -127,6 +146,19 @@ export async function runDebugger(
   });
 
   process.on('SIGINT', async () => {
+    verbose('Destroy debug for "SIGINT"');
+    verbose('Stoping express server...');
+    server.closeAllConnections();
+    server.close();
+    verbose('Closing websocket connection');
+    await reloadTrigger.closeServer();
+  });
+
+  process.on('exit', async () => {
+    verbose('Destroy debug for "exit"');
+    verbose('Stoping express server...');
+    server.closeAllConnections();
+    server.close();
     verbose('Closing websocket connection');
     await reloadTrigger.closeServer();
   });
