@@ -171,7 +171,7 @@ function main() {
   program
     .command('login')
     .description(
-      'Authorize in the system to be able deploy and configure your connector in environment'
+      'Authorize in the system to deploy and configure your connector in the environment'
     )
     .addOption(
       new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')

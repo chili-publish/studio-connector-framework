@@ -15,21 +15,21 @@ export function getConnectorProjectFileInfo(projectPath: string) {
     dir = path.resolve(path.dirname(projectPath));
   }
 
-  verbose(`Checking directory existence in ${dir}`);
+  verbose(`Checking if directory exists: ${dir}`);
   if (!fs.existsSync(dir)) {
-    throw new ExecutionError(`Specified directory ${dir} doesn't exist`);
+    throw new ExecutionError(`Specified directory "${dir}" doesn't exist`);
   }
 
   const connectorFile = path.join(dir, connectorFileName);
-  verbose(`Checking connector file existence in ${connectorFile}`);
+  verbose(`Checking if connector file exists: ${connectorFile}`);
   if (!fs.existsSync(connectorFile)) {
-    throw new ExecutionError(`Specified file ${connectorFile} doesn't exist`);
+    throw new ExecutionError(`Specified file "${connectorFile}" doesn't exist`);
   }
 
   const packageJson = path.join(dir, 'package.json');
-  verbose(`Checking "package.json" existence in ${packageJson}`);
+  verbose(`Checking if "package.json" exists: ${packageJson}`);
   if (!fs.existsSync(packageJson)) {
-    throw new ExecutionError(`Specified file ${packageJson} doesn't exist`);
+    throw new ExecutionError(`Specified file "${packageJson}" doesn't exist`);
   }
 
   return {

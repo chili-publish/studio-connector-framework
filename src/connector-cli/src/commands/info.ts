@@ -84,7 +84,7 @@ export async function runGetInfo(
       connectorCodeConfig.configurationOptions;
 
     if (formattedConfigurationOptions.length === 0) {
-      info('Settings: There is no any settings defined for this connector');
+      info('Settings: Connector does not have any settings defined');
     } else {
       info('Settings...');
       console.table(formattedConfigurationOptions, [
@@ -98,7 +98,7 @@ export async function runGetInfo(
   // Runtime options
   if (Object.values(connectorConfig.options).length === 0) {
     info(
-      'Runtime options: There is no any runtime options defined for this connector'
+      'Runtime options: Connector does not have any runtime options defined'
     );
   } else {
     const formattedOptinos = Object.entries(connectorConfig.options).map(

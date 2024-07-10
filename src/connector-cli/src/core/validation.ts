@@ -28,7 +28,7 @@ export function validateRuntimeOptions(
         errMessages,
         null,
         2
-      )}.\n To see all available options retrieve connector's info via "connector-cli [projectPath] info ..." command`
+      )}.\n To view all available options, retrieve the connector's information using the command: "connector-cli [projectPath] info ..."`
     );
   }
 }

@@ -59,8 +59,8 @@ export async function runBuild(
           throw new ExecutionError(compilation.formattedDiagnostics);
         }
 
-        verbose(`Re-compile to ${path.join(out, outputFilename)}`);
-        success('Re-build succeeded');
+        verbose(`Recompiling to ${path.join(out, outputFilename)}`);
+        success('Rebuild succeeded');
 
         // write to output file
         fs.writeFileSync(path.join(out, outputFilename), compilation.script);
