@@ -7,6 +7,10 @@ interface AcquiaAssetV2 {
   file_properties: {
     format: string;
     format_type: string;
+    image_properties?: {
+      width: number;
+      height: number;
+    };
   };
   metadata: {
     fields: { [metadata_key: string]: Array<string> | string };
@@ -22,15 +26,20 @@ interface AssetId {
   eid: string;
   filename: string;
   fileType: 'image' | 'pdf' | unknown;
+  width?: number;
+  height?: number;
 }
 
 class Converter {
   static assetToMedia(item: AcquiaAssetV2): Media.Media {
+    const { width, height } = item.file_properties.image_properties ?? {};
     const assetId: AssetId = {
       id: item.id,
       eid: item.external_id,
       filename: item.filename,
       fileType: item.file_properties.format_type.toLowerCase(),
+      width,
+      height,
     };
     return {
       id: JSON.stringify(assetId),
@@ -50,6 +59,16 @@ class Converter {
         },
         {} as Connector.Dictionary
       ),
+    };
+  }
+
+  static assetToMediaDetail(item: AcquiaAssetV2): Media.MediaDetail {
+    const { width, height } = item.file_properties.image_properties ?? {};
+    const media = this.assetToMedia(item);
+    return {
+      ...media,
+      width,
+      height,
     };
   }
 
@@ -89,7 +108,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
       );
     }
     const data = JSON.parse(t.text);
-    return Converter.assetToMedia(data);
+    return Converter.assetToMediaDetail(data);
   }
 
   async query(
@@ -217,14 +236,14 @@ export default class AcquiaConnector implements Media.MediaConnector {
     return thumbnail?.url;
   }
 
-  _tryPreviewUrl(
+  private _tryPreviewUrl(
     id: string,
     {
       previewType,
       intent,
     }: { previewType: Media.DownloadType; intent: Media.DownloadIntent }
   ) {
-    const { eid, filename, fileType } = JSON.parse(id) as AssetId;
+    const { eid, filename, fileType, ...size } = JSON.parse(id) as AssetId;
     let endpoint =
       this.ensureTrailingSlash(
         this.runtime.options['PREVIEW_BASE_URL'] as string
@@ -234,15 +253,15 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
     switch (previewType) {
       case 'thumbnail': {
-        endpoint += '/jpeg' + '/' + filename + '?w=125';
+        endpoint += '/jpeg' + '/' + filename + this._getPreviewSize(size, 125);
         break;
       }
       case 'mediumres': {
-        endpoint += '/png' + '/' + filename + '?w=400';
+        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 400);
         break;
       }
       case 'highres':
-        endpoint += '/png' + '/' + filename + '?w=1024';
+        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 1024);
         break;
       case 'fullres':
         if (
@@ -260,8 +279,18 @@ export default class AcquiaConnector implements Media.MediaConnector {
         endpoint += '/original' + '/' + filename + '?download=true';
         break;
       default:
-        endpoint += '/png' + '/' + filename + '?w=400';
+        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 400);
     }
     return endpoint;
+  }
+
+  private _getPreviewSize(
+    original: { width?: number; height?: number },
+    max: 125 | 400 | 1024
+  ) {
+    const { width, height } = original;
+    return `?w=${width && width < max ? width : max}&h=${
+      height && height < max ? height : max
+    }`;
   }
 }
