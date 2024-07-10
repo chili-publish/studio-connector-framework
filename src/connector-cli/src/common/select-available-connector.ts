@@ -18,7 +18,7 @@ export async function selectAvailableConnector(
   }
 
   info(
-    `Received the list of available connectors. Please select the one you want to update:`
+    `Received the list of available connectors. Please select the one you want to make an action with:`
   );
   const { data: connectors } = await res.json();
   console.table(connectors, ['id', 'name']);
@@ -30,7 +30,7 @@ export async function selectAvailableConnector(
   while (true) {
     // Use the question method to get the user input
     const index = Number(
-      await rl.question('Select the index of the connector to update ')
+      await rl.question('Select the index of the connector to make an action')
     );
     // Use the validation function to check the input
     if (isNaN(index) || !connectors[index]) {

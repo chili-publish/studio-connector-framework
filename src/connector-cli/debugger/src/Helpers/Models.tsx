@@ -31,8 +31,8 @@ export const Models: {
       set: (values: any[]) => {
         Models.updateConfiguration('headers', {
           authorization: {
-            name: Object.keys(values[0])[0],
-            value: Object.values(values[0])[0],
+            name: Object.keys(values[0] ?? [])[0],
+            value: Object.values(values[0] ?? [])[0],
           },
           other: Object.entries(values[1] ?? []).map((h) => ({
             name: h[0],

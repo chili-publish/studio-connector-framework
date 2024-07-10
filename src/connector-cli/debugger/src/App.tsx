@@ -86,7 +86,13 @@ function App() {
       model.parameters[0].value = { [authorization.name]: authorization.value };
     }
     if (model.name === 'headers' && Object.keys(globalHeaders).length !== 0) {
-      model.parameters[1].value = globalHeaders;
+      model.parameters[1].value = globalHeaders.reduce(
+        (val, gh) => {
+          val[gh.name] = gh.value;
+          return val;
+        },
+        {} as Record<string, string>
+      );
     }
     setDataModel(model);
   }
