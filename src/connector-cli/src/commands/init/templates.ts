@@ -119,7 +119,5 @@ export const getMediaConnectorTestFile = () => ({
   ],
 });
 
-export const getGitIgnoreFile = () => `
-node_modules
-${outputDirectory}
-`;
+export const getGitIgnoreFile = () => `node_modules
+${outputDirectory}`;
