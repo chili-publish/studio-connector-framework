@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { info, readConnectorConfig, startCommand } from '../core';
+import { info, readConnectorConfig, startCommand, warn } from '../core';
 import { readConnectorCodeConfig } from '../core/connector-code-config';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
 import { getInstalledPackageVersion } from '../utils/version-reader';
@@ -71,9 +71,7 @@ export async function runGetInfo(
       });
 
     if (formattedCapabilities.length === 0) {
-      info(
-        'Capabilities: There is no any enabled capabilities for this connector'
-      );
+      warn('Capabilities: Connector does not have any enabled capabilities.');
     } else {
       info('Capabilities...');
       console.table(formattedCapabilities, ['capability']);

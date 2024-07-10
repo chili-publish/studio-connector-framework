@@ -15,7 +15,7 @@ function App() {
 
   const [globalHeaders, setGlobalHeaders] = useState<Header[]>([]);
   const [authorization, setAuthorization] = useState<Header>({} as any);
-  const [runtimeOptions, setRuntimeOptinos] = useState<Record<string, unknown>>(
+  const [runtimeOptions, setRuntimeOptions] = useState<Record<string, unknown>>(
     {}
   );
 
@@ -50,7 +50,7 @@ function App() {
           sessionStorage.setItem('http-headers', JSON.stringify(value));
           break;
         case 'options': {
-          setRuntimeOptinos(value as Record<string, unknown>);
+          setRuntimeOptions(value as Record<string, unknown>);
           sessionStorage.setItem('runtime-options', JSON.stringify(value));
         }
       }
@@ -72,7 +72,6 @@ function App() {
   }, []);
 
   function onModelChanged(model: DataModel): void {
-    console.log(model);
     // TODO: Implement better way of propagation stored values to the component params
     if (
       model.name === 'Runtime options' &&
