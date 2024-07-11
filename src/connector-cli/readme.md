@@ -1,23 +1,29 @@
 # @chili-publish/connector-cli
 
-`@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to initialize projects, build connectors, debug, test, deploy and publish them to the marketplace.
+`@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to initialize projects, build connectors, debug, test, deploy them to your environment.
 
 ## Features
 
-### Main
+### Project setup
 
-- **Initialize**: Scaffold a new connector with `init`.
-- **Publish**: Deploy your connector to the specified environment with `publish`.
-- **Set Auth**: Configure your connector authentication with `set-auth`.
+- **Init**: Scaffold a new connector project with `init`.
+- **New**: Scaffold a new connector project with `new`.
+
+### Development
+
 - **Build**: Build your connector from TypeScript to JavaScript with `build`.
 - **Debug**: Run a local debug server for your connector with `debug`.
 - **Test**: Run a test suite against your connector with `test`.
 - **Stress Test**: Perform stress tests on your compiled connector with `stress`.
 
+### Deployment
+
+- **Publish**: Deploy your connector to the specified environment with `publish`.
+- **Set Auth**: Configure your connector authentication with `set-auth`.
+
 ### Informational
 
-- **Info**: Retrieve runtime information about your connector with `info`.
-- **List options**: Retrieve information about particular connector config with `list-options`.
+- **Info**: Retrieve information about your connector with `info`.
 
 ## Installation
 
@@ -43,6 +49,12 @@ After installation, the `connector-cli` command will be available globally. Belo
 connector-cli init --name YourConnectorName
 ```
 
+or
+
+```sh
+connector-cli new --name YourConnectorName
+```
+
 ### Build a connector
 
 ```sh
@@ -58,13 +70,13 @@ connector-cli login
 ### Deploy a connector to environment
 
 ```sh
-connector-cli publish pathToTsFile --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --name YourConnectorName
+connector-cli publish pathToProject --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --name YourConnectorName
 ```
 
 ### Configure a connector authentication
 
 ```sh
-connector-cli set-auth pathToConnectorDir --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv --usage browser --type staticKey --auth-data-file ./pathToAuthData
+connector-cli set-auth pathToProject --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv --usage browser --type staticKey --auth-data-file ./pathToAuthData
 ```
 
 ### Debug a connector

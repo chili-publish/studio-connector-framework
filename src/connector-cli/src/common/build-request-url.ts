@@ -1,4 +1,4 @@
-export function getRequestUrl(baseUrl: string, environment: string) {
+export function buildRequestUrl(baseUrl: string, environment: string) {
   const connectorEndpointBaseUrl = new URL(baseUrl);
   if (!connectorEndpointBaseUrl.pathname.endsWith('/')) {
     connectorEndpointBaseUrl.pathname += '/';

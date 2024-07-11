@@ -1,19 +1,23 @@
-import { program, Option } from 'commander';
-import { runGetInfo } from './commands/info';
-import { runDemo, runTests } from './commands/test';
-import { runStressTest } from './commands/stress';
-import { runDebugger } from './commands/debug';
-import { runPublish } from './commands/publish';
-import { runBuild } from './commands/build';
-import { runInit } from './commands/init';
+import { Option, program } from 'commander';
 import info from '../package.json';
+import { runBuild } from './commands/build';
+import { runDebugger } from './commands/debug';
+import { runDelete } from './commands/delete';
+import { runGetInfo } from './commands/info';
+import { runInit } from './commands/init';
 import { runLogin } from './commands/login';
-import { ListCommandTypeOption, runListOptions } from './commands/list-options';
+import { runPublish } from './commands/publish';
 import { runSetAuth } from './commands/set-auth';
-import { withErrorHandlerAction } from './core';
-import { Tenant } from './core/types/types';
-import { SupportedAuth as AuthenticationType } from './core/types/gen-types';
 import { AuthenticationUsage } from './commands/set-auth/types';
+import { runStressTest } from './commands/stress';
+import { runDemo, runTests } from './commands/test';
+import { withErrorHandlerAction } from './core';
+import {
+  SupportedAuth as AuthenticationType,
+  Type as ConnectorType,
+  Tenant,
+} from './core/types';
+import { connectorProject } from './utils/connector-project';
 
 function main() {
   program
@@ -24,29 +28,30 @@ function main() {
 
   program
     .command('init')
-    .argument(
-      '[directory]',
-      'Directory where the project will be created',
-      process.cwd()
-    )
-    .requiredOption(
-      '-n, --name <name>',
-      'Name of the connector. Will be used as package name'
-    )
+    .description("Instantiate current directory as connector's project")
+    .requiredOption('-n, --name <name>', 'Name of the connector')
     .addOption(
       new Option('-t, --type [type]', 'Type of the connector')
-        .choices(['media', 'fonts'])
+        .choices(Object.values(ConnectorType))
         .default('media')
     )
-    .action(runInit);
+    .action(withErrorHandlerAction(runInit));
+
+  program
+    .command('new')
+    .description("Instantiate a <name> directory as connector's project")
+    .requiredOption('-n, --name <name>', 'Name of the connector')
+    .addOption(
+      new Option('-t, --type [type]', 'Type of the connector')
+        .choices(Object.values(ConnectorType))
+        .default('media')
+    )
+    .action(withErrorHandlerAction(runInit));
 
   program
     .command('publish')
-    .argument(
-      '[connectorFile]',
-      'Path to connector file (with package.json) to publish to the environment',
-      './connector.ts'
-    )
+    .description('Deploy your connector to defined environment')
+    .addArgument(connectorProject)
     .addOption(
       new Option(
         '-t, --tenant [tenant]',
@@ -94,70 +99,53 @@ function main() {
 
   program
     .command('build')
-    .argument(
-      '[connectorFile]',
-      'Connector file (ts) to publish to build',
-      './connector.ts'
-    )
-    .option('-o, --outFolder <out>', 'Output folder')
+    .description('Build connector project')
+    .addArgument(connectorProject)
     .option('-w, --watch', 'Watch for changes')
-    .action(runBuild);
+    .action(withErrorHandlerAction(runBuild));
 
   program
     .command('debug')
-    .argument(
-      '[connectorFile]',
-      'Connector file (ts) to run debug server for',
-      './connector.ts'
-    )
+    .description('Run connector project in debug mode for testing in browser')
+    .addArgument(connectorProject)
     .option('-p, --port [port]', 'Port to run debug application', '3300')
     .option(
       '-w, --watch',
       "Enable watch mode to reload connector's code when changed"
     )
-    .action(runDebugger);
+    .action(withErrorHandlerAction(runDebugger));
 
   program
     .command('info')
-    .argument(
-      '[connectorFile]',
-      'Connector file (ts) to get info about',
-      './connector.ts'
+    .description(
+      'Get connectors information, like capabilities, connector settings and etc.'
     )
+    .addArgument(connectorProject)
     .option('-o, --out <out>', 'Output json file')
-    .action(runGetInfo);
+    .action(withErrorHandlerAction(runGetInfo));
 
   program
     .command('test')
-    .argument(
-      '[connectorFile]',
-      'Connector file (ts) to run test suite for',
-      './connector.ts'
-    )
+    .addArgument(connectorProject)
     .requiredOption('-t, --testFile <testFile>')
-    .action(runTests);
+    .action(withErrorHandlerAction(runTests));
 
   program
     .command('demo')
-    .argument(
-      '[connectorFile]',
-      'Connector file (ts) to run demo for',
-      './connector.ts'
-    )
-    .action(runDemo);
+    .addArgument(connectorProject)
+    .action(withErrorHandlerAction(runDemo));
 
   program
     .command('stress')
-    .argument(
-      '[connectorFile]',
-      'Connector file (compiled js) to run stress test suite for',
-      './connector.ts'
-    )
+    .addArgument(connectorProject)
     .option('-i, --iterations <iterations>')
-    .action(runStressTest);
+    .action(withErrorHandlerAction(runStressTest));
 
   program
     .command('login')
+    .description(
+      'Authorize in the system to deploy and configure your connector in the environment'
+    )
     .addOption(
       new Option('-t, --tenant [tenant]', 'Which authentication tenant to use')
         .choices(Object.values(Tenant))
@@ -166,26 +154,9 @@ function main() {
     .action(runLogin);
 
   program
-    .command('list-options')
-    .argument(
-      '[connectorPath]',
-      'Path to connector where "package.json" is located',
-      './'
-    )
-    .addOption(
-      new Option('-t, --type <type>', 'Type of options that you want to list')
-        .makeOptionMandatory(true)
-        .choices(Object.values(ListCommandTypeOption))
-    )
-    .action(runListOptions);
-
-  program
     .command('set-auth')
-    .argument(
-      '[connectorPath]',
-      'Path to connector where "package.json" is located',
-      './'
-    )
+    .description('Configure authorization configuration of deployed connector')
+    .addArgument(connectorProject)
     .addOption(
       new Option(
         '-t, --tenant [tenant]',
@@ -227,6 +198,31 @@ function main() {
       'Path to the file (json or yaml) that contains authentication information for the specified "--type"'
     )
     .action(withErrorHandlerAction(runSetAuth));
+
+  program
+    .command('delete')
+    .description('Remove the published connector from environment')
+    .addOption(
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
+    )
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment name to use for operation, i.e. "cp-qeb-191"'
+    )
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environemnt API endpoint to use for operation, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '--connectorId <connectorId>',
+      'Id of the connector to perform operation'
+    )
+    .action(withErrorHandlerAction(runDelete));
 
   program.parse(process.argv);
 }

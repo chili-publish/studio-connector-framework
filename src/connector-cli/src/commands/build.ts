@@ -1,38 +1,32 @@
 import * as fs from 'fs';
-import { compile } from '../compiler/connectorCompiler';
 import path from 'path';
+import { compile } from '../compiler/connectorCompiler';
+import { info, startCommand, success, verbose } from '../core';
+import { ExecutionError } from '../core/types';
 import {
-  startCommand,
-  validateInputConnectorFile,
-  verbose,
-  errorNoColor,
-  success,
-  info,
-} from '../core';
+  getConnectorProjectFileInfo,
+  outputDirectory,
+  outputFilename,
+} from '../utils/connector-project';
 
 interface BuildCommandOptions {
   watch?: boolean;
-  outFolder?: string;
 }
 
 export async function runBuild(
-  connectorFile: string,
+  projectPath: string,
   options: BuildCommandOptions
 ): Promise<void> {
-  startCommand('build', { connectorFile, options });
-
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
+  startCommand('build', { projectPath, options });
 
   // store all options as vars
-  const { outFolder, watch } = options;
+  const { watch } = options;
 
-  // get connectorfile directory using path utils or fs
-  const connectorFolder = path.dirname(connectorFile);
+  const { projectDir, connectorFile } =
+    getConnectorProjectFileInfo(projectPath);
 
   // if no outfolder, user the directory of the connector file and create subfolder 'out'
-  const out = path.resolve(outFolder || `${connectorFolder}/out`);
+  const out = path.resolve(path.join(projectDir, outputDirectory));
 
   // if outfolder does not exist, create it
   if (!fs.existsSync(out)) {
@@ -43,13 +37,12 @@ export async function runBuild(
   const compilation = await compile(connectorFile);
 
   if (compilation.errors.length > 0) {
-    errorNoColor(compilation.formattedDiagnostics);
-    return;
+    throw new ExecutionError(compilation.formattedDiagnostics);
   }
 
-  // write to out/connector.js
-  fs.writeFileSync(path.join(out, 'connector.js'), compilation.script);
-  verbose(`Written to ${out}/connector.js`);
+  // write to output file
+  fs.writeFileSync(path.join(out, outputFilename), compilation.script);
+  verbose(`Written to ${path.join(out, outputFilename)}`);
 
   success('Build succeeded');
 
@@ -63,14 +56,14 @@ export async function runBuild(
         info('Rebuilding...');
         const compilation = await compile(connectorFile);
         if (compilation.errors.length > 0) {
-          errorNoColor(compilation.formattedDiagnostics);
-          return;
-        } else {
-          success('Build succeeded -> ' + `${out}/connector.js`);
+          throw new ExecutionError(compilation.formattedDiagnostics);
         }
 
-        // write to out/connector.js
-        fs.writeFileSync(path.join(out, 'connector.js'), compilation.script);
+        verbose(`Recompiling to ${path.join(out, outputFilename)}`);
+        success('Rebuild succeeded');
+
+        // write to output file
+        fs.writeFileSync(path.join(out, outputFilename), compilation.script);
 
         info('');
         info('Watching for changes... (press ctrl+c to exit)');

@@ -1,23 +1,18 @@
+import { info, readConnectorConfig, startCommand, success } from '../../core';
+import { readAccessToken } from '../../core/read-access-token';
 import {
-  startCommand,
-  validateInputConnectorPath,
-  success,
-  info,
-  readConnectorConfig,
-} from '../../core';
+  SupportedAuth as AuthenticationType,
+  ExecutionError,
+  Tenant,
+} from '../../core/types';
+import { getConnectorProjectFileInfo } from '../../utils/connector-project';
 import {
   extractAuthData,
+  getRequestUrl,
   setAuthentication,
   validateAuthType,
-  getRequestUrl,
 } from './steps';
-import {
-  Tenant,
-  ExecutionError,
-  SupportedAuth as AuthenticationType,
-} from '../../core/types';
 import { AuthenticationUsage } from './types';
-import { readAccessToken } from '../../core/read-access-token';
 
 interface SetAuthenticationCommandOptions {
   tenant: Tenant;
@@ -30,13 +25,12 @@ interface SetAuthenticationCommandOptions {
 }
 
 export async function runSetAuth(
-  connectorPath: string,
+  projectPath: string,
   options: SetAuthenticationCommandOptions
 ): Promise<void> {
-  startCommand('set-auth', { connectorPath, options });
-  if (!validateInputConnectorPath(connectorPath)) {
-    return;
-  }
+  startCommand('set-auth', { projectPath, options });
+
+  const { packageJson } = getConnectorProjectFileInfo(projectPath);
 
   const accessToken = await readAccessToken(options.tenant);
 
@@ -44,7 +38,7 @@ export async function runSetAuth(
   const { baseUrl, environment, connectorId, usage, type, authDataFile } =
     options;
 
-  const connectorConfig = readConnectorConfig(connectorPath);
+  const connectorConfig = readConnectorConfig(packageJson);
 
   if (!connectorConfig.supportedAuth) {
     throw new ExecutionError(

@@ -1,45 +1,36 @@
+import { default as Chalk, default as chalk } from 'chalk';
+import fs from 'fs';
+import path from 'path';
 import {
   compileToTempFile,
   introspectTsFile,
 } from '../compiler/connectorCompiler';
-import { initRuntime, runtimeConfig, evalAsync } from '../qjs/qjs';
+import { errorNoColor, info, startCommand, success } from '../core';
+import { ExecutionError } from '../core/types';
+import { evalAsync, initRuntime, runtimeConfig } from '../qjs/qjs';
 import { assertResult } from '../tests/asserts';
 import { TestModels } from '../tests/testConfiguration';
-import Chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
-import chalk from 'chalk';
-import {
-  validateInputConnectorFile,
-  error,
-  errorNoColor,
-  info,
-  startCommand,
-  success,
-} from '../core';
+import { getConnectorProjectFileInfo } from '../utils/connector-project';
 
 type DemoCommandOptions = unknown;
 
 export async function runDemo(
-  connectorFile: string,
+  projectPath: string,
   options: DemoCommandOptions
 ): Promise<void> {
+  startCommand('demo', { projectPath, options });
+
+  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
+
   introspectTsFile(connectorFile);
-
-  startCommand('demo', { connectorFile, options });
-
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
 
   const compilation = await compileToTempFile(connectorFile);
 
   if (compilation.errors.length > 0) {
-    errorNoColor(compilation.formattedDiagnostics);
-    return;
-  } else {
-    success('Build succeeded -> ' + compilation.tempFile);
+    throw new ExecutionError(compilation.formattedDiagnostics);
   }
+
+  success('Build succeeded -> ' + compilation.tempFile);
 
   const vm = await initRuntime(compilation.tempFile, {});
 
@@ -132,30 +123,26 @@ interface TestsCommandOptions {
 }
 
 export async function runTests(
-  connectorFile: string,
+  projectPath: string,
   options: TestsCommandOptions
 ): Promise<void> {
-  startCommand('test', { connectorFile, options });
+  startCommand('test', { projectPath, options });
 
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
+  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
 
   const { testFile } = options;
 
   if (fs.existsSync(path.resolve(testFile)) === false) {
-    error('testFile is required');
-    return;
+    throw new ExecutionError('Test file is required');
   }
 
   const compilation = await compileToTempFile(connectorFile);
 
   if (compilation.errors.length > 0) {
-    errorNoColor(compilation.formattedDiagnostics);
-    return;
-  } else {
-    success('Build succeeded -> ' + compilation.tempFile);
+    throw new ExecutionError(compilation.formattedDiagnostics);
   }
+
+  success('Build succeeded -> ' + compilation.tempFile);
 
   // parse the test file (its a json)
   const testConfig: TestModels.TestConfiguration = JSON.parse(

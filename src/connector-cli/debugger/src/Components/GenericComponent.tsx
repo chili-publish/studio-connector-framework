@@ -1,13 +1,13 @@
-import { useCallback, useState } from 'react';
-import { ParameterInput } from './ParameterInput';
+import { useCallback, useEffect, useState } from 'react';
 import {
   DataModel,
   InvokableDataModel,
   Parameter,
   SettableDataModel,
 } from '../Helpers/DataModel';
-import JsonObjectRenderer from './JsonObjectRenderer';
 import ArrayBufferImage from './ImageFromBuffer';
+import JsonObjectRenderer from './JsonObjectRenderer';
+import { ParameterInput } from './ParameterInput';
 
 export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
   const [values, setValues] = useState<Record<string, unknown>>({});
@@ -27,6 +27,28 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     },
     []
   );
+
+  const denormalizeValues = useCallback(() => {
+    return dataModel.parameters.reduce(
+      (val, p) => {
+        if (p.componentType === 'complex') {
+          p.complex
+            .filter((cp) => cp.value !== undefined)
+            .forEach((cp) => {
+              val[`${p.name}.${cp.name}`] = cp.value;
+            });
+        } else if (p.value) {
+          val[p.name] = p.value;
+        }
+        return val;
+      },
+      {} as Record<string, unknown>
+    );
+  }, [dataModel.parameters]);
+
+  useEffect(() => {
+    setValues(denormalizeValues());
+  }, [denormalizeValues]);
 
   const normalizeValues = () => {
     // in the values we will find something like {"orderType.id": "dsfadf","orderType.name": "dsfaasdf","orderId": "dasfadsf"}
@@ -62,7 +84,6 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
         normalizedValues
       );
       setResult(result);
-      console.log('result', result);
     } catch (error) {
       setResult({
         message: `failed to invoke ${

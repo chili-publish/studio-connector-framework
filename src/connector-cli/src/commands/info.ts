@@ -1,44 +1,136 @@
-import { compileToTempFile } from '../compiler/connectorCompiler';
 import fs from 'fs';
 import path from 'path';
-import { getInfoInternal } from '../utils/execution-util';
-import {
-  startCommand,
-  validateInputConnectorFile,
-  errorNoColor,
-  success,
-  info,
-} from '../core';
+import { info, readConnectorConfig, startCommand, warn } from '../core';
+import { readConnectorCodeConfig } from '../core/connector-code-config';
+import { getConnectorProjectFileInfo } from '../utils/connector-project';
+import { getInstalledPackageVersion } from '../utils/version-reader';
 
 interface GetInfoCommandOptions {
   out?: string;
 }
 
 export async function runGetInfo(
-  connectorFile: string,
+  projectPath: string,
   options: GetInfoCommandOptions
 ): Promise<void> {
-  startCommand('info', { connectorFile, options });
-  if (!validateInputConnectorFile(connectorFile)) {
-    return;
-  }
+  startCommand('info', { projectPath, options });
 
-  const compilation = await compileToTempFile(connectorFile);
+  const { packageJson, connectorFile, projectDir } =
+    getConnectorProjectFileInfo(projectPath);
 
-  if (compilation.errors.length > 0) {
-    errorNoColor(compilation.formattedDiagnostics);
-    return;
-  } else {
-    success('Build succeeded -> ' + compilation.tempFile);
-  }
+  const connectorCodeConfig = await readConnectorCodeConfig(connectorFile);
 
-  const properties =
-    '\n' + JSON.stringify(await getInfoInternal(compilation), null, 2) + '\n';
+  const connectorConfig = readConnectorConfig(packageJson);
+
+  const apiVersion = getInstalledPackageVersion(
+    '@chili-publish/studio-connectors',
+    projectDir
+  );
 
   if (options.out) {
-    fs.writeFileSync(path.resolve(options.out), properties);
-    info(`Written to ${options.out}`);
+    const properties = {
+      apiVersion: apiVersion,
+      ...connectorCodeConfig,
+      type: connectorConfig.type,
+      logoUrl: connectorConfig.iconUrl,
+      supportedAuth: connectorConfig.supportedAuth,
+      runtimeOptions: connectorConfig.options,
+    };
+    fs.writeFileSync(
+      path.resolve(options.out),
+      JSON.stringify(properties, null, 2)
+    );
+    info(`Written to ${options.out} file`);
+    return;
+  }
+
+  info('');
+  // API version
+  info(`Framework version: ${apiVersion}`);
+
+  // Connector type
+  info(`Type: "${connectorConfig.type}"`);
+
+  if (connectorConfig.iconUrl) {
+    // Connector logo
+    info(`Logo: "${connectorConfig.iconUrl}"`);
   } else {
-    process.stdout.write(properties);
+    info('Logo: There is no connector logo URL specified for this connector');
+  }
+
+  if (connectorConfig.type === 'media') {
+    // Connector capability
+    const formattedCapabilities = Object.entries(
+      connectorCodeConfig.capabilities
+    )
+      .filter(([_, value]) => !!value)
+      .map(([key, value]) => {
+        return {
+          capability: key,
+        };
+      });
+
+    if (formattedCapabilities.length === 0) {
+      warn('Capabilities: Connector does not have any enabled capabilities.');
+    } else {
+      info('Capabilities...');
+      console.table(formattedCapabilities, ['capability']);
+    }
+
+    // Connector settings
+    const formattedConfigurationOptions =
+      connectorCodeConfig.configurationOptions;
+
+    if (formattedConfigurationOptions.length === 0) {
+      info('Settings: Connector does not have any settings defined');
+    } else {
+      info('Settings...');
+      console.table(formattedConfigurationOptions, [
+        'type',
+        'name',
+        'displayName',
+      ]);
+    }
+  }
+
+  // Runtime options
+  if (Object.values(connectorConfig.options).length === 0) {
+    info(
+      'Runtime options: Connector does not have any runtime options defined'
+    );
+  } else {
+    const formattedOptinos = Object.entries(connectorConfig.options).map(
+      ([key, value]) => {
+        const required = value === null || value === undefined;
+        return {
+          name: key,
+          required,
+          default: required ? 'N/A' : value,
+        };
+      }
+    );
+
+    info('Runtime options...');
+    console.table(formattedOptinos, ['name', 'required', 'default']);
+  }
+
+  // Supported authentication
+
+  if (
+    !connectorConfig.supportedAuth ||
+    Object.values(connectorConfig.supportedAuth).length === 0
+  ) {
+    info(
+      'Authentication: There is no any supported authentication defined for this connector'
+    );
+  } else {
+    const formattedOptinos = connectorConfig.supportedAuth.map((auth) => {
+      return {
+        type: auth,
+      };
+    });
+
+    info('Supported authentication...');
+    console.table(formattedOptinos, ['type']);
   }
 }
