@@ -12,12 +12,12 @@
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Acquia_DAM.png",
     "options": {
       "BASE_URL": null,
-      "PREVIEW_BASE_URL": null,
-      "DEBUG": "0"
+      "PREVIEW_BASE_URL": null
     },
     "supportedAuth": [
       "oAuth2ResourceOwnerPassword",
-      "oAuth2AuthorizationCode"
+      "oAuth2AuthorizationCode",
+      "staticKey"
     ],
     "mappings": {}
   },
