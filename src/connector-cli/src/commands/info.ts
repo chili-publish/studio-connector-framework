@@ -84,7 +84,7 @@ export async function runGetInfo(
     if (formattedConfigurationOptions.length === 0) {
       info('Query options: Connector does not have any query options defined');
     } else {
-      info('Settings...');
+      info('Query options...');
       console.table(formattedConfigurationOptions, [
         'type',
         'name',
