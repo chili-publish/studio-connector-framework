@@ -77,14 +77,14 @@ export async function runGetInfo(
       console.table(formattedCapabilities, ['capability']);
     }
 
-    // Connector settings
+    // Connector query options
     const formattedConfigurationOptions =
       connectorCodeConfig.configurationOptions;
 
     if (formattedConfigurationOptions.length === 0) {
-      info('Settings: Connector does not have any settings defined');
+      info('Query options: Connector does not have any query options defined');
     } else {
-      info('Settings...');
+      info('Query options...');
       console.table(formattedConfigurationOptions, [
         'type',
         'name',
@@ -93,10 +93,10 @@ export async function runGetInfo(
     }
   }
 
-  // Runtime options
+  // Runtime settings
   if (Object.values(connectorConfig.options).length === 0) {
     info(
-      'Runtime options: Connector does not have any runtime options defined'
+      'Runtime settings: Connector does not have any runtime settings defined'
     );
   } else {
     const formattedOptinos = Object.entries(connectorConfig.options).map(
@@ -110,7 +110,7 @@ export async function runGetInfo(
       }
     );
 
-    info('Runtime options...');
+    info('Runtime settings...');
     console.table(formattedOptinos, ['name', 'required', 'default']);
   }
 

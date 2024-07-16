@@ -54,6 +54,13 @@ export const getTsConfig = () => ({
 const mediaConnectorFileContent = `import { Connector, Media } from "@chili-publish/studio-connectors";
 
 export default class MyConnector implements Media.MediaConnector {
+
+  private runtime: Connector.ConnectorRuntimeContext;
+
+  constructor(runtime: Connector.ConnectorRuntimeContext) {
+    this.runtime = runtime;
+  }
+    
   query(
     options: Connector.QueryOptions,
     context: Connector.Dictionary
