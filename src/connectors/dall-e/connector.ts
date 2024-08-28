@@ -1,5 +1,4 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
-// force change to test build 2
 
 export default class DallEConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
