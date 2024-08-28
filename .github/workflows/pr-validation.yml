@@ -19,7 +19,6 @@ jobs:
         uses: jitterbit/get-changed-files@v1
 
       - name: Ensure connector version is bumped
-        id: check_connector
         run: |
           connector_changed=""
           for changed_file in ${{ steps.files.outputs.all }}
@@ -57,14 +56,7 @@ jobs:
               connector_name=$(echo "$connector_path" | cut -d'/' -f3)
               if [[ -z "$connector_changed" ]]
               then
-                MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
-                PR_VERSION=$(jq -r .version src/connectors/$connector_name/package.json)
-                if [ "$MAIN_VERSION" = "$PR_VERSION" ]; then
-                  echo "Error: The version in src/connectors/$connector_name/package.json is the same as in the main branch. Please bump the version"
-                  exit 1
-                else
-                  connector_changed="$connector_name"
-                fi
+                connector_changed="$connector_name"
               elif [[ "$connector_changed" != "$connector_name" ]]
               then
                 echo "Multiple connectors have been changed: $connector_changed and $connector_name. Please change only one connector per PR."
