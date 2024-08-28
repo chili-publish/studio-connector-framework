@@ -50,11 +50,12 @@ jobs:
         id: changes
         run: |
           if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-            echo "CHANGED_CONNECTORS=$(git diff --name-only HEAD^ HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)" >> $GITHUB_ENV
+            CHANGED_CONNECTORS=$(git diff --name-only HEAD^ HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
           else
-            echo "CHANGED_CONNECTORS=$(git diff --name-only HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)" >> $GITHUB_ENV
+            CHANGED_CONNECTORS=$(git diff --name-only HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
           fi
-          echo "Changed connectors: $CHANGED_CONNECTORS"
+          echo "Changed directories: $CHANGED_CONNECTORS"
+          echo "CHANGED_CONNECTORS=$CHANGED_CONNECTORS" >> $GITHUB_ENV
       - name: Bump connector version
         if: steps.changes.outputs.CHANGED_CONNECTORS != ''
         run: |
