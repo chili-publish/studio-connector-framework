@@ -61,7 +61,7 @@ jobs:
           echo "Changed directories: $CHANGED_CONNECTORS"
           echo "CHANGED_CONNECTORS=$CHANGED_CONNECTORS" >> $GITHUB_ENV
       - name: Bump connector version
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         run: |
           for dir in $CHANGED_CONNECTORS; do
             cd src/connectors/$dir
@@ -71,7 +71,7 @@ jobs:
           done
 
       - name: Commit and push connector version bump
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -86,26 +86,26 @@ jobs:
       - name: Build Cli
         run: yarn run build-cli
       - name: Build and Publish connectors
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         run: |
           for dir in $CHANGED_CONNECTORS; do
             echo "Building and publishing $dir"
             node scripts/publish.js --folder src/$dir
           done
       - name: copy to upload folder
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         run: |
           for dir in $CHANGED_CONNECTORS; do
             mkdir -p upload/connector-repo/$dir && cp -r publish/$dir/* upload/connector-repo/$dir
           done
       - name: Upload artifacts
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         uses: actions/upload-artifact@v2
         with:
           name: connectors
           path: upload/connector-repo
       - name: Upload to Azure
-        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        if: env.CHANGED_CONNECTORS != ''
         uses: azure/CLI@v1
         with:
           inlineScript: |
