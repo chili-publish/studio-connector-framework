@@ -91,7 +91,7 @@ jobs:
             echo "Building and publishing $dir"
             node scripts/publish.js --folder src/$dir
           done
-      - name: copy to upload folder
+      - name: Copy to upload folder
         if: env.CHANGED_CONNECTORS != ''
         run: |
           for dir in $CHANGED_CONNECTORS; do
@@ -108,4 +108,4 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
+            az storage container list --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --output table
