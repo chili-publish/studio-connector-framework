@@ -1,0 +1,103 @@
+# workflow to run both yarn && yarn build in the repo when pr is merged to main
+name: Publish Connectors
+
+on:
+  push:
+    branches:
+      - feature/WRS-1849
+
+jobs:
+  build-and-publish:
+    # checkout the repo
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
+      - name: Install dependencies
+        run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+      - name: Download index.json
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            container_name="connector-marketplace"
+            blob_name="connector-repo/index.json"
+            destination_file="existing/index.json"
+            connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
+
+            # ensure 'existing' folder exists
+            mkdir -p existing
+
+            # Check if the blob exists
+            blob_exists=$(az storage blob exists --name $blob_name --container-name $container_name --connection-string $connection_string --output tsv --query exists)
+
+            # If the blob exists, download it
+            if [ $blob_exists == "true" ]; then
+                az storage blob download --name $blob_name --file $destination_file --container-name $container_name --connection-string $connection_string --no-progress
+            else
+                echo "Blob does not exist."
+            fi
+      - name: Determine changed connectors
+        id: changes
+        run: |
+          echo "CHANGED_CONNECTORS=$(git diff --name-only HEAD^ HEAD | grep '^src/connectors/' | cut -d/ -f2 | sort | uniq)" >> $GITHUB_ENV
+          echo "Changed connectors: $CHANGED_CONNECTORS"
+      - name: Bump connector version
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        run: |
+          for dir in $CHANGED_CONNECTORS; do
+            cd src/connectors/$dir
+            npm version patch
+            echo "Bumped version for $dir"
+            cd -
+          done
+
+      - name: Commit and push connector version bump
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git fetch origin
+          for dir in $CHANGED_CONNECTORS; do
+            git add src/connectors/$dir/package.json
+          done
+          git commit -m "Bump version for $CHANGED_CONNECTORS"  --allow-empty
+          git push origin main --follow-tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Cli
+        run: yarn run build-cli
+      - name: Build and Publish connectors
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        run: |
+          for dir in $CHANGED_CONNECTORS; do
+            echo "Building and publishing $dir"
+            node scripts/publish.js --folder src/$dir
+          done
+      - name: copy to upload folder
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        run: |
+          for dir in $CHANGED_CONNECTORS; do
+            mkdir -p upload/connector-repo/$dir && cp -r publish/$dir/* upload/connector-repo/$dir
+          done
+      - name: Upload artifacts
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        uses: actions/upload-artifact@v2
+        with:
+          name: connectors
+          path: upload/connector-repo
+      - name: Upload to Azure
+        if: steps.changes.outputs.CHANGED_CONNECTORS != ''
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
