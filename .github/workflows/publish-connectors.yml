@@ -95,7 +95,7 @@ jobs:
         if: env.CHANGED_CONNECTORS != ''
         run: |
           for dir in $CHANGED_CONNECTORS; do
-            mkdir -p upload/connector-repo/$dir && cp -r publish/$dir/* upload/connector-repo/$dir
+            mkdir -p upload/connector-repo/$dir && cp -r publish/* upload/connector-repo/$dir
           done
       - name: Upload artifacts
         if: env.CHANGED_CONNECTORS != ''
