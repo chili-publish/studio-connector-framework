@@ -49,7 +49,6 @@ jobs:
                 echo "Blob does not exist."
             fi
       - name: Determine changed connectors
-        id: changes
         run: |
           if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
             echo "Diffing HEAD^ HEAD"
@@ -70,19 +69,19 @@ jobs:
             cd -
           done
 
-      - name: Commit and push connector version bump
-        if: env.CHANGED_CONNECTORS != ''
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git fetch origin
-          for dir in $CHANGED_CONNECTORS; do
-            git add src/connectors/$dir/package.json
-          done
-          git commit -m "Bump version for $CHANGED_CONNECTORS"  --allow-empty
-          git push origin main --follow-tags
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Commit and push connector version bump
+      #   if: env.CHANGED_CONNECTORS != ''
+      #   run: |
+      #     git config --global user.name 'github-actions[bot]'
+      #     git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+      #     git fetch origin
+      #     for dir in $CHANGED_CONNECTORS; do
+      #       git add src/connectors/$dir/package.json
+      #     done
+      #     git commit -m "Bump version for $CHANGED_CONNECTORS"  --allow-empty
+      #     git push origin main --follow-tags
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Cli
         run: yarn run build-cli
       - name: Build and Publish connectors
