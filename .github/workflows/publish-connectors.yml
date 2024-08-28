@@ -15,6 +15,8 @@ jobs:
         node-version: [20]
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
@@ -50,8 +52,10 @@ jobs:
         id: changes
         run: |
           if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            echo "Diffing HEAD^ HEAD"
             CHANGED_CONNECTORS=$(git diff --name-only HEAD^ HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
           else
+            echo "Diffing HEAD"
             CHANGED_CONNECTORS=$(git diff --name-only HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
           fi
           echo "Changed directories: $CHANGED_CONNECTORS"
