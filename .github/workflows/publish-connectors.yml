@@ -108,4 +108,4 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage container list --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --output table
+            az storage container list --connection-string "${{ secrets.AZURE_ST_MARKETPLACE_PRD_CONNECTION_STRING }}" --output table
