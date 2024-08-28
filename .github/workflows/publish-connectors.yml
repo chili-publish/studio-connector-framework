@@ -59,15 +59,15 @@ jobs:
           fi
           echo "Changed directories: $CHANGED_CONNECTORS"
           echo "CHANGED_CONNECTORS=$CHANGED_CONNECTORS" >> $GITHUB_ENV
-      - name: Bump connector version
-        if: env.CHANGED_CONNECTORS != ''
-        run: |
-          for dir in $CHANGED_CONNECTORS; do
-            cd src/connectors/$dir
-            npm version patch
-            echo "Bumped version for $dir"
-            cd -
-          done
+      # - name: Bump connector version
+      #   if: env.CHANGED_CONNECTORS != ''
+      #   run: |
+      #     for dir in $CHANGED_CONNECTORS; do
+      #       cd src/connectors/$dir
+      #       npm version patch
+      #       echo "Bumped version for $dir"
+      #       cd -
+      #     done
 
       # - name: Commit and push connector version bump
       #   if: env.CHANGED_CONNECTORS != ''
