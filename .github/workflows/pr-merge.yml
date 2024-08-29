@@ -73,15 +73,18 @@ jobs:
           node scripts/publish.js $CHANGED_CONNECTOR
 
       - name: Copy to upload folder
+        if: env.CHANGED_CONNECTOR != ''
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
 
       - name: Upload artifacts
+        if: env.CHANGED_CONNECTOR != ''
         uses: actions/upload-artifact@v2
         with:
           name: connectors
           path: upload/connector-repo
 
       - name: Upload to Azure
+        if: env.CHANGED_CONNECTOR != ''
         uses: azure/CLI@v1
         with:
           inlineScript: |
