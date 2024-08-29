@@ -1,4 +1,5 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
+
 interface AcquiaAssetV2 {
   id: string;
   filename: string;
