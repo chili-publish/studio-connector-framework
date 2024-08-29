@@ -70,7 +70,7 @@ jobs:
         if: env.CHANGED_CONNECTOR != ''
         run: |
           echo "Building and publishing $CHANGED_CONNECTOR"
-          node scripts/publish.js $dir
+          node scripts/publish.js $CHANGED_CONNECTOR
 
       - name: Copy to upload folder
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
