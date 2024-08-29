@@ -85,4 +85,4 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}" --overwrite true
+            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ secrets.AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}" --overwrite true
