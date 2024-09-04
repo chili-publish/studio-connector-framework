@@ -1,6 +1,6 @@
 {
   "name": "@chili-publish/connector-cli",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "main": "out/src/index.js",
   "license": "MIT",
   "bin": {
