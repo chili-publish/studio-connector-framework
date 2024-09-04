@@ -30,5 +30,5 @@
     }
   },
   "additionalProperties": false,
-  "required": ["type", "options"]
+  "required": ["type", "options", "supportedAuth"]
 }

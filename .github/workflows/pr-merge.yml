@@ -15,21 +15,25 @@ jobs:
         node-version: [20]
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://npm.pkg.github.com'
           scope: '@chili-publish'
+
       - name: Install dependencies
         run: yarn
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+
       - name: Download index.json
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            container_name="sdk"
+            container_name="connector-marketplace"
             blob_name="connector-repo/index.json"
             destination_file="existing/index.json"
             connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
@@ -46,19 +50,42 @@ jobs:
             else
                 echo "Blob does not exist."
             fi
+
+      - name: Determine changed connectors
+        run: |
+          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            echo "Diffing HEAD^ HEAD"
+            CHANGED_CONNECTOR=$(git diff --name-only HEAD^ HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
+          else
+            echo "Diffing HEAD"
+            CHANGED_CONNECTOR=$(git diff --name-only HEAD | grep '^src/connectors/' | cut -d/ -f3 | sort | uniq)
+          fi
+          echo "Changed directories: $CHANGED_CONNECTOR"
+          echo "CHANGED_CONNECTOR=$CHANGED_CONNECTOR" >> $GITHUB_ENV
+
       - name: Build Cli
         run: yarn run build-cli
+
       - name: Build and Publish connectors
-        run: node scripts/publish.js
-      - name: copy to upload folder
+        if: env.CHANGED_CONNECTOR != ''
+        run: |
+          echo "Building and publishing $CHANGED_CONNECTOR"
+          node scripts/publish.js $CHANGED_CONNECTOR
+
+      - name: Copy to upload folder
+        if: env.CHANGED_CONNECTOR != ''
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
+
       - name: Upload artifacts
+        if: env.CHANGED_CONNECTOR != ''
         uses: actions/upload-artifact@v2
         with:
           name: connectors
           path: upload/connector-repo
+
       - name: Upload to Azure
+        if: env.CHANGED_CONNECTOR != ''
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            az storage blob upload-batch -d sdk -s upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
+            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ secrets.AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}" --overwrite true

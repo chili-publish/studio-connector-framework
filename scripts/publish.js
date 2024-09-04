@@ -15,14 +15,15 @@ const {execSync} = require('child_process');
 const repoRoot = findRepoRoot(__dirname);
 
 console.log(`Found repo root at ${repoRoot}`);
-const connectorsDir = path.join(repoRoot, 'src', 'connectors');
-console.log(`Found connectors at ${connectorsDir}`);
-fs.readdirSync(connectorsDir).forEach(file => {
-  const dirPath = path.join(connectorsDir, file);
+
+const connectorsToProcess = process.argv.slice(2);
+connectorsToProcess.forEach(file => {
+  const dirPath = path.join(repoRoot, 'src', 'connectors', file);
   console.log(`Checking ${dirPath}`);
+
   if (fs.statSync(dirPath).isDirectory()) {
     console.log(`Processing ${dirPath}`);
-    var connectorJson = processConnector(dirPath);
+    const connectorJson = processConnector(dirPath);
     // Write the JSON object to <repo root>/publish/<name>.json
     const publishDir = path.join(repoRoot, 'publish');
     if (!fs.existsSync(publishDir)) {
@@ -33,6 +34,8 @@ fs.readdirSync(connectorsDir).forEach(file => {
       JSON.stringify(connectorJson, null, 2),
     );
     console.log(`Successfully processed ${connectorJson.name}`);
+  } else {
+    console.log(`${dirPath} is not a directory. Skipping.`);
   }
 });
 
