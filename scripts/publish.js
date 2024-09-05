@@ -55,14 +55,25 @@ fs.readdirSync(publishDir).forEach(file => {
       fs.readFileSync(path.join(publishDir, file)),
     );
     const connectorName = connectorJson.name;
+    const connectorAuthor = connectorJson.author.name;
+    const connectorType = connectorJson.type;
+    const connectorDescription = connectorJson.description;
+    const connectorIconUrl = connectorJson.iconUrl;
     const connectorVersion = connectorJson.version;
+
     if (!indexJson[connectorName]) {
-      indexJson[connectorName] = [];
+      indexJson[connectorName] = {versions: []};
     }
-    if (indexJson[connectorName].includes(connectorVersion)) {
+    indexJson[connectorName].name = connectorName;
+    indexJson[connectorName].author = connectorAuthor;
+    indexJson[connectorName].type = connectorType;
+    indexJson[connectorName].description = connectorDescription;
+    indexJson[connectorName].iconUrl = connectorIconUrl;
+
+    if (indexJson[connectorName].versions.includes(connectorVersion)) {
       return;
     }
-    indexJson[connectorName].push(connectorVersion);
+    indexJson[connectorName].versions.push(connectorVersion);
   }
 });
 
