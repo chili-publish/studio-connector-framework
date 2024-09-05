@@ -1,6 +1,6 @@
 {
   "name": "acquia",
-  "description": "",
+  "description": "Acquia connector",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
