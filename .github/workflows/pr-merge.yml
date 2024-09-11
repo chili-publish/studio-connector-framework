@@ -78,7 +78,7 @@ jobs:
 
       - name: Upload artifacts
         if: env.CHANGED_CONNECTOR != ''
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: connectors
           path: upload/connector-repo
