@@ -48,7 +48,7 @@ jobs:
           mkdir -p "src/connector-cli/$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
       - name: Upload CLI build artifacts
         if: steps.git_diff.outputs.cli_changed == 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: cli-build
           path: src/connector-cli/upload/
