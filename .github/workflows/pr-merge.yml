@@ -36,7 +36,7 @@ jobs:
             container_name="connector-marketplace"
             blob_name="connector-repo/index.json"
             destination_file="existing/index.json"
-            connection_string="${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}"
+            connection_string="${{ secrets.AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}"
 
             # ensure 'existing' folder exists
             mkdir -p existing
