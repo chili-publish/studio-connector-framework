@@ -60,10 +60,11 @@ fs.readdirSync(publishDir).forEach(file => {
     const connectorDescription = connectorJson.description;
     const connectorIconUrl = connectorJson.iconUrl;
     const connectorVersion = connectorJson.version;
-    const connectorApiVersion= connectorJson.apiVersion;
+    const connectorApiVersion = connectorJson.apiVersion;
     const connectorRuntimeOptions = connectorJson.options;
     const connectorAllowedDomains = connectorJson.allowedDomains;
-    const connectorProxyOptions= connectorJson.proxyOptions;
+    const connectorProxyOptions = connectorJson.proxyOptions;
+    const connectorSupportedAuth = connectorJson.supportedAuth;
 
     if (!indexJson[connectorName]) {
       indexJson[connectorName] = {versions: []};
@@ -77,6 +78,7 @@ fs.readdirSync(publishDir).forEach(file => {
     indexJson[connectorName].options = connectorRuntimeOptions;
     indexJson[connectorName].allowedDomains = connectorAllowedDomains;
     indexJson[connectorName].proxyOptions = connectorProxyOptions;
+    indexJson[connectorName].supportedAuthentication = connectorSupportedAuth;
 
     if (indexJson[connectorName].versions.includes(connectorVersion)) {
       return;
