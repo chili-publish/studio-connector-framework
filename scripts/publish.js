@@ -64,6 +64,9 @@ fs.readdirSync(publishDir).forEach(file => {
     const connectorAllowedDomains = connectorJson.allowedDomains;
     const connectorProxyOptions= connectorJson.proxyOptions;
 
+    console.log(connectorName, connectorJson);
+    console.log(indexJson);
+    
     if (!indexJson[connectorName]) {
       indexJson[connectorName] = {versions: []};
     }
