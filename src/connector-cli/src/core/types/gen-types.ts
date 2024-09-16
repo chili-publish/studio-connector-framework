@@ -72,12 +72,12 @@ export interface StaticKey {
 }
 
 export interface ConnectorConfig {
-    iconUrl?:      string;
-    connectorName?:string;
-    mappings?:     { [key: string]: any };
-    options:       { [key: string]: any };
-    supportedAuth: SupportedAuth[];
-    type:          Type;
+    connectorName?: string;
+    iconUrl?:       string;
+    mappings?:      { [key: string]: any };
+    options:        { [key: string]: any };
+    supportedAuth:  SupportedAuth[];
+    type:           Type;
 }
 
 export enum SupportedAuth {
@@ -340,6 +340,7 @@ const typeMap: any = {
         { json: "value", js: "value", typ: "" },
     ], false),
     "ConnectorConfig": o([
+        { json: "connectorName", js: "connectorName", typ: u(undefined, "") },
         { json: "iconUrl", js: "iconUrl", typ: u(undefined, "") },
         { json: "mappings", js: "mappings", typ: u(undefined, m("any")) },
         { json: "options", js: "options", typ: m("any") },
