@@ -8,7 +8,7 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
-    "displayName": "Acquia DAM",
+    "connectorName": "Acquia DAM",
     "type": "media",
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Acquia_DAM.png",
     "options": {

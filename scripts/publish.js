@@ -55,7 +55,7 @@ fs.readdirSync(publishDir).forEach(file => {
       fs.readFileSync(path.join(publishDir, file)),
     );
     const connectorName = connectorJson.name;
-    const connectorDisplayName = connectorJson.displayName;
+    const connectorDisplayName = connectorJson.connectorName;
     const connectorAuthor = connectorJson.author.name;
     const connectorType = connectorJson.type;
     const connectorDescription = connectorJson.description;
@@ -65,8 +65,7 @@ fs.readdirSync(publishDir).forEach(file => {
     if (!indexJson[connectorName]) {
       indexJson[connectorName] = {versions: []};
     }
-    indexJson[connectorName].name = connectorName;
-    indexJson[connectorName].displayName = connectorDisplayName;
+    indexJson[connectorName].name = connectorDisplayName ?? connectorName;
     indexJson[connectorName].author = connectorAuthor;
     indexJson[connectorName].type = connectorType;
     indexJson[connectorName].description = connectorDescription;

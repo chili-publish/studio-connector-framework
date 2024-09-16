@@ -73,7 +73,7 @@ export interface StaticKey {
 
 export interface ConnectorConfig {
     iconUrl?:      string;
-    displayName?:  string;
+    connectorName?:string;
     mappings?:     { [key: string]: any };
     options:       { [key: string]: any };
     supportedAuth: SupportedAuth[];

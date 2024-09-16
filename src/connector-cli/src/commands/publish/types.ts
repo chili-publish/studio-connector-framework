@@ -5,7 +5,7 @@ export interface ProxyOptions {
 
 interface ConnectorPayload {
   name: string;
-  displayName?: string;
+  // displayName?: string;
   description: string;
   type: 'media' | 'fonts';
   version: string;
