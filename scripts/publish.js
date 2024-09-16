@@ -55,30 +55,21 @@ fs.readdirSync(publishDir).forEach(file => {
       fs.readFileSync(path.join(publishDir, file)),
     );
     const connectorName = connectorJson.name;
+    const connectorDisplayName = connectorJson.config.connectorName;
     const connectorAuthor = connectorJson.author.name;
     const connectorType = connectorJson.type;
     const connectorDescription = connectorJson.description;
     const connectorIconUrl = connectorJson.iconUrl;
     const connectorVersion = connectorJson.version;
-    const connectorApiVersion = connectorJson.apiVersion;
-    const connectorRuntimeOptions = connectorJson.options;
-    const connectorAllowedDomains = connectorJson.allowedDomains;
-    const connectorProxyOptions = connectorJson.proxyOptions;
-    const connectorSupportedAuth = connectorJson.supportedAuth;
 
     if (!indexJson[connectorName]) {
       indexJson[connectorName] = {versions: []};
     }
-    indexJson[connectorName].name = connectorName;
-    indexJson[connectorName].apiVersion = connectorApiVersion;
+    indexJson[connectorName].name = connectorDisplayName ?? connectorName;
     indexJson[connectorName].author = connectorAuthor;
     indexJson[connectorName].type = connectorType;
     indexJson[connectorName].description = connectorDescription;
     indexJson[connectorName].iconUrl = connectorIconUrl;
-    indexJson[connectorName].options = connectorRuntimeOptions;
-    indexJson[connectorName].allowedDomains = connectorAllowedDomains;
-    indexJson[connectorName].proxyOptions = connectorProxyOptions;
-    indexJson[connectorName].supportedAuthentication = connectorSupportedAuth;
 
     if (indexJson[connectorName].versions.includes(connectorVersion)) {
       return;
