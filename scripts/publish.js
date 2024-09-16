@@ -61,7 +61,6 @@ fs.readdirSync(publishDir).forEach(file => {
     const connectorDescription = connectorJson.description;
     const connectorIconUrl = connectorJson.iconUrl;
     const connectorVersion = connectorJson.version;
-    console.log(connectorJson);
 
     if (!indexJson[connectorName]) {
       indexJson[connectorName] = {versions: []};
