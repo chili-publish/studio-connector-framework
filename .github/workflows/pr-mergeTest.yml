@@ -4,7 +4,7 @@ name: Publish Connectors
 on:
   push:
     branches:
-      - fix/connector-data
+      - fix/connector-data-update
 
 jobs:
   build-and-publish:
