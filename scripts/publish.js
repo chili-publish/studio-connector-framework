@@ -55,7 +55,7 @@ fs.readdirSync(publishDir).forEach(file => {
       fs.readFileSync(path.join(publishDir, file)),
     );
     const connectorName = connectorJson.name;
-    const connectorDisplayName = connectorJson.connectorName;
+    const connectorDisplayName = connectorJson.config.connectorName;
     const connectorAuthor = connectorJson.author.name;
     const connectorType = connectorJson.type;
     const connectorDescription = connectorJson.description;
