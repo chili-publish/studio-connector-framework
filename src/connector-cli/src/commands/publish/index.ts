@@ -85,7 +85,6 @@ export async function runPublish(
     version,
     type: config.type,
     iconUrl: config.iconUrl,
-    connectorName: config.connectorName,
     options: runtimeOptions,
     script: connectorJs,
     apiVersion,
