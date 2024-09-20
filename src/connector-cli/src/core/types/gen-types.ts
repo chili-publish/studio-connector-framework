@@ -72,12 +72,36 @@ export interface StaticKey {
 }
 
 export interface ConnectorConfig {
-    connectorName?: string;
-    iconUrl?:       string;
-    mappings?:      { [key: string]: any };
-    options:        { [key: string]: any };
-    supportedAuth:  SupportedAuth[];
-    type:           Type;
+    authenticationConfig?: AuthenticationConfig;
+    connectorName?:        string;
+    iconUrl?:              string;
+    mappings?:             { [key: string]: any };
+    options:               { [key: string]: any };
+    supportedAuth:         SupportedAuth[];
+    type:                  Type;
+}
+
+export interface AuthenticationConfig {
+    oAuth2AuthorizationCode?:     OAuth2AuthorizationCode;
+    oAuth2ResourceOwnerPassword?: OAuth2ResourceOwnerPassword;
+}
+
+export interface OAuth2AuthorizationCode {
+    authorizationServerMetadata: OAuth2AuthorizationCodeAuthorizationServerMetadata;
+    specCustomization?:          OAuth2AuthorizationCodeSpecCustomization;
+}
+
+export interface OAuth2AuthorizationCodeAuthorizationServerMetadata {
+    token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
+}
+
+export interface OAuth2AuthorizationCodeSpecCustomization {
+    codeParameterName?:  string;
+    requestContentType?: RequestContentType;
+}
+
+export interface OAuth2ResourceOwnerPassword {
+    bodyFormat: RequestContentType;
 }
 
 export enum SupportedAuth {
@@ -340,12 +364,31 @@ const typeMap: any = {
         { json: "value", js: "value", typ: "" },
     ], false),
     "ConnectorConfig": o([
+        { json: "authenticationConfig", js: "authenticationConfig", typ: u(undefined, r("AuthenticationConfig")) },
         { json: "connectorName", js: "connectorName", typ: u(undefined, "") },
         { json: "iconUrl", js: "iconUrl", typ: u(undefined, "") },
         { json: "mappings", js: "mappings", typ: u(undefined, m("any")) },
         { json: "options", js: "options", typ: m("any") },
         { json: "supportedAuth", js: "supportedAuth", typ: a(r("SupportedAuth")) },
         { json: "type", js: "type", typ: r("Type") },
+    ], false),
+    "AuthenticationConfig": o([
+        { json: "oAuth2AuthorizationCode", js: "oAuth2AuthorizationCode", typ: u(undefined, r("OAuth2AuthorizationCode")) },
+        { json: "oAuth2ResourceOwnerPassword", js: "oAuth2ResourceOwnerPassword", typ: u(undefined, r("OAuth2ResourceOwnerPassword")) },
+    ], false),
+    "OAuth2AuthorizationCode": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("OAuth2AuthorizationCodeAuthorizationServerMetadata") },
+        { json: "specCustomization", js: "specCustomization", typ: u(undefined, r("OAuth2AuthorizationCodeSpecCustomization")) },
+    ], false),
+    "OAuth2AuthorizationCodeAuthorizationServerMetadata": o([
+        { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
+    ], false),
+    "OAuth2AuthorizationCodeSpecCustomization": o([
+        { json: "codeParameterName", js: "codeParameterName", typ: u(undefined, "") },
+        { json: "requestContentType", js: "requestContentType", typ: u(undefined, r("RequestContentType")) },
+    ], false),
+    "OAuth2ResourceOwnerPassword": o([
+        { json: "bodyFormat", js: "bodyFormat", typ: r("RequestContentType") },
     ], false),
     "TokenEndpointAuthMethodsSupported": [
         "client_secret_basic",

@@ -98,7 +98,7 @@ function processConnector(dir) {
 
   // Read the package.json and extract the necessary info
   const packageJson = require(path.join(dir, 'package.json'));
-  const {name, description, version, author } = packageJson;
+  const {name, description, version, author, config } = packageJson;
 
   // Read the connector.js file
   const {connectorJs} = readScripts(outDir, dir);
@@ -109,11 +109,12 @@ function processConnector(dir) {
   // Create a new JSON object
   const jsonObject = {
     id: name,
-    name: packageJson.config.connectorName || name,
+    name: config.connectorName || name,
     description,
     version,
     author,
-    script: connectorJs
+    script: connectorJs,
+    authenticationConfig: config.authenticationConfig
   };
 
   Object.assign(jsonObject, connectorInfo);
