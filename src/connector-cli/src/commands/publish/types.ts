@@ -11,6 +11,7 @@ interface ConnectorPayload {
   iconUrl?: string;
   script: string;
   apiVersion: string;
+  options?: Record<string, unknown>;
   allowedDomains: Array<string>;
   proxyOptions: {
     forwardedHeaders: boolean;

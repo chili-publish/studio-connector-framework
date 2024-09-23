@@ -1,5 +1,5 @@
-import { selectAvailableConnector } from '../../../common/select-available-connector';
-import { httpErrorHandler, info, success, verbose, warn } from '../../../core';
+import { getConnectorById } from '../../../common/get-connector';
+import { httpErrorHandler, info, success, verbose } from '../../../core';
 import { UpdateConnectorPayload } from '../types';
 
 export async function updateExistingConnector(
@@ -9,37 +9,17 @@ export async function updateExistingConnector(
   payload: UpdateConnectorPayload
 ): Promise<void> {
   info('Updating connector...');
-  const getConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
-
-  verbose(
-    `Checking connector's existing with id ${connectorId} -> ${getConnectorEnpdoint}`
-  );
-  const existingConnectorRes = await fetch(getConnectorEnpdoint, {
-    headers: {
-      Authorization: token,
-    },
+  const existingConnector = await getConnectorById({
+    baseUrl: connectorEndpointBaseUrl,
+    connectorId,
+    token,
   });
-  if (existingConnectorRes.status !== 200) {
-    warn(
-      `Connector with id ${connectorId} doesn't exist or you don't have permission to update it`
-    );
-    // When connector is not available we request the list and ask user to select connector for update
-    const id = await selectAvailableConnector(connectorEndpointBaseUrl, token);
-    return updateExistingConnector(
-      connectorEndpointBaseUrl,
-      id,
-      token,
-      payload
-    );
-  }
-
-  const existingConnector = await existingConnectorRes.json();
   const updatePayload = {
     ...existingConnector,
     ...payload,
   };
 
-  const updateConnectorEnpdoint = getConnectorEnpdoint;
+  const updateConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
 
   verbose(
     `Deploying connector with a payload\n ${JSON.stringify(
