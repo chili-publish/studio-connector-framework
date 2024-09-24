@@ -1,7 +1,7 @@
 {
   "name": "acquia",
   "description": "Acquia DAM",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "author": {
     "name": "CHILI publish",
     "email": "info@chili-publish.com",
@@ -20,6 +20,22 @@
       "oAuth2AuthorizationCode",
       "staticKey"
     ],
+    "authenticationConfig": {
+      "oAuth2ResourceOwnerPassword": {
+        "bodyFormat": "applicationJson"
+      },
+      "oAuth2AuthorizationCode": {
+        "authorizationServerMetadata": {
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_post"
+          ]
+        },
+        "specCustomization": {
+          "requestContentType": "applicationJson",
+          "codeParameterName": "authorization_code"
+        }
+      }
+    },
     "mappings": {}
   },
   "private": true,

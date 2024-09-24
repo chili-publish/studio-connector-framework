@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {execSync} = require('child_process');
+const { execSync } = require('child_process');
 
 /*
     This script is used to build and publish the connectors to the "publish" folder.
@@ -98,10 +98,10 @@ function processConnector(dir) {
 
   // Read the package.json and extract the necessary info
   const packageJson = require(path.join(dir, 'package.json'));
-  const {name, description, version, author } = packageJson;
+  const { name, description, version, author } = packageJson;
 
   // Read the connector.js file
-  const {connectorJs} = readScripts(outDir, dir);
+  const { connectorJs } = readScripts(outDir, dir);
 
   // Build the project
   const connectorInfo = extractConnectorInfo(outDir, dir);
@@ -113,7 +113,8 @@ function processConnector(dir) {
     description,
     version,
     author,
-    script: connectorJs
+    script: connectorJs,
+    authenticationConfig: packageJson.config.authenticationConfig
   };
 
   Object.assign(jsonObject, connectorInfo);
@@ -158,5 +159,5 @@ function readScripts(outDir, dir) {
   const connectorTs = fs.existsSync(path.join(dir, 'connector.ts'))
     ? fs.readFileSync(path.join(dir, 'connector.ts'), 'utf-8')
     : undefined;
-  return {connectorJs, connectorTs};
+  return { connectorJs, connectorTs };
 }
