@@ -30,7 +30,7 @@ connectorsToProcess.forEach(file => {
       fs.mkdirSync(publishDir);
     }
     fs.writeFileSync(
-      path.join(publishDir, `${connectorJson.name}.${connectorJson.version}.json`),
+      path.join(publishDir, `${connectorJson.id}.${connectorJson.version}.json`),
       JSON.stringify(connectorJson, null, 2),
     );
     console.log(`Successfully processed ${connectorJson.name}`);
@@ -51,30 +51,29 @@ const indexJson = fs.existsSync(path.join(existingDir, 'index.json'))
 fs.readdirSync(publishDir).forEach(file => {
   //check if json then read and add to index
   if (file.endsWith('.json')) {
-    const connectorJson = JSON.parse(
+    const connectorDetails = JSON.parse(
       fs.readFileSync(path.join(publishDir, file)),
     );
-    const connectorName = connectorJson.name;
-    const connectorDisplayName = connectorJson.connectorName;
-    const connectorAuthor = connectorJson.author.name;
-    const connectorType = connectorJson.type;
-    const connectorDescription = connectorJson.description;
-    const connectorIconUrl = connectorJson.iconUrl;
-    const connectorVersion = connectorJson.version;
+    const { id, name } = connectorDetails;
+    const connectorAuthor = connectorDetails.author.name;
+    const connectorType = connectorDetails.type;
+    const connectorDescription = connectorDetails.description;
+    const connectorIconUrl = connectorDetails.logoUrl;
+    const connectorVersion = connectorDetails.version;
 
-    if (!indexJson[connectorName]) {
-      indexJson[connectorName] = {versions: []};
+    if (!indexJson[id]) {
+      indexJson[id] = {versions: []};
     }
-    indexJson[connectorName].name = connectorDisplayName ?? connectorName;
-    indexJson[connectorName].author = connectorAuthor;
-    indexJson[connectorName].type = connectorType;
-    indexJson[connectorName].description = connectorDescription;
-    indexJson[connectorName].iconUrl = connectorIconUrl;
+    indexJson[id].name = name ?? packageName;
+    indexJson[id].author = connectorAuthor;
+    indexJson[id].type = connectorType;
+    indexJson[id].description = connectorDescription;
+    indexJson[id].logoUrl = connectorIconUrl;
 
-    if (indexJson[connectorName].versions.includes(connectorVersion)) {
+    if (indexJson[id].versions.includes(connectorVersion)) {
       return;
     }
-    indexJson[connectorName].versions.push(connectorVersion);
+    indexJson[id].versions.push(connectorVersion);
   }
 });
 
@@ -99,77 +98,27 @@ function processConnector(dir) {
 
   // Read the package.json and extract the necessary info
   const packageJson = require(path.join(dir, 'package.json'));
-  const {name, description, version, config, license, author} = packageJson;
+  const {name, description, version, author } = packageJson;
 
   // Read the connector.js file
-  const {connectorJs, connectorTs} = readScripts(outDir, dir);
-
-  // get connector sdk version
-  const connectorApiVersion = extractConnectorSdkVersion(packageJson);
+  const {connectorJs} = readScripts(outDir, dir);
 
   // Build the project
   const connectorInfo = extractConnectorInfo(outDir, dir);
 
   // Create a new JSON object
   const jsonObject = {
-    name,
+    id: name,
+    name: packageJson.config.connectorName || name,
     description,
     version,
-    license,
     author,
-    script: connectorJs,
-    scriptTs: connectorTs,
-    connectorApiVersion,
+    script: connectorJs
   };
 
-  Object.assign(jsonObject, config);
   Object.assign(jsonObject, connectorInfo);
 
   return jsonObject;
-}
-
-function extractConnectorSdkVersion(packageJson) {
-  // in the package.json get the version of the @chili-publish/studio-connectors package
-  const studioConnectorsVersion =
-    packageJson.dependencies['@chili-publish/studio-connectors'];
-  if (!studioConnectorsVersion) {
-    console.error(
-      `@chili-publish/studio-connectors not found in ${path.join(
-        dir,
-        'package.json',
-      )}`,
-    );
-    return;
-  }
-
-  let connectorApiVersion = '';
-
-  // the dependency could be a version, or tarball
-  if (studioConnectorsVersion.startsWith('file:')) {
-    // get the tarball name
-    const tarball = studioConnectorsVersion.replace('file:', '');
-    // regex matchh version number
-    const regex = /v([0-9]+\.[0-9]+\.[0-9]+)\.tgz/;
-    const match = regex.exec(tarball);
-    if (!match) {
-      console.error(`Failed to extract version from ${tarball}`);
-      return;
-    }
-    connectorApiVersion = match[1];
-  } else {
-    // regex matchh version number
-    const regex = /([0-9]+\.[0-9]+\.[0-9]+)/;
-    const match = regex.exec(studioConnectorsVersion);
-    if (!match) {
-      console.error(
-        `Failed to extract version from ${studioConnectorsVersion}`,
-      );
-      return;
-    }
-    connectorApiVersion = match[1];
-  }
-
-  return connectorApiVersion;
 }
 
 
