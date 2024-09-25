@@ -1,3 +1,4 @@
+import { buildRequestUrl } from '../../common/build-request-url';
 import { getConnectorById } from '../../common/get-connector';
 import { info, readConnectorConfig, startCommand, success } from '../../core';
 import { readAccessToken } from '../../core/read-access-token';
@@ -59,7 +60,7 @@ export async function runSetAuth(
 
   info('Retrieving connector to update...');
   const { id, name } = await getConnectorById({
-    baseUrl,
+    baseUrl: buildRequestUrl(baseUrl, environment),
     connectorId,
     token: accessToken,
   });
