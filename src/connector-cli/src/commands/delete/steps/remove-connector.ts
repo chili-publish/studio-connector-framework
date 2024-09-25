@@ -6,14 +6,15 @@ export async function removeConnector(
   connectorId: string,
   token: string
 ): Promise<void> {
-  info('Removing connector...');
-  const deleteConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
-
-  await getConnectorById({
+  info('Retrieving connector to remove...');
+  const { id, name } = await getConnectorById({
     baseUrl: connectorEndpointBaseUrl,
     connectorId,
     token,
   });
+
+  info('Removing connector...');
+  const deleteConnectorEnpdoint = `${connectorEndpointBaseUrl}/${id}`;
 
   verbose('Removing connector via -> ' + deleteConnectorEnpdoint);
 
@@ -29,5 +30,5 @@ export async function removeConnector(
     await httpErrorHandler(res);
   }
 
-  success(`Connector "${connectorId}" is removed`);
+  success(`Connector "${name}" is removed`, { id, name });
 }

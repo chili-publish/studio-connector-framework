@@ -1,3 +1,4 @@
+import { getConnectorById } from '../../common/get-connector';
 import { info, readConnectorConfig, startCommand, success } from '../../core';
 import { readAccessToken } from '../../core/read-access-token';
 import {
@@ -40,7 +41,7 @@ export async function runSetAuth(
 
   const connectorConfig = readConnectorConfig(packageJson);
 
-  if (!connectorConfig.supportedAuth) {
+  if (connectorConfig.supportedAuth.length === 0) {
     throw new ExecutionError(
       'There is no information about supported authentication for this connector. Specify "config.supportedAuth" in connecotr\'s package.json'
     );
@@ -56,8 +57,15 @@ export async function runSetAuth(
     connectorConfig.supportedAuth
   );
 
+  info('Retrieving connector to update...');
+  const { id, name } = await getConnectorById({
+    baseUrl,
+    connectorId,
+    token: accessToken,
+  });
+
   info('Build full request URL...');
-  const requestUrl = getRequestUrl(baseUrl, environment, connectorId, type);
+  const requestUrl = getRequestUrl(baseUrl, environment, id, type);
 
   info('Set authentication...');
   await setAuthentication(
@@ -69,5 +77,9 @@ export async function runSetAuth(
     accessToken
   );
 
-  success(`"${type}" authentication is applied.`, { id: connectorId });
+  success(`"${type}" authentication is applied for "${name}" connector`, {
+    id,
+    name,
+    type,
+  });
 }

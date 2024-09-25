@@ -9,6 +9,8 @@ interface GetConnectorById {
 }
 
 interface EnvironmentConnector {
+  id: string;
+  name: string;
   ownerType: 'grafx';
   externalSourceId?: string;
 }
@@ -40,6 +42,7 @@ export async function getConnectorById(
 
   const connector: EnvironmentConnector = await res.json();
 
+  verbose('Checking belongings to "Hub-Based" connectors');
   if (connector.ownerType === 'grafx' && !!connector.externalSourceId) {
     throw new ExecutionError(
       `You're trying to change a connector created using Connector Hub. It can not be done via Connector CLI. Consider to use GraFx Platform connectors configuration page instead`
