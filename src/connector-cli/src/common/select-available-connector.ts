@@ -30,7 +30,9 @@ export async function selectAvailableConnector(
   while (true) {
     // Use the question method to get the user input
     const index = Number(
-      await rl.question('Select the index of the connector to make an action')
+      await rl.question(
+        'Select the index of the connector to make an action:\xa0'
+      )
     );
     // Use the validation function to check the input
     if (isNaN(index) || !connectors[index]) {

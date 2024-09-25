@@ -1,13 +1,20 @@
-import { selectAvailableConnector } from '../../../common/select-available-connector';
-import { httpErrorHandler, info, success, verbose, warn } from '../../../core';
+import { getConnectorById } from '../../../common/get-connector';
+import { httpErrorHandler, info, success, verbose } from '../../../core';
 
 export async function removeConnector(
   connectorEndpointBaseUrl: string,
   connectorId: string,
   token: string
 ): Promise<void> {
+  info('Retrieving connector to remove...');
+  const { id, name } = await getConnectorById({
+    baseUrl: connectorEndpointBaseUrl,
+    connectorId,
+    token,
+  });
+
   info('Removing connector...');
-  const deleteConnectorEnpdoint = `${connectorEndpointBaseUrl}/${connectorId}`;
+  const deleteConnectorEnpdoint = `${connectorEndpointBaseUrl}/${id}`;
 
   verbose('Removing connector via -> ' + deleteConnectorEnpdoint);
 
@@ -19,15 +26,9 @@ export async function removeConnector(
     },
   });
 
-  if (!res.ok && res.status === 404) {
-    warn(
-      `Connector with id ${connectorId} doesn't exist or you don't have permission to remove it`
-    );
-    const id = await selectAvailableConnector(connectorEndpointBaseUrl, token);
-    return removeConnector(connectorEndpointBaseUrl, id, token);
-  } else if (!res.ok) {
+  if (!res.ok) {
     await httpErrorHandler(res);
   }
 
-  success(`Connector "${connectorId}" is removed`);
+  success(`Connector "${name}" is removed`, { id, name });
 }
