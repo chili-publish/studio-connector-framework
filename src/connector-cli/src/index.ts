@@ -94,7 +94,10 @@ function main() {
         ' You can use "*" to denote dynamic parts of the URL.' +
         ' Example usage: --proxyOption.allowedDomains "main-domain.com", --proxyOption.allowedDomains "*.sub-domain.com"'
     )
-    .option('--proxyOption.forwardedHeaders')
+    .option(
+      '--proxyOption.forwardedHeaders',
+      'If enabled, any request to connector via proxy ednpoint will include X-Forwarded-* headers'
+    )
     .action(withErrorHandlerAction(runPublish));
 
   program
