@@ -13,14 +13,14 @@
 // match the expected interface, even if the JSON is valid.
 
 export interface ChiliToken {
-    name: string;
+    name?: string;
 }
 
 export interface Oauth2AuthorizationCode {
     authorizationServerMetadata: AuthorizationServerMetadata;
     clientId:                    string;
     clientSecret:                string;
-    name:                        string;
+    name?:                       string;
     scope?:                      string;
     specCustomization?:          SpecCustomization;
 }
@@ -49,7 +49,7 @@ export enum RequestContentType {
 export interface Oauth2ClientCredentials {
     clientId:      string;
     clientSecret:  string;
-    name:          string;
+    name?:         string;
     scope?:        string;
     tokenEndpoint: string;
 }
@@ -58,7 +58,7 @@ export interface Oauth2ResourceOwnerPassword {
     bodyFormat?:   RequestContentType;
     clientId:      string;
     clientSecret:  string;
-    name:          string;
+    name?:         string;
     password:      string;
     scope?:        string;
     tokenEndpoint: string;
@@ -67,7 +67,7 @@ export interface Oauth2ResourceOwnerPassword {
 
 export interface StaticKey {
     key:   string;
-    name:  string;
+    name?: string;
     value: string;
 }
 
@@ -298,13 +298,13 @@ function r(name: string) {
 
 const typeMap: any = {
     "ChiliToken": o([
-        { json: "name", js: "name", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
     ], false),
     "Oauth2AuthorizationCode": o([
         { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("AuthorizationServerMetadata") },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
-        { json: "name", js: "name", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "specCustomization", js: "specCustomization", typ: u(undefined, r("SpecCustomization")) },
     ], false),
@@ -320,7 +320,7 @@ const typeMap: any = {
     "Oauth2ClientCredentials": o([
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
-        { json: "name", js: "name", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
     ], false),
@@ -328,7 +328,7 @@ const typeMap: any = {
         { json: "bodyFormat", js: "bodyFormat", typ: u(undefined, r("RequestContentType")) },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
-        { json: "name", js: "name", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "password", js: "password", typ: "" },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
@@ -336,7 +336,7 @@ const typeMap: any = {
     ], false),
     "StaticKey": o([
         { json: "key", js: "key", typ: "" },
-        { json: "name", js: "name", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
         { json: "value", js: "value", typ: "" },
     ], false),
     "ConnectorConfig": o([

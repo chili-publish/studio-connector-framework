@@ -43,7 +43,7 @@ export async function runSetAuth(
 
   if (connectorConfig.supportedAuth.length === 0) {
     throw new ExecutionError(
-      'There is no information about supported authentication for this connector. Specify "config.supportedAuth" in connecotr\'s package.json'
+      'There is no information about supported authentication for this connector. Specify "config.supportedAuth" in connector\'s package.json'
     );
   }
 
@@ -63,6 +63,10 @@ export async function runSetAuth(
     connectorId,
     token: accessToken,
   });
+
+  if (!authData.name) {
+    authData.name = `${id}-${usage}-${type}`;
+  }
 
   info('Build full request URL...');
   const requestUrl = getRequestUrl(baseUrl, environment, id, type);

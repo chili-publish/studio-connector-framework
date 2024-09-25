@@ -60,11 +60,6 @@
       "$ref": "#/$defs/SpecCustomization"
     }
   },
-  "required": [
-    "name",
-    "clientId",
-    "clientSecret",
-    "authorizationServerMetadata"
-  ],
+  "required": ["clientId", "clientSecret", "authorizationServerMetadata"],
   "additionalProperties": false
 }

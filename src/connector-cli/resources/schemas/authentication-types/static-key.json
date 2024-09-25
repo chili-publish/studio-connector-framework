@@ -12,6 +12,6 @@
       "type": "string"
     }
   },
-  "required": ["name", "key", "value"],
+  "required": ["key", "value"],
   "additionalProperties": false
 }
