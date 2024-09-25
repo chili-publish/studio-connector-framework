@@ -18,6 +18,7 @@ export const getPackageJson = (projectName: string, type: Type) => ({
     type: type,
     options: {},
     mappings: {},
+    supportedAuth: [],
   },
   license: 'MIT',
   main: `${outputDirectory}/${outputFilename}`,
