@@ -103,6 +103,6 @@ export async function runPublish(
       )
     : await createNewConnector(requestUrl, accessToken, {
         ...connectorPayload,
-        enabled: true,
+        enabled: false,
       });
 }
