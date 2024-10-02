@@ -19,7 +19,7 @@ interface ConnectorPayload {
 }
 
 export interface CreateConnectorPayload extends ConnectorPayload {
-  enabled: true;
+  enabled: false;
 }
 
 export type UpdateConnectorPayload = ConnectorPayload;

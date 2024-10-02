@@ -1,7 +1,7 @@
 {
   "name": "acquia",
   "description": "Acquia DAM",
-  "version": "1.0.11",
+  "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
     "email": "info@chili-publish.com",
@@ -10,7 +10,7 @@
   "config": {
     "connectorName": "Acquia DAM",
     "type": "media",
-    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Acquia_DAM.png",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Acquia_logo.svg",
     "options": {
       "BASE_URL": null,
       "PREVIEW_BASE_URL": null
