@@ -15,6 +15,7 @@ import {
 interface InitCommandOptions {
   name: string;
   type: ConnectorType;
+  out: string;
 }
 
 export async function runInit(options: InitCommandOptions): Promise<void> {
@@ -29,7 +30,7 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
     );
   }
 
-  let relDirectory = './';
+  let relDirectory = options.out;
   if (commandName === 'new') {
     relDirectory = path.join(relDirectory, options.name);
   }
@@ -90,11 +91,25 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   info('Creating .gitignore');
   fs.writeFileSync(path.join(projectDir, './.gitignore'), gitIgnore);
 
-  // 7. init git project
-  info(
-    execSync(`git init`, {
-      cwd: projectDir,
-      encoding: 'utf-8',
-    })
+  // Checking whether currenct directory is a git directory
+  const response = execSync(`git rev-parse --is-inside-work-tree`, {
+    cwd: projectDir,
+    encoding: 'utf-8',
+  });
+
+  verbose(
+    `Checking whether current directory is a git directory\n ${response}`
   );
+
+  // 7. init or add files to git project
+  if (response.trim() === 'true') {
+    info('Adding generated project files to the git...');
+  } else {
+    info(
+      execSync(`git init`, {
+        cwd: projectDir,
+        encoding: 'utf-8',
+      })
+    );
+  }
 }
