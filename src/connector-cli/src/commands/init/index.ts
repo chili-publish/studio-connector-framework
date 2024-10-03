@@ -98,7 +98,7 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   });
 
   verbose(
-    `Checking whether current directory is a git directory\n ${response}`
+    `Checking whether the current directory is a git directory\n ${response}`
   );
 
   // 7. init or add files to git project
