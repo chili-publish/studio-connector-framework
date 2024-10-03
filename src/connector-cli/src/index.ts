@@ -46,6 +46,11 @@ function main() {
         .choices(Object.values(ConnectorType))
         .default('media')
     )
+    .option(
+      '-o, --out [out]',
+      'Output path of project files. Combined with <name> to produce final directory',
+      './'
+    )
     .action(withErrorHandlerAction(runInit));
 
   program
