@@ -9,6 +9,7 @@ export const Models: {
   ConnectorInstance: any;
   Configuration: SettableDataModel[];
   Media: InvokableDataModel[];
+  Data: InvokableDataModel[];
   updateConfiguration: (name: 'headers' | 'options', values: unknown) => void;
 } = {
   ConnectorMetadata: null,
@@ -54,6 +55,73 @@ export const Models: {
         Models.updateConfiguration('options', values[0]);
         window.alert('Settings were applied');
       },
+    },
+  ],
+  Data: [
+    {
+      name: 'getPage',
+      parameters: [
+        {
+          name: 'config',
+          componentType: 'complex',
+          complex: [
+            {
+              name: 'filters',
+              componentType: 'list',
+            },
+            {
+              name: 'sorting',
+              componentType: 'list',
+            },
+            {
+              name: 'continuationToken',
+              componentType: 'text',
+            },
+            {
+              name: 'limit',
+              componentType: 'number',
+              min: 0,
+              value: 0,
+            },
+          ],
+        },
+        {
+          name: 'context',
+          componentType: 'dictionary',
+        },
+      ],
+      invoke: async (values: any[]) => {
+        const result = await Models.ConnectorInstance.getPage(
+          values[0] || {},
+          values[1] || {}
+        );
+
+        console.table({ request: values, result });
+
+        return result;
+      },
+      returnJson: true,
+      returnJsonArray: true,
+      returnsImage: false,
+    },
+    {
+      name: 'getModel',
+      parameters: [
+        {
+          name: 'context',
+          componentType: 'dictionary',
+        },
+      ],
+      invoke: async (values: any[]) => {
+        const result = await Models.ConnectorInstance.getModel(values[0] || {});
+
+        console.table({ request: values, result });
+
+        return result;
+      },
+      returnJson: true,
+      returnJsonArray: false,
+      returnsImage: false,
     },
   ],
   Media: [

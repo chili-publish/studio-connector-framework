@@ -16,13 +16,14 @@ export const Sidebar = ({
   let models: DataModel[] = [];
   const configurationModels = Models.Configuration;
 
-  switch (Models.ConnectorMetadata?.type) {
-    case 'MediaConnector':
+  switch (Models.ConnectorMetadata?.type?.toLowerCase()) {
+    case 'mediaconnector':
       Models.Media.forEach((model: DataModel) => models.push(model));
       break;
-    case 'FontConnector':
+    case 'fontconnector':
       break;
-    case 'DataConnector':
+    case 'dataconnector':
+      Models.Data.forEach((model: DataModel) => models.push(model));
       break;
     default:
       Models.Media.forEach((model: DataModel) => models.push(model));
