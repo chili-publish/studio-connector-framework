@@ -129,7 +129,8 @@ function App() {
   return (
     <div className="h-screen flex">
       <Sidebar onModelChanged={modelChangeHandler} />
-      <MainContent dataModel={dataModel} />
+      {/* we specify key as dataModel.name to rerender the same components once model changed */}
+      <MainContent key={dataModel?.name} dataModel={dataModel} />
     </div>
   );
 }
