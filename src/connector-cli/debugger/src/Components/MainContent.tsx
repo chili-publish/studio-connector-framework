@@ -1,6 +1,6 @@
 import { DataModel } from '../Helpers/DataModel';
-import { GenericComponent } from './GenericComponent';
 import { Models } from '../Helpers/Models';
+import { GenericComponent } from './GenericComponent';
 
 export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
   if (!dataModel) {
@@ -22,7 +22,9 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
           <h1 className="text-xl font-semibold">
             {Models.ConnectorMetadata?.name}
           </h1>
-          <p className="text-gray-600">{Models.ConnectorMetadata?.type}</p>
+          <p className="text-gray-600">
+            {Models.ConnectorMetadata?.getDisplayType()}
+          </p>
         </div>
         <GenericComponent dataModel={dataModel} />
       </div>

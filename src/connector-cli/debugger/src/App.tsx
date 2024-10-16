@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import { MainContent } from './Components/MainContent';
 import { Sidebar } from './Components/Sidebar';
-import { Header, initRuntime } from './Helpers/ConnectorRuntime';
-import { DataModel } from './Helpers/DataModel';
+import { useConnectorSettings } from './core/useConnectorSettings';
+import { initRuntime } from './Helpers/ConnectorRuntime';
+import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
+import { ComplexParameter, DataModel } from './Helpers/DataModel';
 import { Models } from './Helpers/Models';
-
-const httpHeadersStorageKey = 'connector-cli-http-headers';
-const runtimeSettingsStorageKey = 'connector-cli-runtime-settings';
 
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
@@ -16,14 +15,32 @@ function App() {
   const [connector, setConnector] = useState<any>(null);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const [globalHeaders, setGlobalHeaders] = useState<Header[]>([]);
-  const [authorization, setAuthorization] = useState<Header>({} as any);
-  const [runtimeOptions, setRuntimeOptions] = useState<Record<string, unknown>>(
-    {}
-  );
+  const {
+    globalHeaders,
+    runtimeOptions,
+    authorization,
+    globalQueryParams,
+    updateSettings,
+    initSettings,
+  } = useConnectorSettings();
+
+  const connectorType = useMemo(() => {
+    const queryParamConnectorType = new URLSearchParams(window.location.search)
+      .get('type')
+      ?.toLowerCase();
+
+    if (
+      queryParamConnectorType !== 'mediaconnector' &&
+      queryParamConnectorType !== 'dataconnector' &&
+      queryParamConnectorType !== 'fontconnector'
+    ) {
+      return 'mediaconnector';
+    }
+    return queryParamConnectorType;
+  }, []);
 
   useEffect(() => {
-    initRuntime(globalHeaders, runtimeOptions, authorization)
+    initRuntime(globalHeaders, runtimeOptions, authorization, globalQueryParams)
       .then((connector) => {
         Models.ConnectorInstance = connector;
         setConnector(connector);
@@ -35,50 +52,19 @@ function App() {
         setLoading(false);
         console.error('error', err);
       });
-  }, [globalHeaders, runtimeOptions, authorization]);
+  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
 
   useEffect(() => {
-    Models.updateConfiguration = (
-      name: 'headers' | 'options',
-      value: unknown
-    ) => {
-      switch (name) {
-        case 'headers':
-          const val: { authorization: Header; other: Header[] } = value as {
-            authorization: Header;
-            other: Header[];
-          };
-          setAuthorization(val.authorization);
-          setGlobalHeaders(val.other);
-
-          sessionStorage.setItem(httpHeadersStorageKey, JSON.stringify(val));
-          break;
-        case 'options': {
-          setRuntimeOptions(value as Record<string, unknown>);
-          sessionStorage.setItem(
-            runtimeSettingsStorageKey,
-            JSON.stringify(value)
-          );
-        }
-      }
-    };
-
-    // Read saved configuration from session storage
-    if (!!sessionStorage.getItem(runtimeSettingsStorageKey)) {
-      Models.updateConfiguration(
-        'options',
-        JSON.parse(sessionStorage.getItem(runtimeSettingsStorageKey)!)
-      );
-    }
-    if (!!sessionStorage.getItem(httpHeadersStorageKey)) {
-      Models.updateConfiguration(
-        'headers',
-        JSON.parse(sessionStorage.getItem(httpHeadersStorageKey)!)
-      );
-    }
+    initRuntimeErrors();
   }, []);
 
-  function onModelChanged(model: DataModel): void {
+  useEffect(() => {
+    Models.updateSettings = updateSettings;
+    initSettings();
+  }, [updateSettings, initSettings]);
+
+  const modelChangeHandler = (model: DataModel) => {
+    console.debug('Model "Change"', model);
     // TODO: Implement better way of propagation stored values to the component params
     if (
       model.name === 'Runtime options' &&
@@ -87,22 +73,40 @@ function App() {
       model.parameters[0].value = runtimeOptions;
     }
     if (
-      model.name === 'headers' &&
+      model.name === 'http-params' &&
       (authorization.name || authorization.value)
     ) {
-      model.parameters[0].value = { [authorization.name]: authorization.value };
+      (model.parameters[0] as ComplexParameter).complex[0].value = {
+        [authorization.name]: authorization.value,
+      };
     }
-    if (model.name === 'headers' && Object.keys(globalHeaders).length !== 0) {
-      model.parameters[1].value = globalHeaders.reduce(
-        (val, gh) => {
-          val[gh.name] = gh.value;
+    if (
+      model.name === 'http-params' &&
+      Object.keys(globalHeaders).length !== 0
+    ) {
+      (model.parameters[0] as ComplexParameter).complex[1].value =
+        globalHeaders.reduce(
+          (val, gh) => {
+            val[gh.name] = gh.value;
+            return val;
+          },
+          {} as Record<string, string>
+        );
+    }
+
+    if (model.name === 'http-params' && globalQueryParams.size !== 0) {
+      model.parameters[1].value = Array.from(
+        globalQueryParams.entries()
+      ).reduce(
+        (val, gqp) => {
+          val[gqp[0]] = gqp[1];
           return val;
         },
         {} as Record<string, string>
       );
     }
     setDataModel(model);
-  }
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -114,27 +118,24 @@ function App() {
 
   Models.ConnectorMetadata = {
     name: connector.constructor.name,
-    type:
-      new URLSearchParams(window.location.search).get('type') ??
-      'FontConnector',
+    type: connectorType,
     getDisplayType: function () {
       switch (this.type) {
-        case 'MediaConnector':
+        case 'mediaconnector':
           return 'Media Connector';
-        case 'FontConnector':
+        case 'fontconnector':
           return 'Font Connector';
-        case 'DataConnector':
+        case 'dataconnector':
           return 'Data Connector';
-        default:
-          return 'Media Connector';
       }
     },
   };
 
   return (
     <div className="h-screen flex">
-      <Sidebar onModelChanged={onModelChanged} />
-      <MainContent dataModel={dataModel} />
+      <Sidebar onModelChanged={modelChangeHandler} />
+      {/* we specify key as dataModel.name to rerender the same components once model changed */}
+      <MainContent key={dataModel?.name} dataModel={dataModel} />
     </div>
   );
 }
