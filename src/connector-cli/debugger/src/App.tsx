@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import { MainContent } from './Components/MainContent';
 import { Sidebar } from './Components/Sidebar';
+import { useConnectorSettings } from './core/useConnectorSettings';
 import { initRuntime } from './Helpers/ConnectorRuntime';
+import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
 import { ComplexParameter, DataModel } from './Helpers/DataModel';
 import { Models } from './Helpers/Models';
-import { useConnectorSettings } from './core/useConnectorSettings';
 
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
@@ -52,6 +53,10 @@ function App() {
         console.error('error', err);
       });
   }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
+
+  useEffect(() => {
+    initRuntimeErrors();
+  }, []);
 
   useEffect(() => {
     Models.updateSettings = updateSettings;
