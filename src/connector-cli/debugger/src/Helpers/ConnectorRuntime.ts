@@ -20,19 +20,33 @@ export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
 export async function initRuntime(
   globalHeaders: Header[],
   runtimeOptions: Record<string, unknown>,
-  authorization: Header
+  authorization: Header,
+  globalQueryParams: URLSearchParams
 ) {
   // proxy the fetch function to be able to inject headers
   const fetch = async (url: string, options: any) => {
+    const authHeader =
+      authorization.name && authorization.value
+        ? { [authorization.name]: authorization.value }
+        : {};
     const headers = {
       ...options.headers,
       ...globalHeaders.reduce(
         (acc, curr) => ({ ...acc, [curr.name]: curr.value }),
         {}
       ),
-      [authorization.name]: authorization.value,
+      ...authHeader,
     };
-    const response = await window.fetch(url, { ...options, headers });
+    const urlInstance = new URL(url);
+
+    if (globalQueryParams.size > 0) {
+      urlInstance.search = new URLSearchParams([
+        ...Array.from(urlInstance.searchParams.entries()),
+        ...Array.from(globalQueryParams.entries()),
+      ]).toString();
+    }
+
+    const response = await window.fetch(urlInstance, { ...options, headers });
 
     // if binary file, add arrayBufferPointer property
     if (response.headers.get('content-type')?.includes('json')) {

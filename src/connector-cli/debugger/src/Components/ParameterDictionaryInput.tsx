@@ -7,7 +7,7 @@ export const ParameterDictionaryInput = ({
 }: {
   parentParameter: Parameter | undefined;
   parameter: DictionaryParameter;
-  onChange: (name: string, parameter: Parameter, value: any) => void;
+  onChange: (value: Record<string, string>) => void;
 }) => {
   let initialList = [{ key: '', value: '' }];
 
@@ -43,7 +43,7 @@ export const ParameterDictionaryInput = ({
     newItems.forEach((item) => {
       newItemsObject[item.key] = item.value;
     });
-    onChange(parameter.name, parameter, newItemsObject);
+    onChange(newItemsObject);
   };
 
   const handleKeyChange = (
@@ -59,7 +59,7 @@ export const ParameterDictionaryInput = ({
     newItems.forEach((item) => {
       newItemsObject[item.key] = item.value;
     });
-    onChange(parameter.name, parameter, newItemsObject);
+    onChange(newItemsObject);
   };
 
   const handleValueChange = (
@@ -75,7 +75,7 @@ export const ParameterDictionaryInput = ({
     newItems.forEach((item) => {
       newItemsObject[item.key] = item.value;
     });
-    onChange(parameter.name, parameter, newItemsObject);
+    onChange(newItemsObject);
   };
 
   return (

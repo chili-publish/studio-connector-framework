@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
-import { ParameterDictionaryInput } from './ParameterDictionaryInput';
+import { useCallback, useEffect } from 'react';
 import { NumberParameter, Parameter } from '../Helpers/DataModel';
+import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { ParameterListInput } from './ParameterListInput';
 
 export const ParameterInput = ({
@@ -13,21 +13,29 @@ export const ParameterInput = ({
   onChange: (name: string, parameter: Parameter, value: any) => void;
 }) => {
   const handleInputChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    (value: string | number | boolean) => {
       if (parentParameter !== undefined) {
         onChange(
           parentParameter?.name + '.' + parameter.name,
           parameter,
-          event.target?.value
+          value
         );
         return;
       }
-      onChange(parameter.name, parameter, event.target?.value);
+      onChange(parameter.name, parameter, value);
     },
     [parentParameter, parameter, onChange]
   );
 
   const handleListChange = (value: string[]) => {
+    if (parentParameter !== undefined) {
+      onChange(parentParameter?.name + '.' + parameter.name, parameter, value);
+      return;
+    }
+    onChange(parameter.name, parameter, value);
+  };
+
+  const handleDictionaryChange = (value: Record<string, string>) => {
     if (parentParameter !== undefined) {
       onChange(parentParameter?.name + '.' + parameter.name, parameter, value);
       return;
@@ -41,7 +49,7 @@ export const ParameterInput = ({
       parameter.value !== null &&
       ['text', 'number', 'boolean'].includes(parameter.componentType)
     ) {
-      handleInputChange({ target: { value: parameter.value } } as any);
+      handleInputChange(parameter.value);
     }
   }, [parameter.value, parameter.componentType, handleInputChange]);
 
@@ -63,7 +71,7 @@ export const ParameterInput = ({
               name={parameter.name}
               type="text"
               placeholder={parameter.name}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(e.target.value)}
               value={parameter.value ?? ''}
             />
           </div>
@@ -85,7 +93,7 @@ export const ParameterInput = ({
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
               name={parameter.name}
               type="checkbox"
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(e.target.checked)}
               value={parameter.value ?? false}
             />
           </div>
@@ -107,7 +115,7 @@ export const ParameterInput = ({
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               name={parameter.name}
               type="number"
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(Number(e.target.value))}
               defaultValue={parameter.value}
               min={(parameter as NumberParameter).min}
               max={(parameter as NumberParameter).max}
@@ -130,7 +138,7 @@ export const ParameterInput = ({
               id="name"
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               name={parameter.name}
-              onChange={handleInputChange}
+              onChange={(e) => handleInputChange(e.target.value)}
               defaultValue={parameter.value}
             >
               <option value="" selected disabled>
@@ -188,7 +196,7 @@ export const ParameterInput = ({
           <div className="w-fulkl">
             <ParameterDictionaryInput
               parameter={parameter}
-              onChange={onChange}
+              onChange={handleDictionaryChange}
               parentParameter={undefined}
             />
           </div>

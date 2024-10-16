@@ -14,9 +14,9 @@ export const Sidebar = ({
 }) => {
   // get url parameter for connector type (media/font/data)
   let models: DataModel[] = [];
-  const configurationModels = Models.Configuration;
+  const configurationModels = Models.Settings;
 
-  switch (Models.ConnectorMetadata?.type?.toLowerCase()) {
+  switch (Models.ConnectorMetadata?.type) {
     case 'mediaconnector':
       Models.Media.forEach((model: DataModel) => models.push(model));
       break;
@@ -38,7 +38,7 @@ export const Sidebar = ({
       <nav>
         <ul>
           <li>
-            <div>Configuration</div>
+            <div>Settings</div>
             {configurationModels.map((model) => (
               <a
                 key={model.name}
@@ -60,7 +60,7 @@ export const Sidebar = ({
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                {model.name}
+                {model.displayName ?? model.name}
               </a>
             ))}
           </li>
@@ -87,7 +87,7 @@ export const Sidebar = ({
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                {model.name}
+                {model.displayName ?? model.name}
               </a>
             ))}
           </li>

@@ -1,4 +1,9 @@
 import {
+  UpdateHttpParamsSettings,
+  UpdateRuntimeOptionsSettings,
+  UpdateSettingsFn,
+} from '../core/useConnectorSettings';
+import {
   ConnectorMetadata,
   InvokableDataModel,
   SettableDataModel,
@@ -7,39 +12,45 @@ import {
 export const Models: {
   ConnectorMetadata: ConnectorMetadata | null;
   ConnectorInstance: any;
-  Configuration: SettableDataModel[];
+  Settings: SettableDataModel[];
   Media: InvokableDataModel[];
   Data: InvokableDataModel[];
-  updateConfiguration: (name: 'headers' | 'options', values: unknown) => void;
+  updateSettings: UpdateSettingsFn;
 } = {
   ConnectorMetadata: null,
   ConnectorInstance: null,
-  updateConfiguration: () => ({}),
-  Configuration: [
+  updateSettings: () => ({}),
+  Settings: [
     {
-      name: 'headers',
+      name: 'http-params',
+      displayName: 'HTTP Params',
       parameters: [
         {
-          name: 'AuthenticationHeader',
-          componentType: 'dictionary',
-          rectrictModification: true,
+          name: 'headers',
+          componentType: 'complex',
+          complex: [
+            {
+              name: 'authorization',
+              componentType: 'dictionary',
+              rectrictModification: true,
+            },
+            {
+              name: 'other',
+              componentType: 'dictionary',
+            },
+          ],
         },
         {
-          name: 'HttpHeaders',
+          name: 'query',
           componentType: 'dictionary',
         },
       ],
-      set: (values: any[]) => {
-        Models.updateConfiguration('headers', {
-          authorization: {
-            name: Object.keys(values[0] ?? [])[0],
-            value: Object.values(values[0] ?? [])[0],
-          },
-          other: Object.entries(values[1] ?? []).map((h) => ({
-            name: h[0],
-            value: h[1],
-          })),
-        });
+      set: ([
+        headers,
+        queryParams,
+      ]: Parameters<UpdateHttpParamsSettings>[1]) => {
+        console.debug('Set "http-params"', headers, queryParams);
+        Models.updateSettings('http-params', [headers, queryParams]);
         window.alert('Settings were applied');
       },
     },
@@ -47,12 +58,13 @@ export const Models: {
       name: 'Runtime options',
       parameters: [
         {
-          name: 'options',
+          name: 'runtime-options',
           componentType: 'dictionary',
         },
       ],
-      set: async (values: any[]) => {
-        Models.updateConfiguration('options', values[0]);
+      set: async (values: Parameters<UpdateRuntimeOptionsSettings>[1]) => {
+        console.debug('Set "Runtime options"', values);
+        Models.updateSettings('runtime-options', values);
         window.alert('Settings were applied');
       },
     },
@@ -91,6 +103,7 @@ export const Models: {
         },
       ],
       invoke: async (values: any[]) => {
+        console.debug('Invoke "GetPage"', values);
         const result = await Models.ConnectorInstance.getPage(
           values[0] || {},
           values[1] || {}
@@ -113,6 +126,7 @@ export const Models: {
         },
       ],
       invoke: async (values: any[]) => {
+        console.debug('Invoke "GetModel"', values);
         const result = await Models.ConnectorInstance.getModel(values[0] || {});
 
         console.table({ request: values, result });
@@ -166,6 +180,7 @@ export const Models: {
         },
       ],
       invoke: async (values: any[]) => {
+        console.debug('Invoke "Media:Query"', values);
         const result = await Models.ConnectorInstance.query(
           values[0] || {},
           values[1] || {}
@@ -192,6 +207,7 @@ export const Models: {
         },
       ],
       invoke: async (values: any[]) => {
+        console.debug('Invoke "Media:Detail"', values);
         const result = await Models.ConnectorInstance.detail(
           values[0] || '',
           values[1] || {}
@@ -228,6 +244,7 @@ export const Models: {
         },
       ],
       invoke: async (values: any[]) => {
+        console.debug('Invoke "Media:Download"', values);
         const result = await Models.ConnectorInstance.download(
           values[0],
           values[1],

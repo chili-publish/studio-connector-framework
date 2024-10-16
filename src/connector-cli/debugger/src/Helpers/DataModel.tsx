@@ -1,5 +1,6 @@
 export type DataModel = {
   name: string;
+  displayName?: string;
   parameters: Parameter[];
 };
 
@@ -11,12 +12,12 @@ export type InvokableDataModel = DataModel & {
 };
 
 export type SettableDataModel = DataModel & {
-  set: (values: any[]) => void;
+  set: (values: any) => void;
 };
 
 export type ConnectorMetadata = {
   name: string;
-  type: 'MediaConnector' | 'FontConnector' | 'DataConnector';
+  type: 'mediaconnector' | 'fontconnector' | 'dataconnector';
   getDisplayType: () => string;
 };
 

@@ -160,7 +160,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
       <div className="bg-white p-0 flex flex-col flex-1 overflow-y-auto">
         <div className="mb-4 border-b pb-4">
           <h1 className="capitalize  text-xl font-semibold">
-            {dataModel.name}
+            {dataModel.displayName ?? dataModel.name}
           </h1>
         </div>
         {inputRender}
