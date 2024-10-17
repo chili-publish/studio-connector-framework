@@ -8,7 +8,7 @@ export async function updateExistingConnector(
   token: string,
   payload: UpdateConnectorPayload
 ): Promise<void> {
-  info('Retrieving connector to remove...');
+  info('Retrieving connector to update...');
   const existingConnector = await getConnectorById({
     baseUrl: connectorEndpointBaseUrl,
     connectorId,
