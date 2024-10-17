@@ -113,6 +113,7 @@ export enum SupportedAuth {
 }
 
 export enum Type {
+    Data = "data",
     Media = "media",
 }
 
@@ -406,6 +407,7 @@ const typeMap: any = {
         "staticKey",
     ],
     "Type": [
+        "data",
         "media",
     ],
 };

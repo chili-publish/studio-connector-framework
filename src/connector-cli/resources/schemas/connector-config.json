@@ -7,7 +7,7 @@
     },
     "type": {
       "type": "string",
-      "enum": ["media"]
+      "enum": ["media", "data"]
     },
     "iconUrl": {
       "type": "string"

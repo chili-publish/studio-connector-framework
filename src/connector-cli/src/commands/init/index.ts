@@ -5,6 +5,7 @@ import path from 'path';
 import { info, startCommand, verbose } from '../../core';
 import { Type as ConnectorType, ExecutionError } from '../../core/types';
 import {
+  getDataConnectorFile,
   getGitIgnoreFile,
   getMediaConnectorFile,
   getMediaConnectorTestFile,
@@ -71,19 +72,23 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   );
 
   // 4. create connector file
-  const { content, fileName } = getMediaConnectorFile();
+  const { content, fileName } =
+    options.type === ConnectorType.Media
+      ? getMediaConnectorFile()
+      : getDataConnectorFile();
 
   info('Creating ' + fileName);
   fs.writeFileSync(path.join(projectDir, fileName), content);
 
-  // 5. create tests.json
-  const testsJson = getMediaConnectorTestFile();
-
-  info('Creating tests.json');
-  fs.writeFileSync(
-    path.join(projectDir, './tests.json'),
-    JSON.stringify(testsJson, null, 2)
-  );
+  if (options.type === ConnectorType.Media) {
+    // 5. create tests.json
+    const testsJson = getMediaConnectorTestFile();
+    info('Creating tests.json');
+    fs.writeFileSync(
+      path.join(projectDir, './tests.json'),
+      JSON.stringify(testsJson, null, 2)
+    );
+  }
 
   // 6. create .gitignore
   const gitIgnore = getGitIgnoreFile();
