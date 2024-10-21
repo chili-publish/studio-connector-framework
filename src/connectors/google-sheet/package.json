@@ -1,0 +1,40 @@
+{
+  "name": "google-sheet",
+  "description": "Integartion with Google Sheet API to read data from spreadsheets",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "type": "data",
+    "options": {},
+    "mappings": {},
+    "supportedAuth": [
+      "oAuth2AuthorizationCode"
+    ],
+    "authenticationConfig": {
+      "oAuth2AuthorizationCode": {
+        "authorizationServerMetadata": {
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_post"
+          ]
+        }
+      }
+    }
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "typescript": "^5.2.2",
+    "@chili-publish/studio-connectors": "^1.11.0"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.9.0"
+  }
+}
