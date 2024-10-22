@@ -353,6 +353,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
 
     let queryString = `Definition.Name=="M.Asset"`;
     if (filters && filters.length && filters[0].length) {
+      // Check if id is in filters
       try {
         const temp = JSON.parse(filters[0]);
         queryString += ` AND FullText == "id=${temp.id}"`;
