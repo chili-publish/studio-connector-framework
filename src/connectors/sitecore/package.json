@@ -1,0 +1,37 @@
+{
+  "name": "contenthub",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "Sitecore Content Hub",
+    "type": "media",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Sitecore_logo.svg",
+    "options": {
+      "BASE_URL": null,
+      "relationMetadataIncludes": ""
+    },
+    "supportedAuth": [
+      "oAuth2ResourceOwnerPassword",
+      "oAuth2AuthorizationCode"
+    ],
+    "mappings": {}
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1",
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.6.2"
+  }
+}
