@@ -45,6 +45,7 @@ connector-cli set-auth \
 ```
 
 ## query example
+Info about query https://doc.sitecore.com/ch/en/developers/cloud-dev/generic-properties.html
 
 Attached to product
 `Exists("PCMProductToAsset")`
