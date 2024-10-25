@@ -1,11 +1,24 @@
+export type ContenthubDataOptionValue = {
+  identifier: string;
+  labels: Record<string, string>;
+};
+export type ContenthubProperty =
+  | string
+  | number
+  | boolean
+  | null
+  | ContenthubDataOptionValue
+  | any;
+
+export type ContenthubProperties = Record<string, ContenthubProperty>;
 export interface ContenthubEntity {
-  properties: Record<string, unknown>;
+  properties: ContenthubProperties;
   relations: Record<string, any>;
   id: number;
   identifier: string;
   version: number;
   renditions: Record<
-    "downloadOriginal" | "thumbnail" | string,
+    'downloadOriginal' | 'thumbnail' | string,
     { href: string }[]
   >;
   related_paths?: Record<

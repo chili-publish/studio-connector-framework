@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2020"
-    ],
+    "lib": ["ES2020"],
     "noEmitHelpers": true,
     "module": "ES2020",
     "outDir": "out",
@@ -13,11 +11,6 @@
     "removeComments": true,
     "declaration": false
   },
-  "include": [
-    "connector.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "out"
-  ]
+  "include": ["connector.ts"],
+  "exclude": ["node_modules", "out"]
 }

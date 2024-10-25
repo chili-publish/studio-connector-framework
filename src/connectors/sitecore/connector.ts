@@ -1,13 +1,14 @@
-import { Connector, Media } from "@chili-publish/studio-connectors";
+import { Connector, Media } from '@chili-publish/studio-connectors';
 import {
   ContenthubEntity,
+  ContenthubProperties,
   ContenthubQueryResult,
-} from "./contenthub.interfaces";
+} from './contenthub.interfaces';
 
 class ContenthubEntryTransformer {
   static assetProperties: { [key: string]: string } = {
-    name: "FileName",
-    properties: "FileProperties",
+    name: 'FileName',
+    properties: 'FileProperties',
   };
   static assetRelations: { [key: string]: string } = {};
 
@@ -31,8 +32,8 @@ class ContenthubEntryTransformer {
       name: item.properties[this.assetProperties.name] as string,
       type: 0,
       // TODO: to be defined
-      relativePath: "/",
-      extension: properties.extension ? properties.extension.toLowerCase() : "",
+      relativePath: '/',
+      extension: properties.extension ? properties.extension.toLowerCase() : '',
       metaData: this.getMetadataFromEntity(item, locale, relatedEntities),
     };
   }
@@ -46,7 +47,7 @@ class ContenthubEntryTransformer {
       this.assetProperties.properties
     ] as {
       properties: { width: string; height: string };
-    }) || { properties: { width: "0", height: "0" } };
+    }) || { properties: { width: '0', height: '0' } };
     const media = this.assetToMedia(item, locale, relatedEntities);
     return {
       ...media,
@@ -66,19 +67,19 @@ class ContenthubEntryTransformer {
      * Set the properties on the metadata bag
      */
     const setPropertiesOnMetadata = (
-      properties: Record<string, unknown>,
-      pre = ""
+      properties: ContenthubProperties,
+      pre = ''
     ) => {
       Object.keys(properties).forEach((property) => {
         if (!properties[property]) {
           return;
         }
-        if (typeof properties[property] == "string") {
+        if (typeof properties[property] == 'string') {
           metadata[`${pre}${property}`] = properties[property];
-        } else if (typeof properties[property] == "number") {
+        } else if (typeof properties[property] == 'number') {
           metadata[`${pre}${property}`] = `${properties[property]}`;
         } else if (
-          typeof properties[property] == "object" &&
+          typeof properties[property] == 'object' &&
           properties[property][locale]
         ) {
           metadata[`${pre}${property}`] = properties[property][locale];
@@ -109,7 +110,7 @@ class ContenthubEntryTransformer {
         if (!relInfo) {
           return;
         }
-        let relatedEntityId = parseInt(relInfo.href.split("/").pop());
+        let relatedEntityId = parseInt(relInfo.href.split('/').pop());
         const relatedEntity = relatedEntities.find(
           (e) => e.id == relatedEntityId
         );
@@ -142,7 +143,7 @@ class ContenthubEntryTransformer {
           metadata[path] =
             related.values[locale] || Object.values(related.values)[0];
 
-          let relatedEntityId = parseInt(related.entity.split("/").pop());
+          let relatedEntityId = parseInt(related.entity.split('/').pop());
           const relatedEntity = relatedEntities.find(
             (e) => e.id == relatedEntityId
           );
@@ -167,9 +168,9 @@ class ContenthubEntryTransformer {
 
 export default class ContenthubConnector implements Media.MediaConnector {
   static Constants = {
-    standardRepository: "M.Content.Repository.Standard",
-    approvedStatus: "M.Final.LifeCycle.Status.Approved",
-    defaultLocale: "en-US",
+    standardRepository: 'M.Content.Repository.Standard',
+    approvedStatus: 'M.Final.LifeCycle.Status.Approved',
+    defaultLocale: 'en-US',
   };
   private runtime: Connector.ConnectorRuntimeContext;
   identifierIdMapping: { [key: string]: number } = {};
@@ -178,17 +179,17 @@ export default class ContenthubConnector implements Media.MediaConnector {
   }
   private get relatedMetadataRelations() {
     const runtimeOption = this.runtime.options[
-      "relationMetadataIncludes"
+      'relationMetadataIncludes'
     ] as string;
     if (!runtimeOption || !runtimeOption.length) {
       return [];
     }
-    return runtimeOption.split(",");
+    return runtimeOption.split(',');
   }
 
   private get baseUrl() {
-    const root = (this.runtime.options["BASE_URL"] as string) || "";
-    return root.endsWith("/") ? root : `${root}/`;
+    const root = (this.runtime.options['BASE_URL'] as string) || '';
+    return root.endsWith('/') ? root : `${root}/`;
   }
 
   query(
@@ -216,7 +217,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
                   return data;
                 }),
                 links: {
-                  nextPage: res.next ? `${skip + options.pageSize}` : "",
+                  nextPage: res.next ? `${skip + options.pageSize}` : '',
                 },
               };
             }
@@ -250,7 +251,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
       .fetch(
         `${this.baseUrl}api/entities/identifier/${identifier}?members=renditions`,
         {
-          method: "GET",
+          method: 'GET',
         }
       )
       .then((response) => {
@@ -263,17 +264,17 @@ export default class ContenthubConnector implements Media.MediaConnector {
         const asset = JSON.parse(response.text);
         let assetUrl = asset.renditions.preview[0].href;
 
-        if (previewType === "thumbnail" && asset.renditions.thumbnail?.length) {
+        if (previewType === 'thumbnail' && asset.renditions.thumbnail?.length) {
           assetUrl = asset.renditions.thumbnail[0].href;
         } else if (
-          previewType === "mediumres" &&
+          previewType === 'mediumres' &&
           asset.renditions.bigthumbnail?.length
         ) {
           assetUrl = asset.renditions.thumbnail[0].href;
         }
         return this.runtime
           .fetch(assetUrl, {
-            method: "GET",
+            method: 'GET',
           })
           .then((result) => {
             if (!result.ok) {
@@ -290,19 +291,19 @@ export default class ContenthubConnector implements Media.MediaConnector {
   getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
     return [
       {
-        name: "approvedAssets",
-        displayName: "Show only approved assets",
-        type: "boolean",
+        name: 'approvedAssets',
+        displayName: 'Show only approved assets',
+        type: 'boolean',
       },
       {
-        name: "query",
-        displayName: "Search Query",
-        type: "text",
+        name: 'query',
+        displayName: 'Search Query',
+        type: 'text',
       },
       {
-        name: "locale",
-        displayName: "Locale",
-        type: "text",
+        name: 'locale',
+        displayName: 'Locale',
+        type: 'text',
       },
     ];
   }
@@ -324,7 +325,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
 
   private async fetchEntity(ident: string | number, locale?: string) {
     let path =
-      typeof ident === "string"
+      typeof ident === 'string'
         ? `${this.baseUrl}api/entities/identifier/${ident}`
         : `${this.baseUrl}api/entities/${ident}`;
     if (locale) {
@@ -332,7 +333,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
     }
     return this.runtime
       .fetch(path, {
-        method: "GET",
+        method: 'GET',
       })
       .then((response) => {
         if (!response.ok) {
@@ -349,7 +350,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
     filters: string[],
     context: Connector.Dictionary
   ) {
-    const query = (context["query"] as string) ?? null;
+    const query = (context['query'] as string) ?? null;
 
     let queryString = `Definition.Name=="M.Asset"`;
     if (filters && filters.length && filters[0].length) {
@@ -366,9 +367,13 @@ export default class ContenthubConnector implements Media.MediaConnector {
       ContenthubConnector.Constants.standardRepository,
       ContenthubConnector.Constants.approvedStatus,
     ]);
-    queryString += `AND Parent("ContentRepositoryToAsset").id == ${idenifiers[ContenthubConnector.Constants.standardRepository]}`;
-    if (context["approvedAssets"] as boolean) {
-      queryString += `AND Parent("FinalLifeCycleStatusToAsset").id == ${idenifiers[ContenthubConnector.Constants.approvedStatus]}`;
+    queryString += `AND Parent("ContentRepositoryToAsset").id == ${
+      idenifiers[ContenthubConnector.Constants.standardRepository]
+    }`;
+    if (context['approvedAssets'] as boolean) {
+      queryString += `AND Parent("FinalLifeCycleStatusToAsset").id == ${
+        idenifiers[ContenthubConnector.Constants.approvedStatus]
+      }`;
     }
     if (query) {
       queryString += `AND (${query})`;
@@ -396,10 +401,10 @@ export default class ContenthubConnector implements Media.MediaConnector {
   ) {
     let queryingRoute = `api/entities/query?query=${query}`;
     if (members) {
-      queryingRoute += `&members=${members.join(",")}`;
+      queryingRoute += `&members=${members.join(',')}`;
     }
     if (cultures && cultures.length) {
-      queryingRoute += `&culture=${cultures.join(",")}`;
+      queryingRoute += `&culture=${cultures.join(',')}`;
     }
 
     const otherQueryParams = {
@@ -415,7 +420,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
     });
 
     const res = await this.runtime.fetch(`${this.baseUrl}${queryingRoute}`, {
-      method: "GET",
+      method: 'GET',
     });
 
     if (!res.ok) {
@@ -430,7 +435,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
   private fetchEntityIdFromIdentier = async (identifier) => {
     const entity = await this.runtime.fetch(
       `${this.baseUrl}api/entities/identifier/${identifier}?members=id`,
-      { method: "GET" }
+      { method: 'GET' }
     );
     if (entity.ok) {
       return JSON.parse(entity.text).id;
@@ -491,7 +496,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
                 e.relations[relation].child ||
                 e.relations[relation].children;
               const entry = item && (Array.isArray(item) ? item : [item])[0];
-              return entry && parseInt(entry.href.split("/").pop());
+              return entry && parseInt(entry.href.split('/').pop());
             }
 
             return null;
@@ -500,7 +505,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
             e.related_paths[relation][0][
               e.related_paths[relation][0].length - 1
             ].entity;
-          return parseInt(path.split("/").pop());
+          return parseInt(path.split('/').pop());
         })
         .filter((i) => i !== null);
     });
@@ -509,7 +514,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
     }
 
     return this.contenthubQuery(
-      entityIds.map((e) => `FullText == "id=${e}"`).join(" OR "),
+      entityIds.map((e) => `FullText == "id=${e}"`).join(' OR '),
       {
         take: 100,
         cultures: [locale],
