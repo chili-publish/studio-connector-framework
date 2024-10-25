@@ -63,18 +63,6 @@ class RangeHelper {
   }
 }
 
-// When using table view for spreadsheet it returns only existing cells of the table
-// So in case if it returns less then we requested, it means we've reached the end of the spreadsheet
-function isNextPageAvailable(requestedRange: string, resultRange: string);
-// For the default spreadsheet view we should calculate it based on returned items and limit request
-function isNextPageAvailable(requestedSize: number, resultSize: number);
-function isNextPageAvailable(
-  requested: string | number,
-  result: string | number
-) {
-  return requested === result;
-}
-
 function convertCellsToDataItems(
   tableHeader: SheetCells['values'][0],
   sheetCells: SheetCells['values']
@@ -139,7 +127,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     const data = convertCellsToDataItems(headerRow, values);
 
     return {
-      continuationToken: isNextPageAvailable(config.limit, data.length)
+      continuationToken: this.isNextPageAvailable(config.limit, data.length)
         ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
         : null,
       data,
@@ -214,7 +202,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
     if (!spreadsheetURL || typeof spreadsheetURL !== 'string') {
       throw new Error(
-        'Google Sheet: The required configuration option "spreadsheetURL" is not provided or has a wrong type. Expected "string"'
+        `Google Sheet: The required configuration option "spreadsheetURL" is not provided or has a wrong type.
+          Expected "string" URL. Actual is "${spreadsheetURL}"`
       );
     }
     const spreadsheetIdMatch = spreadsheetURL
@@ -263,5 +252,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       );
     }
     return sheet.properties.title;
+  }
+
+  private isNextPageAvailable(requestedSize: number, resultItems: number) {
+    return requestedSize === resultItems;
   }
 }

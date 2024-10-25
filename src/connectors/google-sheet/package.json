@@ -1,6 +1,6 @@
 {
   "name": "google-sheet",
-  "description": "Integartion with Google Sheet API to read data from spreadsheets",
+  "description": "Integartion with Google Sheet API to read data from the spreadsheets",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
@@ -8,7 +8,9 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
+    "connectorName": "Google Sheet",
     "type": "data",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Google_Sheets_logo.svg",
     "options": {},
     "mappings": {},
     "supportedAuth": [
