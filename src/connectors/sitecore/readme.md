@@ -66,3 +66,35 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
 The ones needed
 - oAuth2ResourceOwnerPassword
 - oAuth2AuthorizationCode
+
+### templates
+
+oauth-authorization-code.json
+```
+{
+  "name": "ChiliStudio",
+  "clientId": "{CLIENT_ID}",
+  "clientSecret": "{CLIENT_SECRET}",
+  "scope": "openid profile",
+  "authorizationServerMetadata": {
+    "authorization_endpoint": "https://{SITECORE_CONTENTHUB_PATH}/oauth/authorize",
+    "token_endpoint": "https://{SITECORE_CONTENTHUB_PATH}/oauth/token",
+    "token_endpoint_auth_methods_supported": [
+      "client_secret_basic",
+      "client_secret_post"
+    ]
+  }
+}
+```
+
+oauth-resource-owner.json
+```
+{
+  "name": "ChiliStudio",
+  "clientId": "{CLIENT_ID}",
+  "clientSecret": "{CLIENT_SECRET}",
+  "username": "{SITECORE_USERNAME}",
+  "password": "{SITECORE_PASSWORD}",
+  "tokenEndpoint": "https://{SITECORE_CONTENTHUB_PATH}/oauth/token"
+}
+```
