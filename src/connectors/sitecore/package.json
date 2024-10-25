@@ -24,7 +24,7 @@
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
-    "@chili-publish/studio-connectors": "^1",
+    "@chili-publish/studio-connectors": "^1.15.0",
     "typescript": "^5.2.2"
   },
   "scripts": {
