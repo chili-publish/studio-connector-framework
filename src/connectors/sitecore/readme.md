@@ -12,7 +12,7 @@ connector-cli publish \
 Load relation metadata properties below example loads all the metadata from `PCMProductToAsset`
 ```
 connector-cli publish \
-    -e cp-dcl-432 \
+    -e {ENVIRONMENT} \
     -b https://{ENVIRONMENT}.chili-publish.online/grafx \
     -n "Sitecore Content Hub" \
     --proxyOption.allowedDomains "*.sitecoresandbox.cloud" \
@@ -72,7 +72,6 @@ The ones needed
 oauth-authorization-code.json
 ```
 {
-  "name": "ChiliStudio",
   "clientId": "{CLIENT_ID}",
   "clientSecret": "{CLIENT_SECRET}",
   "scope": "openid profile",
@@ -90,7 +89,6 @@ oauth-authorization-code.json
 oauth-resource-owner.json
 ```
 {
-  "name": "ChiliStudio",
   "clientId": "{CLIENT_ID}",
   "clientSecret": "{CLIENT_SECRET}",
   "username": "{SITECORE_USERNAME}",
