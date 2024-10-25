@@ -16,44 +16,47 @@ interface SheetRanges {
   valueRanges: Array<SheetCells>;
 }
 
+interface Spreadsheet {
+  sheets: Array<{ properties: { sheetId: string; title: string } }>;
+}
+
 class RangeHelper {
-  static buildHeaderRange(sheetId: string) {
-    return RangeHelper.buildRange(sheetId, 1, 1);
+  static buildHeaderRange(sheetName: string | null) {
+    return RangeHelper.buildRange(sheetName, 1, 1);
   }
 
-  static buildFirstPageRange(sheetId: string, limit: number) {
+  static buildFirstPageRange(sheetName: string | null, limit: number) {
     // starts from 2 since exclude header row that has index '1'
-    return RangeHelper.buildRange(sheetId, 2, limit > 1 ? 1 + limit : 2);
+    return RangeHelper.buildRange(sheetName, 2, limit > 1 ? 1 + limit : 2);
   }
 
   static buildNextPageRange(currentRange: string, limit: number) {
-    const [sheetId, _, lastRow] = RangeHelper.extractFromRange(currentRange);
+    const [sheetName, _, lastRow] = RangeHelper.extractFromRange(currentRange);
     if (Number.isNaN(lastRow)) {
       throw new Error(`Incorrect format of the cells range "${currentRange}"`);
     }
-    return RangeHelper.buildRange(sheetId, lastRow + 1, lastRow + limit);
+    return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
   private static buildRange(
-    sheetId: string | undefined,
+    sheetName: string | null,
     start: number,
     end: number
   ) {
-    const sheetName = sheetId ? `'${sheetId}'` : '';
     return sheetName ? `${sheetName}!A${start}:Z${end}` : `A${start}:Z${end}`;
   }
 
   private static extractFromRange(
     range: string
-  ): [string | undefined, number, number] {
+  ): [string | null, number, number] {
     const splitted = range.split('!');
 
-    const sheetId = splitted.length === 1 ? undefined : splitted[0]; // when we request data without sheetId
+    const sheetName = splitted.length === 1 ? null : splitted[0]; // when we request data without sheetName
     const cellsQuery = splitted.length === 1 ? splitted[0] : splitted[1];
 
     const splittedCells = cellsQuery.split(':');
     return [
-      sheetId,
+      sheetName,
       Number(splittedCells[0].replace('A', '')),
       Number(splittedCells[1].replace('Z', '')),
     ];
@@ -95,12 +98,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     config: Data.PageConfig,
     context: Connector.Dictionary
   ): Promise<Data.DataPage> {
-    const spreadsheetId = context['spreadsheetId'] as string;
-    if (!spreadsheetId) {
-      throw new Error(
-        'Google Sheet: The required configuration option "spreadsheetId" is not defined'
-      );
-    }
+    const { spreadsheetId, sheetId } =
+      this.extractSheetIdentityFromContext(context);
 
     if (config.limit < 1) {
       return {
@@ -108,18 +107,18 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         data: [],
       };
     }
-    const sheetId = context['sheetId'] as string;
+    const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
     let cellsRange =
       config.continuationToken ||
-      RangeHelper.buildFirstPageRange(sheetId, config.limit);
+      RangeHelper.buildFirstPageRange(sheetName, config.limit);
 
     // Request two ranges of the cells
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${RangeHelper.buildHeaderRange(
-        sheetId
+        sheetName
       )}&ranges=${cellsRange}`,
       {
         method: 'GET',
@@ -140,26 +139,22 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     const data = convertCellsToDataItems(headerRow, values);
 
     return {
-      continuationToken:
-        isNextPageAvailable(cellsRange, range) ||
-        isNextPageAvailable(config.limit, data.length)
-          ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
-          : null,
+      continuationToken: isNextPageAvailable(config.limit, data.length)
+        ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
+        : null,
       data,
     };
   }
 
   async getModel(context: Connector.Dictionary): Promise<Data.DataModel> {
-    const spreadsheetId = context['spreadsheetId'] as string;
-    if (!spreadsheetId) {
-      throw new Error(
-        'Google Sheet: The required configuration option "spreadsheetId" is not defined'
-      );
-    }
-    const sheetId = context['sheetId'] as string;
+    const { spreadsheetId, sheetId } =
+      this.extractSheetIdentityFromContext(context);
+
+    const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
+
     const res = await this.runtime.fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${RangeHelper.buildHeaderRange(
-        sheetId
+        sheetName
       )}`,
       {
         method: 'GET',
@@ -197,13 +192,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     return [
       {
         type: 'text',
-        name: 'spreadsheetId',
-        displayName: 'Google spreadsheet ID',
-      },
-      {
-        type: 'text',
-        name: 'sheetId',
-        displayName: 'Sheet name inside the Google Spreadsheet document',
+        name: 'spreadsheetURL',
+        displayName: 'Spreadsheet URL',
       },
     ];
   }
@@ -214,5 +204,64 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       sorting: false,
       model: true,
     };
+  }
+
+  private extractSheetIdentityFromContext(context: Connector.Dictionary): {
+    spreadsheetId: string;
+    sheetId: string | null;
+  } {
+    const spreadsheetURL = context['spreadsheetURL'];
+
+    if (!spreadsheetURL || typeof spreadsheetURL !== 'string') {
+      throw new Error(
+        'Google Sheet: The required configuration option "spreadsheetURL" is not provided or has a wrong type. Expected "string"'
+      );
+    }
+    const spreadsheetIdMatch = spreadsheetURL
+      .trim()
+      .match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    const sheetIdMatch = spreadsheetURL.trim().match(/gid=(\d+)/);
+
+    const spreadsheetId = spreadsheetIdMatch ? spreadsheetIdMatch[1] : null;
+    const sheetId = sheetIdMatch ? sheetIdMatch[1] : null;
+
+    // URL must contain at least spreadsheetId. If sheetId is not defined we treat it as first sheet to work with
+    if (!spreadsheetId) {
+      throw new Error(
+        `Google Sheet: The provided Spreadsheet URL "${spreadsheetURL}"  is not correct. "spreadsheetId" can\'t be identified.`
+      );
+    }
+
+    return { spreadsheetId, sheetId };
+  }
+
+  private async fetchSheetName(
+    spreadsheetId: string,
+    sheetId: string | null
+  ): Promise<string | null> {
+    if (!sheetId) {
+      return null;
+    }
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+
+    const res = await this.runtime.fetch(url, { method: 'GET' });
+    if (!res.ok)
+      throw new ConnectorHttpError(
+        res.status,
+        `Google Sheet: GetSheetName failed for "${spreadsheetId}" and "${sheetId}". Result is ${res.status} - ${res.statusText}`
+      );
+
+    const data: Spreadsheet = JSON.parse(res.text);
+
+    // Find the sheet that matches the sheetId
+    const sheet = data.sheets.find(
+      (sheet) => sheet.properties.sheetId.toString() === sheetId
+    );
+    if (!sheet) {
+      throw new Error(
+        `Google Sheet: The provided sheetId "${sheetId}" doesn't exist in the spreadsheet document`
+      );
+    }
+    return sheet.properties.title;
   }
 }
