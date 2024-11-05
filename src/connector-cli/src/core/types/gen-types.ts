@@ -17,7 +17,7 @@ export interface ChiliToken {
 }
 
 export interface Oauth2AuthorizationCode {
-    authorizationServerMetadata: AuthorizationServerMetadata;
+    authorizationServerMetadata: Oauth2AuthorizationCodeAuthorizationServerMetadata;
     clientId:                    string;
     clientSecret:                string;
     name?:                       string;
@@ -25,7 +25,7 @@ export interface Oauth2AuthorizationCode {
     specCustomization?:          SpecCustomization;
 }
 
-export interface AuthorizationServerMetadata {
+export interface Oauth2AuthorizationCodeAuthorizationServerMetadata {
     authorization_endpoint:                string;
     token_endpoint:                        string;
     token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
@@ -55,14 +55,19 @@ export interface Oauth2ClientCredentials {
 }
 
 export interface Oauth2ResourceOwnerPassword {
-    bodyFormat?:   RequestContentType;
-    clientId:      string;
-    clientSecret:  string;
-    name?:         string;
-    password:      string;
-    scope?:        string;
-    tokenEndpoint: string;
-    username:      string;
+    authorizationServerMetadata?: Oauth2ResourceOwnerPasswordAuthorizationServerMetadata;
+    bodyFormat?:                  RequestContentType;
+    clientId:                     string;
+    clientSecret:                 string;
+    name?:                        string;
+    password:                     string;
+    scope?:                       string;
+    tokenEndpoint:                string;
+    username:                     string;
+}
+
+export interface Oauth2ResourceOwnerPasswordAuthorizationServerMetadata {
+    token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
 }
 
 export interface StaticKey {
@@ -101,7 +106,12 @@ export interface OAuth2AuthorizationCodeSpecCustomization {
 }
 
 export interface OAuth2ResourceOwnerPassword {
-    bodyFormat: RequestContentType;
+    authorizationServerMetadata?: OAuth2ResourceOwnerPasswordAuthorizationServerMetadata;
+    bodyFormat:                   RequestContentType;
+}
+
+export interface OAuth2ResourceOwnerPasswordAuthorizationServerMetadata {
+    token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
 }
 
 export enum SupportedAuth {
@@ -326,14 +336,14 @@ const typeMap: any = {
         { json: "name", js: "name", typ: u(undefined, "") },
     ], false),
     "Oauth2AuthorizationCode": o([
-        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("AuthorizationServerMetadata") },
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("Oauth2AuthorizationCodeAuthorizationServerMetadata") },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
         { json: "name", js: "name", typ: u(undefined, "") },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "specCustomization", js: "specCustomization", typ: u(undefined, r("SpecCustomization")) },
     ], false),
-    "AuthorizationServerMetadata": o([
+    "Oauth2AuthorizationCodeAuthorizationServerMetadata": o([
         { json: "authorization_endpoint", js: "authorization_endpoint", typ: "" },
         { json: "token_endpoint", js: "token_endpoint", typ: "" },
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
@@ -350,6 +360,7 @@ const typeMap: any = {
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
     ], false),
     "Oauth2ResourceOwnerPassword": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("Oauth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
         { json: "bodyFormat", js: "bodyFormat", typ: u(undefined, r("RequestContentType")) },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
@@ -358,6 +369,9 @@ const typeMap: any = {
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
         { json: "username", js: "username", typ: "" },
+    ], false),
+    "Oauth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
+        { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
     ], false),
     "StaticKey": o([
         { json: "key", js: "key", typ: "" },
@@ -389,7 +403,11 @@ const typeMap: any = {
         { json: "requestContentType", js: "requestContentType", typ: u(undefined, r("RequestContentType")) },
     ], false),
     "OAuth2ResourceOwnerPassword": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
         { json: "bodyFormat", js: "bodyFormat", typ: r("RequestContentType") },
+    ], false),
+    "OAuth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
+        { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
     ], false),
     "TokenEndpointAuthMethodsSupported": [
         "client_secret_basic",
