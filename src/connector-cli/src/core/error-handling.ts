@@ -10,7 +10,7 @@ export function withErrorHandlerAction(
     } catch (err) {
       if (err instanceof ExecutionError) {
         error(err.message);
-        return;
+        process.exit(1);
       }
       throw err;
     }
