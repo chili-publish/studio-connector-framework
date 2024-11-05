@@ -93,6 +93,11 @@ oauth-resource-owner.json
   "clientSecret": "{CLIENT_SECRET}",
   "username": "{SITECORE_USERNAME}",
   "password": "{SITECORE_PASSWORD}",
-  "tokenEndpoint": "https://{SITECORE_CONTENTHUB_PATH}/oauth/token"
+  "tokenEndpoint": "https://{SITECORE_CONTENTHUB_PATH}/oauth/token",
+  "authorizationServerMetadata": {
+    "token_endpoint_auth_methods_supported": [
+      "client_secret_post"
+    ]
+  }
 }
 ```
