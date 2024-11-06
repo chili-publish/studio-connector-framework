@@ -21,16 +21,10 @@ class ContenthubEntryTransformer {
     ] || { properties: {} }) as {
       properties: { extension?: string };
     };
-    const renditions = this.neededRenditions.reduce((result, rendition) => {
-      if (item.renditions && item.renditions[rendition]?.length) {
-        result[rendition] = item.renditions[rendition][0].href;
-      }
-      return result;
-    }, {});
+
     const id = JSON.stringify({
       id: item.id,
       identifier: item.identifier,
-      renditions,
     });
 
     return {
@@ -251,15 +245,15 @@ export default class ContenthubConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { renditions } = JSON.parse(id);
+    const { identifier } = JSON.parse(id);
 
-    let assetUrl = renditions.preview;
+    let rendition = 'preview';
 
-    if (previewType === 'thumbnail' && renditions.thumbnail) {
-      assetUrl = renditions.thumbnail;
-    } else if (previewType === 'mediumres' && renditions.bigthumbnail) {
-      assetUrl = renditions.bigthumbnail;
+    if (['thumbnail', 'mediumres'].includes(previewType)) {
+      rendition = 'thumbnail';
     }
+
+    const assetUrl = `${this.baseUrl}api/gateway/identifier/${identifier}/${rendition}`;
     return this.runtime
       .fetch(assetUrl, {
         method: 'GET',
@@ -268,7 +262,7 @@ export default class ContenthubConnector implements Media.MediaConnector {
         if (!result.ok) {
           throw new ConnectorHttpError(
             result.status,
-            `Acquia DAM: Download failed ${result.status} - ${result.statusText}`
+            `Contenthub DAM: Download failed ${result.status} - ${result.statusText}`
           );
         }
         return result.arrayBuffer;
