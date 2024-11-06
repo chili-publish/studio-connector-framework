@@ -219,7 +219,7 @@
     to-fast-properties "^2.0.0"
 
 "@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.9.0"
+  version "1.9.1"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
