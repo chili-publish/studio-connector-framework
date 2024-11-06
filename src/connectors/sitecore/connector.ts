@@ -1,7 +1,6 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
 import {
   ContenthubEntity,
-  ContenthubProperties,
   ContenthubQueryResult,
 } from './contenthub.interfaces';
 
@@ -11,7 +10,7 @@ class ContenthubEntryTransformer {
     properties: 'FileProperties',
   };
   static assetRelations: { [key: string]: string } = {};
-
+  static neededRenditions = ['preview', 'thumbnail', 'bigthumbnail'];
   static assetToMedia(
     item: ContenthubEntity,
     locale: string,
@@ -22,9 +21,16 @@ class ContenthubEntryTransformer {
     ] || { properties: {} }) as {
       properties: { extension?: string };
     };
+    const renditions = this.neededRenditions.reduce((result, rendition) => {
+      if (item.renditions && item.renditions[rendition]?.length) {
+        result[rendition] = item.renditions[rendition][0].href;
+      }
+      return result;
+    }, {});
     const id = JSON.stringify({
       id: item.id,
       identifier: item.identifier,
+      renditions,
     });
 
     return {
@@ -67,7 +73,7 @@ class ContenthubEntryTransformer {
      * Set the properties on the metadata bag
      */
     const setPropertiesOnMetadata = (
-      properties: ContenthubProperties,
+      properties: Record<string, unknown>,
       pre = ''
     ) => {
       Object.keys(properties).forEach((property) => {
@@ -245,46 +251,27 @@ export default class ContenthubConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { identifier } = JSON.parse(id);
+    const { renditions } = JSON.parse(id);
 
+    let assetUrl = renditions.preview;
+
+    if (previewType === 'thumbnail' && renditions.thumbnail) {
+      assetUrl = renditions.thumbnail;
+    } else if (previewType === 'mediumres' && renditions.bigthumbnail) {
+      assetUrl = renditions.bigthumbnail;
+    }
     return this.runtime
-      .fetch(
-        `${this.baseUrl}api/entities/identifier/${identifier}?members=renditions`,
-        {
-          method: 'GET',
-        }
-      )
-      .then((response) => {
-        if (!response.ok) {
+      .fetch(assetUrl, {
+        method: 'GET',
+      })
+      .then((result) => {
+        if (!result.ok) {
           throw new ConnectorHttpError(
-            response.status,
-            `Contenthub DAM: Download failed ${response.status} - ${response.statusText}`
+            result.status,
+            `Acquia DAM: Download failed ${result.status} - ${result.statusText}`
           );
         }
-        const asset = JSON.parse(response.text);
-        let assetUrl = asset.renditions.preview[0].href;
-
-        if (previewType === 'thumbnail' && asset.renditions.thumbnail?.length) {
-          assetUrl = asset.renditions.thumbnail[0].href;
-        } else if (
-          previewType === 'mediumres' &&
-          asset.renditions.bigthumbnail?.length
-        ) {
-          assetUrl = asset.renditions.thumbnail[0].href;
-        }
-        return this.runtime
-          .fetch(assetUrl, {
-            method: 'GET',
-          })
-          .then((result) => {
-            if (!result.ok) {
-              throw new ConnectorHttpError(
-                result.status,
-                `Acquia DAM: Download failed ${result.status} - ${result.statusText}`
-              );
-            }
-            return result.arrayBuffer;
-          });
+        return result.arrayBuffer;
       });
   }
 
