@@ -1,6 +1,7 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
 import {
   ContenthubEntity,
+  ContenthubProperties,
   ContenthubQueryResult,
 } from './contenthub.interfaces';
 
@@ -67,7 +68,7 @@ class ContenthubEntryTransformer {
      * Set the properties on the metadata bag
      */
     const setPropertiesOnMetadata = (
-      properties: Record<string, unknown>,
+      properties: ContenthubProperties,
       pre = ''
     ) => {
       Object.keys(properties).forEach((property) => {
