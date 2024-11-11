@@ -107,7 +107,7 @@ export interface OAuth2AuthorizationCodeSpecCustomization {
 
 export interface OAuth2ResourceOwnerPassword {
     authorizationServerMetadata?: OAuth2ResourceOwnerPasswordAuthorizationServerMetadata;
-    bodyFormat:                   RequestContentType;
+    bodyFormat?:                  RequestContentType;
 }
 
 export interface OAuth2ResourceOwnerPasswordAuthorizationServerMetadata {
@@ -404,7 +404,7 @@ const typeMap: any = {
     ], false),
     "OAuth2ResourceOwnerPassword": o([
         { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
-        { json: "bodyFormat", js: "bodyFormat", typ: r("RequestContentType") },
+        { json: "bodyFormat", js: "bodyFormat", typ: u(undefined, r("RequestContentType")) },
     ], false),
     "OAuth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
