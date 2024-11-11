@@ -53,7 +53,7 @@
               "additionalProperties": false
             }
           },
-          "required": ["bodyFormat"],
+          "required": [],
           "additionalProperties": false
         },
         "oAuth2AuthorizationCode": {
