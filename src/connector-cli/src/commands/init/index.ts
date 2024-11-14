@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { info, startCommand, verbose } from '../../core';
 import { Type as ConnectorType, ExecutionError } from '../../core/types';
+import { isGitDirectory } from './isGitDirectory';
 import {
   getDataConnectorFile,
   getGitIgnoreFile,
@@ -45,7 +46,7 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   // 1. intialize a new project in "projectDir" directory
   if (!fs.existsSync(projectDir)) {
     verbose('Creating directory ' + projectDir);
-    fs.mkdirSync(projectDir);
+    fs.mkdirSync(projectDir, { recursive: true });
   }
 
   // Check if no existing projects in "resultDirectory"
@@ -96,18 +97,8 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   info('Creating .gitignore');
   fs.writeFileSync(path.join(projectDir, './.gitignore'), gitIgnore);
 
-  // Checking whether currenct directory is a git directory
-  const response = execSync(`git rev-parse --is-inside-work-tree`, {
-    cwd: projectDir,
-    encoding: 'utf-8',
-  });
-
-  verbose(
-    `Checking whether the current directory is a git directory\n ${response}`
-  );
-
   // 7. init or add files to git project
-  if (response.trim() === 'true') {
+  if (isGitDirectory(projectDir)) {
     info('Adding generated project files to the git...');
   } else {
     info(
