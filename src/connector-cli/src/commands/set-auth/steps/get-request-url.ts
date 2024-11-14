@@ -33,6 +33,9 @@ export function getRequestUrl(
       connectorEndpointBaseUrl.pathname += '/auth/oauth-authorization-code';
       break;
     }
+    case SupportedAuth.OAuth2JwtBearer: {
+      connectorEndpointBaseUrl.pathname += '/auth/oauth-jwt-bearer';
+    }
   }
   return connectorEndpointBaseUrl.toString();
 }

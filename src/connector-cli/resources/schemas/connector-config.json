@@ -24,7 +24,8 @@
           "staticKey",
           "oAuth2ClientCredentials",
           "oAuth2ResourceOwnerPassword",
-          "oAuth2AuthorizationCode"
+          "oAuth2AuthorizationCode",
+          "oAuth2JwtBearer"
         ]
       }
     },
@@ -53,7 +54,7 @@
               "additionalProperties": false
             }
           },
-          "required": ["bodyFormat"],
+          "required": [],
           "additionalProperties": false
         },
         "oAuth2AuthorizationCode": {

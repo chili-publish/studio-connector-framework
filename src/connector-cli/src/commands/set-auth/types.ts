@@ -1,9 +1,10 @@
 import {
   ChiliToken,
-  StaticKey,
-  Oauth2ClientCredentials,
-  Oauth2ResourceOwnerPassword,
   Oauth2AuthorizationCode,
+  Oauth2ClientCredentials,
+  Oauth2JwtBearer,
+  Oauth2ResourceOwnerPassword,
+  StaticKey,
 } from '../../core/types/gen-types';
 
 export type ConnectorAuthentication =
@@ -11,7 +12,8 @@ export type ConnectorAuthentication =
   | StaticKey
   | Oauth2ClientCredentials
   | Oauth2ResourceOwnerPassword
-  | Oauth2AuthorizationCode;
+  | Oauth2AuthorizationCode
+  | Oauth2JwtBearer;
 
 export enum AuthenticationUsage {
   Browser = 'browser',
@@ -23,4 +25,5 @@ export type APIConnectorAuthentication =
   | (StaticKey & { usage: AuthenticationUsage })
   | (Oauth2ClientCredentials & { usage: AuthenticationUsage })
   | (Oauth2ResourceOwnerPassword & { usage: AuthenticationUsage })
-  | (Oauth2AuthorizationCode & { usage: AuthenticationUsage.Browser });
+  | (Oauth2AuthorizationCode & { usage: AuthenticationUsage.Browser })
+  | (Oauth2JwtBearer & { usage: AuthenticationUsage });
