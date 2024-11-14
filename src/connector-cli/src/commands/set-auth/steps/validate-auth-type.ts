@@ -1,9 +1,9 @@
 import { verbose } from '../../../core';
 import {
   ConnectorConfig,
-  SupportedAuth,
   Convert,
   ExecutionError,
+  SupportedAuth,
 } from '../../../core/types';
 import { ConnectorAuthentication } from '../types';
 
@@ -38,6 +38,9 @@ export function validateAuthType(
       }
       case SupportedAuth.OAuth2AuthorizationCode: {
         return Convert.toOauth2AuthorizationCode(JSON.stringify(dirtyAuthData));
+      }
+      case SupportedAuth.OAuth2JwtBearer: {
+        return Convert.toOauth2JwtBearer(JSON.stringify(dirtyAuthData));
       }
     }
   } catch (error) {
