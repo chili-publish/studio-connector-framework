@@ -14,7 +14,8 @@
     "options": {},
     "mappings": {},
     "supportedAuth": [
-      "oAuth2AuthorizationCode"
+      "oAuth2AuthorizationCode",
+      "oAuth2JwtBearer"
     ],
     "authenticationConfig": {
       "oAuth2AuthorizationCode": {
