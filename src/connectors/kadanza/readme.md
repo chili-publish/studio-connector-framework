@@ -23,7 +23,7 @@ connector-cli publish \
 
 ## Set authenticator
 
-###Server
+### Server
 ```
 connector-cli set-auth \
     --connectorId {CONNECTOR_ID} \
@@ -70,7 +70,6 @@ oauth-resource-owner.json
 oauth-authorization-code.json
 ```
 {
-  "name": "oAuth2AuthorizationCode",
   "clientId": "{CLIENT_ID}",
   "clientSecret": "{CLIENT_SECRET}",
   "scope": "",
