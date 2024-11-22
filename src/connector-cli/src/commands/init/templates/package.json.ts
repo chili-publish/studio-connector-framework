@@ -23,7 +23,7 @@ export const getPackageJson = (projectName: string, type: Type) => ({
   main: `${outputDirectory}/${outputFilename}`,
   dependencies: {
     typescript: '^5.2.2',
-    '@chili-publish/studio-connectors': '^1.16.0',
+    '@chili-publish/studio-connectors': '^1.17.1',
   },
   scripts: {
     build: 'yarn connector-cli build',
