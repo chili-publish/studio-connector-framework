@@ -34,6 +34,7 @@ interface AssetId {
   assetHash: string;
   tenantHash: string;
   thumbnail: string;
+  extension: string;
 }
 
 interface DAMCustomMetadata {
@@ -116,6 +117,7 @@ export default class DamConnector implements Media.MediaConnector {
       ? options?.filter
       : undefined;
 
+    let searchQuery = '&search=format:(png OR jpeg OR pdf OR mp4 OR gif)';
     if (filter && filter.length > 0) {
       const stringifiedFilter = filter.toString().trim();
 
@@ -134,16 +136,17 @@ export default class DamConnector implements Media.MediaConnector {
           `Filtering query by _id: ${id}`
         );
 
-        queryEndpoint += `&search=_id: ${id}`;
+        searchQuery += `AND _id: ${id}`;
       } else if (stringifiedFilter && context?.searchQuery) {
         this._logError(
           `Filtering query by ${stringifiedFilter} in ${context.searchQuery}`
         );
 
-        const search = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
-        queryEndpoint += `&search=${search}`;
+        const searchInput = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
+        searchQuery += `AND ${searchInput}`;
       }
     }
+    queryEndpoint += searchQuery;
 
     this._logError(`Query: endpoint ${encodeURI(queryEndpoint)}`);
 
@@ -192,29 +195,32 @@ export default class DamConnector implements Media.MediaConnector {
 
     const baseUrl = this._getBaseMediaUrl();
     let downloadEndpoint = `${baseUrl}`;
+    const thumbnail = detail.thumbnail;
+    const original = `/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(detail.name)}/original`;
+    const format = detail.extension.toLowerCase();
 
     switch (previewType) {
-      // TODO -> handle medium/highres with conversion profiles?
-
       case 'fullres':
-      case 'highres':
       case 'original':
-        downloadEndpoint += `/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(
-          detail.name
-        )}/original`;
+        downloadEndpoint += original;
+        break;
+
+      case 'highres':
+        if (['png', 'jpeg'].includes(format)) {
+            downloadEndpoint += original;
+          } else {
+            downloadEndpoint += thumbnail;
+          }
         break;
 
       case 'thumbnail':
       case 'mediumres':
-        downloadEndpoint += detail.thumbnail ? detail.thumbnail : `/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(
-          detail.name
-        )}/original`;
-        break;
-
       default:
-        downloadEndpoint += `/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(
-          detail.name
-        )}/original`;
+        if (!thumbnail) {
+          throw new Error(`Thumbnail not available for asset with id ${detail.id}`);
+        }
+
+        downloadEndpoint += thumbnail;
         break;
     }
 
@@ -295,6 +301,7 @@ export default class DamConnector implements Media.MediaConnector {
       assetHash: damMedia.assetHash,
       tenantHash: damMedia.tenantHash,
       thumbnail: damMedia.thumbnail,
+      extension: damMedia.format,
     };
 
     return {
@@ -313,7 +320,7 @@ export default class DamConnector implements Media.MediaConnector {
   _getMetadataFromDamMedia(damMedia: DamMedia, customMetadata: DAMCustomMetadataPage): Connector.Dictionary {
     const attributeNames: Array<string> = customMetadata['hydra:member'].map((m) => m.attributeName);
 
-    return Object.fromEntries(attributeNames.filter((a) => typeof damMedia[a] === 'string').map((a) => [a, damMedia[a]] ));
+    return Object.fromEntries(attributeNames.filter((a) => ['string', 'number'].includes(typeof damMedia[a])).map((a) => [a, damMedia[a].toString()] ));
   }
 
   _logError(err: string) {
