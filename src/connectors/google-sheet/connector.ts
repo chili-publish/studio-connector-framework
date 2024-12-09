@@ -147,8 +147,6 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }
     const { valueRanges }: SheetRanges = JSON.parse(res.text);
 
-    // 2. No more rows - check status text woth 400 errror
-
     const headerRow = valueRanges[0].values[0];
     const { values, range } = valueRanges[1];
 
