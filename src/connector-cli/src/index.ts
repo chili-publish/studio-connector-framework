@@ -4,8 +4,8 @@ import { runBuild } from './commands/build';
 import { runDebugger } from './commands/debug';
 import { runDelete } from './commands/delete';
 import { runGetInfo } from './commands/info';
-import { runInit } from './commands/init';
 import { runLogin } from './commands/login';
+import { runNewProject } from './commands/new';
 import { runPublish } from './commands/publish';
 import { runSetAuth } from './commands/set-auth';
 import { AuthenticationUsage } from './commands/set-auth/types';
@@ -27,31 +27,25 @@ function main() {
     .option('--verbose', 'Enable verbose logging');
 
   program
-    .command('init')
-    .description("Instantiate current directory as connector's project")
-    .requiredOption('-n, --name <name>', 'Name of the connector')
-    .addOption(
-      new Option('-t, --type [type]', 'Type of the connector')
-        .choices(Object.values(ConnectorType))
-        .default('media')
-    )
-    .action(withErrorHandlerAction(runInit));
-
-  program
     .command('new')
-    .description("Instantiate a <name> directory as connector's project")
-    .requiredOption('-n, --name <name>', 'Name of the connector')
+    .description(
+      "Creates a folder with the given <projectName> and initialize it as a new connector's project"
+    )
+    .argument('[projectName]', "The name of the new connector's project")
     .addOption(
-      new Option('-t, --type [type]', 'Type of the connector')
-        .choices(Object.values(ConnectorType))
-        .default('media')
+      new Option('-t, --type [type]', 'Type of the connector').choices(
+        Object.values(ConnectorType)
+      )
+    )
+    .option(
+      '-n, --connector-name [connectorName]',
+      'Name of the connector. If not provided, <projectName> is going to be used as value for this option'
     )
     .option(
       '-o, --out [out]',
-      'Output path of project files. Combined with <name> to produce final directory',
-      './'
+      'Output path of project files. By default it outputs files to newly created <projectName> folder'
     )
-    .action(withErrorHandlerAction(runInit));
+    .action(withErrorHandlerAction(runNewProject));
 
   program
     .command('publish')
@@ -73,9 +67,9 @@ function main() {
       '-b, --baseUrl <baseurl>',
       'Environemnt API endpoint to use for publishing, i.e. "https://main.cpstaging.online/grafx"'
     )
-    .requiredOption(
-      '-n, --name <name>',
-      'Connector name to use for publishing, i.e. "MyConnector"'
+    .option(
+      '-n, --name [name]',
+      'Connector name to use for publishing, i.e. "MyConnector". By default will use "config.connectorName" value if it exists'
     )
     .option(
       '--connectorId [connectorId]',
