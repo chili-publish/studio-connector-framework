@@ -9,7 +9,7 @@ import { Connector, Data } from '@chili-publish/studio-connectors';
 
 interface SheetCells {
   range: string;
-  values: Array<Array<string>>;
+  values: Array<Array<string>> | undefined;
 }
 
 interface SheetRanges {
@@ -18,6 +18,12 @@ interface SheetRanges {
 
 interface Spreadsheet {
   sheets: Array<{ properties: { sheetId: string; title: string } }>;
+}
+
+interface ApiError {
+  error: {
+    message: string;
+  };
 }
 
 class RangeHelper {
@@ -113,6 +119,26 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       }
     );
 
+    // We handle 400 in a specific way since it might be related to the requesting the last "empty" batch of records
+    // during batch output generation. In this case we need to complete request as success with empty return data
+    if (!res.ok && res.status === 400) {
+      try {
+        const { error }: ApiError = JSON.parse(res.text);
+        this.runtime.logError(
+          `Google Sheet: GetPage failed ${res.status} - ${error.message}`
+        );
+        return {
+          continuationToken: null,
+          data: [],
+        };
+      } catch (err) {
+        throw new ConnectorHttpError(
+          res.status,
+          `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
+        );
+      }
+    }
+
     if (!res.ok) {
       throw new ConnectorHttpError(
         res.status,
@@ -124,7 +150,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     const headerRow = valueRanges[0].values[0];
     const { values, range } = valueRanges[1];
 
-    const data = convertCellsToDataItems(headerRow, values);
+    // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
+    const data = values ? convertCellsToDataItems(headerRow, values) : [];
 
     return {
       continuationToken: this.isNextPageAvailable(config.limit, data.length)
