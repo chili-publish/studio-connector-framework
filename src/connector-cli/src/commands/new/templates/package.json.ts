@@ -4,7 +4,11 @@ import {
   outputFilename,
 } from '../../../utils/connector-project';
 
-export const getPackageJson = (projectName: string, type: Type) => ({
+export const getPackageJson = (
+  projectName: string,
+  type: Type,
+  connectorName: string
+) => ({
   name: projectName,
   description: '',
   version: '1.0.0',
@@ -14,6 +18,7 @@ export const getPackageJson = (projectName: string, type: Type) => ({
     url: 'https://github.com/chili-publish',
   },
   config: {
+    connectorName,
     type: type,
     options: {},
     mappings: {},

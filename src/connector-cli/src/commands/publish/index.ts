@@ -7,6 +7,7 @@ import {
   validateRuntimeOptions,
 } from '../../core';
 import { readAccessToken } from '../../core/read-access-token';
+import { ExecutionError } from '../../core/types';
 import { getConnectorProjectFileInfo } from '../../utils/connector-project';
 import { compileConnector } from './steps/compile';
 import { createNewConnector } from './steps/create-connector';
@@ -19,7 +20,7 @@ interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
   baseUrl: string;
   environment: string;
-  name: string;
+  name?: string;
   connectorId?: string;
   runtimeOption?: Record<string, unknown>;
   ['proxyOption.allowedDomains']?: Array<string>;
@@ -38,7 +39,6 @@ export async function runPublish(
   const {
     baseUrl,
     environment,
-    name,
     connectorId,
     runtimeOption: runtimeOptions,
     ...rawProxyOptions
@@ -53,6 +53,13 @@ export async function runPublish(
     getConnectorProjectFileInfo(projectPath);
 
   const config = readConnectorConfig(packageJson);
+
+  info('Validating connector name...');
+
+  const connectorName = options.name || config.connectorName;
+  if (!connectorName) {
+    throw new ExecutionError('You must define connector name for deploy');
+  }
 
   info('Validating allowed domains option...');
 
@@ -80,7 +87,7 @@ export async function runPublish(
   const requestUrl = buildRequestUrl(baseUrl, environment);
 
   const connectorPayload = {
-    name,
+    name: connectorName,
     description,
     version,
     type: config.type,
