@@ -9,11 +9,19 @@ import { Connector, Data } from '@chili-publish/studio-connectors';
 
 interface SheetCells {
   range: string;
-  values: Array<Array<string>> | undefined;
-}
-
-interface SheetRanges {
-  valueRanges: Array<SheetCells>;
+  values:
+    | {
+        formattedValue: string;
+        effectiveValue: {
+          stringValue?: string;
+          numberValue?: number;
+          boolValue?: boolean;
+        };
+        effectiveFormat?: {
+          numberFormat: { type: string };
+        };
+      }[]
+    | undefined;
 }
 
 interface Spreadsheet {
@@ -27,8 +35,12 @@ interface ApiError {
 }
 
 class RangeHelper {
-  static buildHeaderRange(sheetName: string | null) {
-    return RangeHelper.buildRange(sheetName, 1, 1);
+  static buildHeaderRange(
+    sheetName: string | null,
+    start: number,
+    end: number
+  ) {
+    return RangeHelper.buildRange(sheetName, start, end);
   }
 
   static buildFirstPageRange(sheetName: string | null, limit: number) {
@@ -71,21 +83,36 @@ class RangeHelper {
 
 function convertCellsToDataItems(
   tableHeader: SheetCells['values'][0],
-  sheetCells: SheetCells['values']
+  sheetCells: SheetCells[]
 ): Array<Data.DataItem> {
-  return sheetCells.map((row) =>
-    row.reduce((item, cell, index) => {
-      item[tableHeader[index]] = cell;
+  return sheetCells.map((row) => {
+    return row.values.reduce((item, cell, index) => {
+      if (cell?.effectiveFormat?.numberFormat.type === 'NUMBER')
+        item[tableHeader[index].formattedValue] =
+          cell?.effectiveValue.numberValue;
+      else if (
+        cell?.effectiveFormat?.numberFormat.type === 'DATE' ||
+        cell?.effectiveFormat?.numberFormat.type === 'DATE_TIME'
+      ) {
+        item[tableHeader[index].formattedValue] = new Date(cell.formattedValue);
+      } else if (cell?.effectiveValue?.boolValue !== undefined) {
+        item[tableHeader[index].formattedValue] =
+          cell?.effectiveValue?.boolValue;
+      } else {
+        item[tableHeader[index].formattedValue] =
+          cell?.effectiveValue?.stringValue;
+      }
       return item;
-    }, {} as Data.DataItem)
-  );
+    }, {} as Data.DataItem);
+  });
 }
 
 export default class GoogleSheetConnector implements Data.DataConnector {
   private runtime: Connector.ConnectorRuntimeContext;
-
+  private fieldsMask: string;
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
+    this.fieldsMask = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
   }
 
   async getPage(
@@ -111,8 +138,12 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${RangeHelper.buildHeaderRange(
-        sheetName
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${
+        this.fieldsMask
+      }&ranges=${RangeHelper.buildHeaderRange(
+        sheetName,
+        1,
+        1
       )}&ranges=${cellsRange}`,
       {
         method: 'GET',
@@ -145,11 +176,10 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
       );
     }
-    const { valueRanges }: SheetRanges = JSON.parse(res.text);
+    const sheetData = JSON.parse(res.text).sheets[0].data;
 
-    const headerRow = valueRanges[0].values[0];
-    const { values, range } = valueRanges[1];
-
+    const headerRow = sheetData[0].rowData[0].values;
+    const values = sheetData[1].rowData;
     // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
     const data = values ? convertCellsToDataItems(headerRow, values) : [];
 
@@ -166,11 +196,14 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       this.extractSheetIdentityFromContext(context);
 
     const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
-
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${RangeHelper.buildHeaderRange(
-        sheetName
-      )}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${RangeHelper.buildHeaderRange(
+        sheetName,
+        1,
+        1
+      )}&ranges=${RangeHelper.buildHeaderRange(sheetName, 2, 2)}&fields=${
+        this.fieldsMask
+      }`,
       {
         method: 'GET',
       }
@@ -183,23 +216,34 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       );
     }
 
-    const { values }: SheetCells = JSON.parse(res.text);
+    const { values }: { values: { formattedValue: string }[] } = JSON.parse(
+      res.text
+    ).sheets[0].data[0].rowData[0];
 
-    const headerRow = values[0];
+    const { values: dataValues }: SheetCells = JSON.parse(res.text).sheets[0]
+      .data[1].rowData[0];
 
-    // TODO: To define proper type we need in addition to header row also request first row of the data
-    // and extract all information from there
-    // The all call should be replaced with "spreadsheets.get" with grid data for the range of header and first data row
-    // To read the format, refers to "effectiveFormat"  or "effectiveValue" fields:
-    // - "effectiveFormat.numberFormat.type" = "NUMBER" - states for "number"
-    // - "effectiveFormat.numberFormat.type" = "DATE" or "DATE_TIME" - states for "date"
-    // - "effectiveValue.boolValue" != undefined - states for "bool"
-    // - Others - states for "singleLine" ("MultiLine")
+    const headerRow = values;
+
+    const getType = (column) => {
+      if (column?.effectiveFormat?.numberFormat.type === 'NUMBER')
+        return 'number';
+      if (
+        column?.effectiveFormat?.numberFormat.type === 'DATE' ||
+        column?.effectiveFormat?.numberFormat.type === 'DATE_TIME'
+      )
+        return 'date';
+
+      if (column?.effectiveValue?.boolValue !== undefined) return 'boolean';
+      return 'singleLine';
+    };
     return {
-      properties: headerRow.map((column) => ({
-        type: 'singleLine',
-        name: column,
-      })),
+      properties: headerRow.map((column, idx) => {
+        return {
+          type: getType(dataValues[idx]),
+          name: column.formattedValue,
+        };
+      }),
     };
   }
 
