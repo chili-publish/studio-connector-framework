@@ -147,6 +147,12 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }
     const { valueRanges }: SheetRanges = JSON.parse(res.text);
 
+    if (!valueRanges[0].values) {
+      throw new Error(
+        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
+      );
+    }
+
     const headerRow = valueRanges[0].values[0];
     const { values, range } = valueRanges[1];
 
@@ -184,6 +190,12 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }
 
     const { values }: SheetCells = JSON.parse(res.text);
+
+    if (!values) {
+      throw new Error(
+        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
+      );
+    }
 
     const headerRow = values[0];
 
