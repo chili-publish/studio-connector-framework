@@ -83,31 +83,53 @@ class RangeHelper {
   }
 }
 
+const getType = (cell: CellData) => {
+  if (cell.effectiveFormat?.numberFormat?.type === 'NUMBER') return 'number';
+  if (
+    cell.effectiveFormat?.numberFormat?.type === 'DATE' ||
+    cell.effectiveFormat?.numberFormat?.type === 'DATE_TIME'
+  )
+    return 'date';
+  if (
+    'boolValue' in cell.effectiveValue &&
+    cell.effectiveValue.boolValue !== undefined
+  )
+    return 'boolean';
+  return 'singleLine';
+};
+
 function convertCellsToDataItems(
   tableHeader: SheetCells['values'][0],
   sheetCells: SheetCells[]
 ): Array<Data.DataItem> {
   return sheetCells.map((row) => {
     return row.values.reduce((item, cell, index) => {
-      if (
-        cell.effectiveFormat?.numberFormat.type === 'NUMBER' &&
-        'numberValue' in cell.effectiveValue
-      )
-        item[tableHeader[index].formattedValue] =
-          cell.effectiveValue.numberValue;
-      else if (
-        cell.effectiveFormat?.numberFormat.type === 'DATE' ||
-        cell.effectiveFormat?.numberFormat.type === 'DATE_TIME'
-      ) {
-        item[tableHeader[index].formattedValue] = new Date(cell.formattedValue);
-      } else if (
-        'boolValue' in cell.effectiveValue &&
-        cell.effectiveValue.boolValue !== undefined
-      ) {
-        item[tableHeader[index].formattedValue] = cell.effectiveValue.boolValue;
-      } else if ('stringValue' in cell.effectiveValue) {
-        item[tableHeader[index].formattedValue] =
-          cell.effectiveValue.stringValue;
+      const columnType = getType(cell);
+
+      switch (columnType) {
+        case 'number':
+          if ('numberValue' in cell.effectiveValue) {
+            item[tableHeader[index].formattedValue] =
+              cell.effectiveValue.numberValue;
+          }
+          break;
+        case 'date':
+          item[tableHeader[index].formattedValue] = new Date(
+            cell.formattedValue
+          );
+          break;
+        case 'boolean':
+          if ('boolValue' in cell.effectiveValue) {
+            item[tableHeader[index].formattedValue] =
+              cell.effectiveValue.boolValue;
+          }
+          break;
+        case 'singleLine':
+          if ('stringValue' in cell.effectiveValue) {
+            item[tableHeader[index].formattedValue] =
+              cell.effectiveValue.stringValue;
+          }
+          break;
       }
       return item;
     }, {} as Data.DataItem);
@@ -227,18 +249,6 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
     const headerRow = values;
 
-    const getType = (column) => {
-      if (column?.effectiveFormat?.numberFormat.type === 'NUMBER')
-        return 'number';
-      if (
-        column?.effectiveFormat?.numberFormat.type === 'DATE' ||
-        column?.effectiveFormat?.numberFormat.type === 'DATE_TIME'
-      )
-        return 'date';
-
-      if (column?.effectiveValue?.boolValue !== undefined) return 'boolean';
-      return 'singleLine';
-    };
     return {
       properties: headerRow.map((column, idx) => {
         return {
