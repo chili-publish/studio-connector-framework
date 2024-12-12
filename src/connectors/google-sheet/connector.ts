@@ -7,21 +7,27 @@ import { Connector, Data } from '@chili-publish/studio-connectors';
  * 2. First row is always header
  */
 
+interface BaseSheetCells {
+  formattedValue: string;
+  effectiveFormat?: {
+    numberFormat: { type: string };
+  };
+}
+interface NumberCell extends BaseSheetCells {
+  effectiveValue: { numberValue: number };
+}
+interface BooleanCell extends BaseSheetCells {
+  effectiveValue: { boolValue: boolean };
+}
+interface StringCell extends BaseSheetCells {
+  effectiveValue: { stringValue: string };
+}
+
+type CellData = StringCell | NumberCell | BooleanCell;
+
 interface SheetCells {
   range: string;
-  values:
-    | {
-        formattedValue: string;
-        effectiveValue: {
-          stringValue?: string;
-          numberValue?: number;
-          boolValue?: boolean;
-        };
-        effectiveFormat?: {
-          numberFormat: { type: string };
-        };
-      }[]
-    | undefined;
+  values: CellData[] | undefined;
 }
 
 interface Spreadsheet {
@@ -87,20 +93,25 @@ function convertCellsToDataItems(
 ): Array<Data.DataItem> {
   return sheetCells.map((row) => {
     return row.values.reduce((item, cell, index) => {
-      if (cell?.effectiveFormat?.numberFormat.type === 'NUMBER')
+      if (
+        cell.effectiveFormat?.numberFormat.type === 'NUMBER' &&
+        'numberValue' in cell.effectiveValue
+      )
         item[tableHeader[index].formattedValue] =
-          cell?.effectiveValue.numberValue;
+          cell.effectiveValue.numberValue;
       else if (
-        cell?.effectiveFormat?.numberFormat.type === 'DATE' ||
-        cell?.effectiveFormat?.numberFormat.type === 'DATE_TIME'
+        cell.effectiveFormat?.numberFormat.type === 'DATE' ||
+        cell.effectiveFormat?.numberFormat.type === 'DATE_TIME'
       ) {
         item[tableHeader[index].formattedValue] = new Date(cell.formattedValue);
-      } else if (cell?.effectiveValue?.boolValue !== undefined) {
+      } else if (
+        'boolValue' in cell.effectiveValue &&
+        cell.effectiveValue.boolValue !== undefined
+      ) {
+        item[tableHeader[index].formattedValue] = cell.effectiveValue.boolValue;
+      } else if ('stringValue' in cell.effectiveValue) {
         item[tableHeader[index].formattedValue] =
-          cell?.effectiveValue?.boolValue;
-      } else {
-        item[tableHeader[index].formattedValue] =
-          cell?.effectiveValue?.stringValue;
+          cell.effectiveValue.stringValue;
       }
       return item;
     }, {} as Data.DataItem);
