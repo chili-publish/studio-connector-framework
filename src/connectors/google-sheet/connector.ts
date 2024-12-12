@@ -166,9 +166,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${RangeHelper.buildHeaderRange(
-        sheetName
-      )}&ranges=${cellsRange}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${encodeURIComponent(
+        RangeHelper.buildHeaderRange(sheetName)
+      )}&ranges=${encodeURIComponent(cellsRange)}`,
       {
         method: 'GET',
       }
@@ -226,12 +226,10 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
     const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${RangeHelper.buildHeaderRange(
-        sheetName
-      )}&ranges=${RangeHelper.buildRange(
-        sheetName,
-        2,
-        2
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${encodeURIComponent(
+        RangeHelper.buildHeaderRange(sheetName)
+      )}&ranges=${encodeURIComponent(
+        RangeHelper.buildRange(sheetName, 2, 2)
       )}&fields=${fieldsMask}`,
       {
         method: 'GET',
