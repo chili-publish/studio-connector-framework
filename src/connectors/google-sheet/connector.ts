@@ -107,12 +107,11 @@ function convertCellsToDataItems(
   });
 }
 
+const fieldsMask = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
 export default class GoogleSheetConnector implements Data.DataConnector {
   private runtime: Connector.ConnectorRuntimeContext;
-  private fieldsMask: string;
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
-    this.fieldsMask = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
   }
 
   async getPage(
@@ -138,9 +137,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${
-        this.fieldsMask
-      }&ranges=${RangeHelper.buildHeaderRange(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${RangeHelper.buildHeaderRange(
         sheetName,
         1,
         1
@@ -201,9 +198,11 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         sheetName,
         1,
         1
-      )}&ranges=${RangeHelper.buildHeaderRange(sheetName, 2, 2)}&fields=${
-        this.fieldsMask
-      }`,
+      )}&ranges=${RangeHelper.buildHeaderRange(
+        sheetName,
+        2,
+        2
+      )}&fields=${fieldsMask}`,
       {
         method: 'GET',
       }
