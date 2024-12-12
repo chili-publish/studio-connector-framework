@@ -41,12 +41,8 @@ interface ApiError {
 }
 
 class RangeHelper {
-  static buildHeaderRange(
-    sheetName: string | null,
-    start: number,
-    end: number
-  ) {
-    return RangeHelper.buildRange(sheetName, start, end);
+  static buildHeaderRange(sheetName: string | null) {
+    return RangeHelper.buildRange(sheetName, 1, 1);
   }
 
   static buildFirstPageRange(sheetName: string | null, limit: number) {
@@ -62,7 +58,7 @@ class RangeHelper {
     return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
-  private static buildRange(
+  public static buildRange(
     sheetName: string | null,
     start: number,
     end: number
@@ -149,9 +145,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 2. Next batch of values
     const res = await this.runtime.fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${RangeHelper.buildHeaderRange(
-        sheetName,
-        1,
-        1
+        sheetName
       )}&ranges=${cellsRange}`,
       {
         method: 'GET',
@@ -206,10 +200,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
     const res = await this.runtime.fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${RangeHelper.buildHeaderRange(
-        sheetName,
-        1,
-        1
-      )}&ranges=${RangeHelper.buildHeaderRange(
+        sheetName
+      )}&ranges=${RangeHelper.buildRange(
         sheetName,
         2,
         2
