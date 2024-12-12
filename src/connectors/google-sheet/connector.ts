@@ -202,6 +202,11 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }
     const sheetData = JSON.parse(res.text).sheets[0].data;
 
+    if (!sheetData[0].rowData) {
+      throw new Error(
+        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
+      );
+    }
     const headerRow = sheetData[0].rowData[0].values;
     const values = sheetData[1].rowData;
     // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
