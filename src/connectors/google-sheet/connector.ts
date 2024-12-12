@@ -244,20 +244,20 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         `Google Sheet: GetModel failed ${res.status} - ${res.statusText}`
       );
     }
+    const sheetData = JSON.parse(res.text).sheets[0].data;
+    if (!sheetData[0].rowData) {
+      throw new Error(
+        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
+      );
+    }
+    const headerRow = sheetData[0].rowData[0].values;
 
-    const { values }: { values: { formattedValue: string }[] } = JSON.parse(
-      res.text
-    ).sheets[0].data[0].rowData[0];
-
-    const { values: dataValues }: SheetCells = JSON.parse(res.text).sheets[0]
-      .data[1].rowData[0];
-
-    const headerRow = values;
+    const { values }: SheetCells = sheetData[1].rowData[0];
 
     return {
       properties: headerRow.map((column, idx) => {
         return {
-          type: getType(dataValues[idx]),
+          type: getType(values[idx]),
           name: column.formattedValue,
         };
       }),
