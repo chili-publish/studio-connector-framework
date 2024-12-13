@@ -19,11 +19,8 @@ interface NumberCell extends BaseSheetCells {
 interface BooleanCell extends BaseSheetCells {
   effectiveValue: { boolValue: boolean };
 }
-interface StringCell extends BaseSheetCells {
-  effectiveValue: { stringValue: string };
-}
 
-type CellData = StringCell | NumberCell | BooleanCell;
+type CellData = NumberCell | BooleanCell;
 
 interface SheetCells {
   range: string;
@@ -125,10 +122,7 @@ function convertCellsToDataItems(
           }
           break;
         case 'singleLine':
-          if ('stringValue' in cell.effectiveValue) {
-            item[tableHeader[index].formattedValue] =
-              cell.effectiveValue.stringValue;
-          }
+          item[tableHeader[index].formattedValue] = cell.formattedValue;
           break;
       }
       return item;
@@ -209,6 +203,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }
     const headerRow = sheetData[0].rowData[0].values;
     const values = sheetData[1].rowData;
+
     // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
     const data = values ? convertCellsToDataItems(headerRow, values) : [];
 
