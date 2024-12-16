@@ -7,13 +7,24 @@ import { Connector, Data } from '@chili-publish/studio-connectors';
  * 2. First row is always header
  */
 
-interface SheetCells {
-  range: string;
-  values: Array<Array<string>> | undefined;
+interface BaseSheetCells {
+  formattedValue: string;
+  effectiveFormat?: {
+    numberFormat: { type: string };
+  };
+}
+interface NumberCell extends BaseSheetCells {
+  effectiveValue: { numberValue: number };
+}
+interface BooleanCell extends BaseSheetCells {
+  effectiveValue: { boolValue: boolean };
 }
 
-interface SheetRanges {
-  valueRanges: Array<SheetCells>;
+type CellData = NumberCell | BooleanCell;
+
+interface SheetCells {
+  range: string;
+  values: CellData[] | undefined;
 }
 
 interface Spreadsheet {
@@ -44,7 +55,7 @@ class RangeHelper {
     return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
-  private static buildRange(
+  public static buildRange(
     sheetName: string | null,
     start: number,
     end: number
@@ -69,21 +80,59 @@ class RangeHelper {
   }
 }
 
+const getType = (cell: CellData) => {
+  if (cell.effectiveFormat?.numberFormat?.type === 'NUMBER') return 'number';
+  if (
+    cell.effectiveFormat?.numberFormat?.type === 'DATE' ||
+    cell.effectiveFormat?.numberFormat?.type === 'DATE_TIME'
+  )
+    return 'date';
+  if (
+    'boolValue' in cell.effectiveValue &&
+    cell.effectiveValue.boolValue !== undefined
+  )
+    return 'boolean';
+  return 'singleLine';
+};
+
 function convertCellsToDataItems(
   tableHeader: SheetCells['values'][0],
-  sheetCells: SheetCells['values']
+  sheetCells: SheetCells[]
 ): Array<Data.DataItem> {
-  return sheetCells.map((row) =>
-    row.reduce((item, cell, index) => {
-      item[tableHeader[index]] = cell;
+  return sheetCells.map((row) => {
+    return row.values.reduce((item, cell, index) => {
+      const columnType = getType(cell);
+
+      switch (columnType) {
+        case 'number':
+          if ('numberValue' in cell.effectiveValue) {
+            item[tableHeader[index].formattedValue] =
+              cell.effectiveValue.numberValue;
+          }
+          break;
+        case 'date':
+          item[tableHeader[index].formattedValue] = new Date(
+            cell.formattedValue
+          );
+          break;
+        case 'boolean':
+          if ('boolValue' in cell.effectiveValue) {
+            item[tableHeader[index].formattedValue] =
+              cell.effectiveValue.boolValue;
+          }
+          break;
+        case 'singleLine':
+          item[tableHeader[index].formattedValue] = cell.formattedValue;
+          break;
+      }
       return item;
-    }, {} as Data.DataItem)
-  );
+    }, {} as Data.DataItem);
+  });
 }
 
+const fieldsMask = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
 export default class GoogleSheetConnector implements Data.DataConnector {
   private runtime: Connector.ConnectorRuntimeContext;
-
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
   }
@@ -111,9 +160,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${RangeHelper.buildHeaderRange(
-        sheetName
-      )}&ranges=${cellsRange}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${encodeURIComponent(
+        RangeHelper.buildHeaderRange(sheetName)
+      )}&ranges=${encodeURIComponent(cellsRange)}`,
       {
         method: 'GET',
       }
@@ -145,16 +194,15 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
       );
     }
-    const { valueRanges }: SheetRanges = JSON.parse(res.text);
+    const sheetData = JSON.parse(res.text).sheets[0].data;
 
-    if (!valueRanges[0].values) {
+    if (!sheetData[0].rowData) {
       throw new Error(
         'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
       );
     }
-
-    const headerRow = valueRanges[0].values[0];
-    const { values, range } = valueRanges[1];
+    const headerRow = sheetData[0].rowData[0].values;
+    const values = sheetData[1].rowData;
 
     // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
     const data = values ? convertCellsToDataItems(headerRow, values) : [];
@@ -172,11 +220,12 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       this.extractSheetIdentityFromContext(context);
 
     const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
-
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${RangeHelper.buildHeaderRange(
-        sheetName
-      )}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${encodeURIComponent(
+        RangeHelper.buildHeaderRange(sheetName)
+      )}&ranges=${encodeURIComponent(
+        RangeHelper.buildRange(sheetName, 2, 2)
+      )}&fields=${fieldsMask}`,
       {
         method: 'GET',
       }
@@ -188,30 +237,23 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         `Google Sheet: GetModel failed ${res.status} - ${res.statusText}`
       );
     }
-
-    const { values }: SheetCells = JSON.parse(res.text);
-
-    if (!values) {
+    const sheetData = JSON.parse(res.text).sheets[0].data;
+    if (!sheetData[0].rowData) {
       throw new Error(
         'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
       );
     }
+    const headerRow = sheetData[0].rowData[0].values;
 
-    const headerRow = values[0];
+    const { values }: SheetCells = sheetData[1].rowData[0];
 
-    // TODO: To define proper type we need in addition to header row also request first row of the data
-    // and extract all information from there
-    // The all call should be replaced with "spreadsheets.get" with grid data for the range of header and first data row
-    // To read the format, refers to "effectiveFormat"  or "effectiveValue" fields:
-    // - "effectiveFormat.numberFormat.type" = "NUMBER" - states for "number"
-    // - "effectiveFormat.numberFormat.type" = "DATE" or "DATE_TIME" - states for "date"
-    // - "effectiveValue.boolValue" != undefined - states for "bool"
-    // - Others - states for "singleLine" ("MultiLine")
     return {
-      properties: headerRow.map((column) => ({
-        type: 'singleLine',
-        name: column,
-      })),
+      properties: headerRow.map((column, idx) => {
+        return {
+          type: getType(values[idx]),
+          name: column.formattedValue,
+        };
+      }),
     };
   }
 
