@@ -1,6 +1,6 @@
 {
   "name": "google-sheet",
-  "description": "Integartion with Google Sheet API to read data from the spreadsheets",
+  "description": "Connect to Google Sheets to use data from your spreadsheets.",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
