@@ -238,6 +238,8 @@
 
 "@chili-publish/connector-cli@^1.6.2":
   version "1.9.5"
+  resolved "https://npm.pkg.github.com/download/@chili-publish/connector-cli/1.9.5/20b080fb6f3b7199fe83447daed372bdb37b1d91"
+  integrity sha512-PpxbGKfjd9gFDpls+rVWHG47zgoembuqT2SO9q2LhN7jhODGYm8ol5KDetEnPoaWO2Pribi4JcuJnse/NaICuw==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -254,6 +256,8 @@
 
 "@chili-publish/connector-cli@^1.9.0":
   version "1.9.5"
+  resolved "https://npm.pkg.github.com/download/@chili-publish/connector-cli/1.9.5/20b080fb6f3b7199fe83447daed372bdb37b1d91"
+  integrity sha512-PpxbGKfjd9gFDpls+rVWHG47zgoembuqT2SO9q2LhN7jhODGYm8ol5KDetEnPoaWO2Pribi4JcuJnse/NaICuw==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -269,7 +273,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.3.6-rc.0"
+  version "1.3.7-rc.1"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
