@@ -24,8 +24,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@chili-publish'
       - name: Install dependencies
-        # To prevent updates of yarn.lock file because of calling yarn install on sub package level
-        run: yarn install --frozen-lockfile
+        run: yarn
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Build
