@@ -99,11 +99,13 @@ class AEMTransformer {
     if (
       ['sling:Folder', 'sling:OrderedFolder'].includes(item['jcr:primaryType'])
     ) {
+      const pathSplit = item['jcr:path'].split('/');
+      const folderName = pathSplit.pop();
       return {
         id: path,
-        name: item['jcr:content']['jcr:title'],
+        name: folderName,
         type: 1,
-        relativePath: item['jcr:path'],
+        relativePath: `${pathSplit.join('/')}/`,
         extension: 'folder',
         metaData: {},
       };
@@ -205,7 +207,6 @@ export default class MyConnector implements Media.MediaConnector {
   ): Promise<Media.MediaPage> {
     const offset = Number(options.pageToken) || 0;
     const pageSize = options.pageSize || 20;
-
     // When collection we fetch the collection resources and create media objects from paths
     const collection = context.collection as string | undefined;
     if (collection && collection.length) {
@@ -240,8 +241,12 @@ export default class MyConnector implements Media.MediaConnector {
       // Check if id is in filterss
       try {
         // If it can be parsed we know that its an id
-        JSON.parse(filters[0]) as InternalAemId;
-        detailId = filters[0];
+        var parsed = JSON.parse(filters[0]) as InternalAemId;
+        if (parsed.path) {
+          detailId = filters[0];
+        } else {
+          fulltext = filters[0];
+        }
       } catch (error) {
         fulltext = filters[0];
       }
@@ -259,44 +264,53 @@ export default class MyConnector implements Media.MediaConnector {
         };
       });
     }
+    // Don't show the folders when a path is set as configuration option
+    let showFolders = !context.path;
+    let isFlat = !fulltext.length;
+    let path = (context.path as string) || '/content/dam';
 
-    // TODO folders
-    let showFolders = false;
-    let isFlat = false; // !fulltext.length;
+    // The Home is added to path when you copy it in the studio so remove here
+    if (path.startsWith('Home/content/dam')) {
+      path = path.replace('Home/content/dam', '/content/dam');
+    }
+    // when the collection starts with /content/dam we know that the user clicked on folder
+    if (options.collection.startsWith('/content/dam')) {
+      path = options.collection;
+    }
     // Otherwise we do a query call
 
     return this.aemQueryCall(
       {
         fulltext: fulltext,
-        path: context.path || '/content/dam',
+        path: path,
         mainAsset: true,
         location: 'asset',
         'location.suggestion': 'Assets',
         'path.flat': isFlat,
         excludepaths: '(.*)%3F(jcr%3Acontent%7Crep%3Apolicy)(%2F.*)%3F',
-        x: 1,
-        y: 1,
       },
       [
+        // Check on Folders or files
         {
           'p.or': true,
-          '1_group.1_group.type': 'dam:Asset',
-          // Check if its of type image or he has the full res fallback to use
-          '1_group.2_group.p.or': true,
-          '1_group.2_group.1_group.p.or': true,
-          '1_group.2_group.1_group.property': 'jcr:content/metadata/dc:format',
-          '1_group.2_group.1_group.property.1_value': 'image/jpeg',
-          '1_group.2_group.1_group.property.2_value': 'image/png',
-          '1_group.2_group.2_group.property': `jcr:content/renditions/${this.aemRenditions.fullresfallback}/jcr:created`,
-          '1_group.2_group.2_group.property.operation': 'exists',
+
           ...(showFolders
             ? {
-                '2_group.1_group.type': 'sling:Folder',
-                '2_group.2_group.property': 'jcr:path',
-                '2_group.2_group.property.value': '/content/dam/appdata',
-                '2_group.2_group.property.operation': 'unequals',
+                '1_group.1_group.type': 'sling:Folder',
+                '1_group.2_group.property': 'jcr:path',
+                '1_group.2_group.property.value': '/content/dam/appdata',
+                '1_group.2_group.property.operation': 'unequals',
               }
             : {}),
+          '2_group.1_group.type': 'dam:Asset',
+          // When files Check if its of type image or he has the full res fallback to use
+          '2_group.2_group.p.or': true,
+          '2_group.2_group.1_group.p.or': true,
+          '2_group.2_group.1_group.property': 'jcr:content/metadata/dc:format',
+          '2_group.2_group.1_group.property.1_value': 'image/jpeg',
+          '2_group.2_group.1_group.property.2_value': 'image/png',
+          '2_group.2_group.2_group.property': `jcr:content/renditions/${this.aemRenditions.fullresfallback}/jcr:created`,
+          '2_group.2_group.2_group.property.operation': 'exists',
         },
       ],
       {
@@ -398,7 +412,6 @@ export default class MyConnector implements Media.MediaConnector {
     availableRenditions: string[],
     previewType: Media.DownloadType
   ) {
-    // TODO RUN PDF WHEN NEEDED
     const getRendition = (renditionType: AemRendition) => {
       const rendition = this.aemRenditions[renditionType];
       if (availableRenditions.includes(rendition)) {
