@@ -25,6 +25,7 @@ export enum AemRendition {
   MediumRes = 'mediumres',
   HighRes = 'highres',
   FullResFallback = 'fullresfallback',
+  Pdf = 'pdf',
 }
 
 export type AemRenditions = {
@@ -33,10 +34,12 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
+  isImage?: boolean;
   path: string;
 }
 
 class AEMTransformer {
+  static imageFormats = ['image/jpeg', 'image/png'];
   static neededProperties = [
     'jcr:path',
     'jcr:primaryType',
@@ -65,7 +68,10 @@ class AEMTransformer {
     neededRenditions: string[],
     path: string = item['jcr:path']
   ) => {
+    var format = item['jcr:content']['metadata']['dc:format'];
+
     return JSON.stringify({
+      isImage: format && this.imageFormats.includes(format),
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -183,11 +189,22 @@ export default class MyConnector implements Media.MediaConnector {
   }
 
   private get aemRenditions() {
+    const renditionOverrides = this.runtime.options[
+      'renditionOverrides'
+    ] as string;
+    let overrides = {};
+    if (renditionOverrides.length) {
+      try {
+        overrides = JSON.parse(renditionOverrides);
+      } catch {}
+    }
     return {
       [AemRendition.Thumbnail]: 'cq5dam.thumbnail.140.100.png',
       [AemRendition.MediumRes]: 'cq5dam.thumbnail.319.319.png',
       [AemRendition.HighRes]: 'cq5dam.web.1280.1280.jpeg',
       [AemRendition.FullResFallback]: 'cq5dam.zoom.2048.2048.jpeg',
+      [AemRendition.Pdf]: 'cq5dam.preview.pdf',
+      ...overrides,
       // todo add renditions config
     } as AemRenditions;
   }
@@ -359,12 +376,19 @@ export default class MyConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { availableRenditions, path } = JSON.parse(id) as InternalAemId;
+    const { availableRenditions, path, isImage } = JSON.parse(
+      id
+    ) as InternalAemId;
     let downloadPath = path;
     if (downloadPath.startsWith('/')) {
       downloadPath = path.substring(1);
     }
-    let rendition = this.getCorrectRendition(availableRenditions, previewType);
+    let rendition = this.getCorrectRendition(
+      availableRenditions,
+      previewType,
+      intent,
+      isImage
+    );
 
     if (rendition) {
       downloadPath += `/_jcr_content/renditions/${rendition}`;
@@ -410,10 +434,20 @@ export default class MyConnector implements Media.MediaConnector {
 
   private getCorrectRendition(
     availableRenditions: string[],
-    previewType: Media.DownloadType
+    previewType: Media.DownloadType,
+    intent: Media.DownloadIntent,
+    isImage?: boolean
   ) {
     const getRendition = (renditionType: AemRendition) => {
-      const rendition = this.aemRenditions[renditionType];
+      let rendition = this.aemRenditions[renditionType];
+      if (isImage && previewType == 'fullres' && intent !== 'print') {
+        // Original
+        return null;
+      }
+      if (previewType === 'fullres' && intent == 'print') {
+        rendition = this.aemRenditions[AemRendition.Pdf];
+      }
+
       if (availableRenditions.includes(rendition)) {
         return rendition;
       } else if (renditionType === AemRendition.Thumbnail) {
@@ -423,7 +457,10 @@ export default class MyConnector implements Media.MediaConnector {
       } else if (renditionType === AemRendition.HighRes) {
         return getRendition(AemRendition.FullResFallback);
       }
-
+      // We know this one exist beceause of the query
+      if (!isImage) {
+        return AemRendition.FullResFallback;
+      }
       return null;
     };
     if (previewType === 'thumbnail') {
