@@ -1,0 +1,1816 @@
+{
+  "setup": {
+    "runtime_options": {
+      "BASE_URL": "https://localhost:3000",
+      "ENV_API_URL": "https://api.test.com"
+    }
+  },
+  "tests": [
+    {
+      "name": "Query Test 1",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 20
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/bin/querybuilder.json?fulltext=&path=/content/dam&p.nodedepth=2&p.guessTotal=20&p.offset=0&p.limit=20&p.hits=full&2_property=jcr:content/dam:assetState&2_property.value=processed",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "success": true,
+                "results": 18,
+                "total": 18,
+                "more": false,
+                "offset": 0,
+                "hits": [
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/CHILLtronics-C3.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "4d11581e-d3e1-48c5-a41a-db19b90ef771",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "c2a1cc9b-3a1f-49a3-9016-6dd9e388f277",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.preview.mp4",
+                        "cqdam.metadata.xml",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.text.txt",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cq5dam.thumbnail.48.48.png"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2366,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:00 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 4723854,
+                        "dam:predictedColors": [12055, 9026, 31018],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "7c4d037dfb4f588568b14d9df4586477835f061b",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1859
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/CHILLtronics-C4-Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "5e3f1c82-31e3-4db3-ac11-afa508574add",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "2b3c81e6-d949-4bda-a54e-49c78cb0d3ed",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.metadata.xml",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.text.txt",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.preview.mp4",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.140.100.png"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "33.35694122314453",
+                        "dam:Physicalwidthininches": "26.343929290771484",
+                        "tiff:ImageLength": 2402,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3889640,
+                        "dam:predictedColors": [
+                          9054, 12023, 25009, 11008, 31006
+                        ],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "b9e6a7ad735a5c1c3626383ff5e285944849d157",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1897
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/CHILLtronics-C5-Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "e3461408-e5e1-4aed-9eee-6921c0b56e59",
+                    "jcr:content": {
+                      "cq:lastReplicatedBy": "ward@chili-publish.com",
+                      "cq:lastReplicationAction": "Activate",
+                      "cq:lastReplicatedBy_publish": "ward@chili-publish.com",
+                      "cq:isDelivered": false,
+                      "dam:runPostProcess": true,
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "99bc44dd-30c8-4c8c-b00f-284c3d76631a",
+                      "dam:assetState": "processed",
+                      "jcr:mixinTypes": [
+                        "cq:ReplicationStatus",
+                        "cq:ReplicationStatus2"
+                      ],
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.text.txt",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.mp4",
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.tags.json"
+                      ],
+                      "cq:lastReplicationAction_publish": "Activate",
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                      "cq:lastReplicated": "Fri Nov 29 2024 11:31:46 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "cq:lastReplicated_publish": "Fri Nov 29 2024 11:31:46 GMT+0000",
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2402,
+                        "dc:format": "image/png",
+                        "undefined": "test",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:00 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 4199814,
+                        "dam:predictedColors": [
+                          12067, 31011, 16008, 34007, 9006
+                        ],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "0ebf8261489d0b94da5f70b66ea7d9b6ee95f2d3",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1897
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/CHILLtronics-C7.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:45 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "988c5f47-3373-402b-afa9-30c820f7a27d",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "7976d640-e427-4a64-b1eb-4744167fa099",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.text.txt",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.web.1280.1280.jpeg"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:45 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2114,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 2106061,
+                        "dam:predictedColors": [
+                          12063, 16015, 31008, 9007, 19006
+                        ],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "f563f27e2d589a6e22e6e843091b63018feede3f",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1763
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:45 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/CHILLtronics-C9-Basic.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "875fe53f-4f4c-4d90-a2b7-43ddf6d607fa",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "2ea3aa1b-c386-4ba5-866a-dcb31f26fbcf",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.preview.mp4",
+                        "cqdam.metadata.xml",
+                        "cqdam.text.txt",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cq5dam.thumbnail.319.319.png"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "33.35694122314453",
+                        "dam:Physicalwidthininches": "26.343929290771484",
+                        "tiff:ImageLength": 2402,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:02 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3863674,
+                        "dam:predictedColors": [9060, 16022, 12017],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "79a56a2e435d56168f09c2476dac8d820aa5b78c",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1897
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/iPhone-15-Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "bf7a9dd9-ab47-43a6-bfc4-14de5bd1116f",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "1768da5a-ab4a-49bc-9081-ba4163b1fdd2",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.text.txt",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.preview.mp4"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "33.35694122314453",
+                        "dam:Physicalwidthininches": "26.343929290771484",
+                        "tiff:ImageLength": 2402,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:02 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3783947,
+                        "dam:predictedColors": [5033, 9032, 12028, 16006],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "68ec742a64daba6a19e78d6f5e81e3e58618d70f",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1897
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/iphone-15-pro-titanium.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "794e0013-1ae6-4891-b9b5-6a6257f3a1c5",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "8b16d099-d119-430d-abbd-9090433d75bf",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.preview.mp4",
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.text.txt",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.preview.pdf"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:48 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "photoshop:ICCProfile": "sRGB IEC61966-2.1",
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "23.81646728515625",
+                        "dam:Physicalwidthininches": "19.136497497558594",
+                        "tiff:ImageLength": 1715,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:00 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3445686,
+                        "dam:predictedColors": [15053, 12026, 16021],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "3c733ecfdbc6bf5a30335243d11c1bb6c47d3560",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1378
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:47 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/iphone-15-pro-white.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "35874cb6-07f7-46d8-8a54-e04a3ea08011",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "b0b1cbf6-0df0-4122-90be-9e471249a2df",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.preview.pdf",
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.text.txt",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.features.json"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "photoshop:ICCProfile": "sRGB IEC61966-2.1",
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "23.802579879760742",
+                        "dam:Physicalwidthininches": "19.136497497558594",
+                        "tiff:ImageLength": 1714,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:02 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3492651,
+                        "dam:predictedColors": [
+                          15029, 14022, 16021, 12013, 13009, 17005
+                        ],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "7f34bf87647532ba69a334e87e862f1f41ead4f3",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1378
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:46 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/SmartPhones/s24ultra.png",
+                    "jcr:created": "Tue Sep 03 2024 13:14:48 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "cdc39117-8226-4898-a76b-78ec15606ae2",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "2d64f947-ab20-4241-8fb5-4716d553e370",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:15:03 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.text.txt"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:14:48 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "22.219444274902344",
+                        "dam:Physicalwidthininches": "22.219444274902344",
+                        "dam:isAiGenerated": true,
+                        "tiff:ImageLength": 1600,
+                        "dc:format": "image/png",
+                        "default": "Samsung",
+                        "dam:Physicalheightindpi": 72,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:15:02 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": 72,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:hasC2PAManifest": true,
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 1564513,
+                        "dam:predictedColors": [12047, 16028, 9014, 15012],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "d0a2ccd7f2b76bc09a34659c013f5d329e55486b",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1600
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:14:48 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 11 Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "c089ea47-6b96-4a60-b953-006009c16716",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.text.txt",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.preview.mp4"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 1271,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 1571693,
+                        "dam:predictedColors": [
+                          12032, 9028, 11021, 8013, 10006
+                        ],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "f18440850aedd4b5333a2621999f2b1e36a6986f",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1016
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 6 Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:29:57 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "38e92695-3e3f-4c0d-ac99-5a77a4b2d492",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "dc587db9-c119-4069-bb4c-1241e4cf1d2f",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.text.txt",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.machine.metadata.colors.json",
+                        "cqdam.metadata.xml",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.features.json"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:57 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2162,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:30:08 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 2982405,
+                        "dam:predictedColors": [12045, 9031, 25012, 31012],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "f1765f4da58c84f7956bb2bd268203c6e2fcf7e2",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 1735
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:29:57 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 7 Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "384eb448-7063-4d1e-8f3d-5ae8619b30d5",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "4e656252-905e-4031-b907-17679e59d5a7",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:15 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.text.txt",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.thumbnail.319.319.png"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2861,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:30:14 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 6007189,
+                        "dam:predictedColors": [12072, 5021, 16007],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "9f740601ab15eea554b7ab27e364b09aa6a9c811",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 2202
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 7.png",
+                    "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "a7788674-272b-4261-aaa6-ad8805bf77da",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "f00c15d1-74dc-4d91-84ef-0337809bbb9b",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:15 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.text.txt",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.web.1280.1280.jpeg"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 2244,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:30:14 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 4241549,
+                        "dam:predictedColors": [12042, 9032, 31019, 39007],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "fa2c3b586c9367901b558f1793d15f885c397176",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 2036
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 8 Pro.png",
+                    "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "e7182725-c294-44f7-af41-8b8e8d64a64e",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                      "dam:processingId": "85124ff6-0207-419a-a01c-cf7e54cbd4fa",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:15 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.mp4",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.text.txt",
+                        "cq5dam.preview.pdf"
+                      ],
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 32,
+                        "dam:MIMEtype": "image/png",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 3486,
+                        "dc:format": "image/png",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Tue Sep 03 2024 13:30:14 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/portrait"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "PNG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 10928161,
+                        "dam:predictedColors": [9053, 12030, 37009, 31009],
+                        "photoshop:ColorMode": 3,
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "dbaeefb7a06cd1da623ac04a5d597f415757f1bf",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 2541
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Tue Sep 03 2024 13:29:59 GMT+0000",
+                        "jcr:createdBy": "pblondeel@chili-publish.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/dh-test/Cat.jpg",
+                    "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "jasper@digital-herd.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "9555b8fe-97a1-4ae8-93fa-211b4fbff665",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "jasper@digital-herd.com",
+                      "dam:processingAttempts": 1,
+                      "dam:processingId": "c12009b8-823f-42f0-ab14-7a0dba992aee",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "onTime": "Sun Dec 01 2024 14:35:00 GMT+0000",
+                      "jcr:lastModified": "Sun Dec 01 2024 14:32:29 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.text.txt",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.preview.mp4",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.tags.json"
+                      ],
+                      "dam:jobId": "8f2f8851-5008-467a-a6ba-8918249a488f",
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 24,
+                        "dc:description": "test",
+                        "dam:MIMEtype": "image/jpeg",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "5.333333492279053",
+                        "dam:Physicalwidthininches": "5.333333492279053",
+                        "tiff:ImageLength": 640,
+                        "dc:format": "image/jpeg",
+                        "dam:Physicalheightindpi": 120,
+                        "dc:title": "Test",
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Sun Dec 01 2024 14:32:23 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8],
+                        "dam:Physicalwidthindpi": 120,
+                        "cq:tags": ["properties:orientation/square"],
+                        "dam:Progressive": "no",
+                        "dam:status": "approved",
+                        "dam:Fileformat": "JPEG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 42055,
+                        "dam:predictedColors": [
+                          14034, 27015, 23010, 37010, 24009, 25008, 17008, 2007
+                        ],
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "b700a88497229ea7d6dbed0895ed03aeb2cc54e7",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 640
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                        "jcr:createdBy": "jasper@digital-herd.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/dh-test/image1.JPEG",
+                    "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "jasper@digital-herd.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "53ecf352-6678-4591-87d8-4b40a5aa1b3d",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "jasper@digital-herd.com",
+                      "dam:processingAttempts": 1,
+                      "dam:processingId": "fa77df48-48b9-4850-992e-7803d4121f9f",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Sun Dec 01 2024 14:32:29 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.metadata.xml",
+                        "cqdam.machine.metadata.colors.json",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.preview.pdf",
+                        "cqdam.text.txt",
+                        "cqdam.machine.metadata.tags.json",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.319.319.png"
+                      ],
+                      "dam:jobId": "8f2f8851-5008-467a-a6ba-8918249a488f",
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 24,
+                        "dam:MIMEtype": "image/jpeg",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 201,
+                        "dc:format": "image/jpeg",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Sun Dec 01 2024 14:32:23 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/landscape"],
+                        "dam:Progressive": "no",
+                        "dam:status": "approved",
+                        "dam:Fileformat": "JPEG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 7169,
+                        "dam:predictedColors": [15042, 16037, 40014, 36007],
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "609804a893164335a7cb6cd4e2609963aabb035e",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 251
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                        "jcr:createdBy": "jasper@digital-herd.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/dh-test/image2.jpeg",
+                    "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "jasper@digital-herd.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "2efbae74-f9b8-477f-9e25-9bb0a7eaf2f7",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "jasper@digital-herd.com",
+                      "dam:processingAttempts": 1,
+                      "dam:processingId": "c076dd2f-d42b-4148-902a-4c97cb7630fc",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Sun Dec 01 2024 14:32:29 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cqdam.metadata.xml",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.text.txt",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.machine.metadata.features.json",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.pdf",
+                        "cq5dam.web.1280.1280.jpeg",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.319.319.png"
+                      ],
+                      "dam:jobId": "8f2f8851-5008-467a-a6ba-8918249a488f",
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 24,
+                        "dam:MIMEtype": "image/jpeg",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 183,
+                        "dc:format": "image/jpeg",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Sun Dec 01 2024 14:32:23 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/landscape"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "JPEG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 4853,
+                        "dam:predictedColors": [
+                          15037, 40020, 16015, 6013, 36008, 5008
+                        ],
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "826f2c39474a94876d173b6c811c22afcec57f64",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 275
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                        "jcr:createdBy": "jasper@digital-herd.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  },
+                  {
+                    "jcr:path": "/content/dam/dh-test/image4.jpeg",
+                    "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                    "jcr:mixinTypes": ["mix:referenceable"],
+                    "jcr:createdBy": "jasper@digital-herd.com",
+                    "jcr:primaryType": "dam:Asset",
+                    "jcr:uuid": "49379eb5-96d7-409b-8274-3e2e7147c0f8",
+                    "jcr:content": {
+                      "jcr:lastModifiedBy": "jasper@digital-herd.com",
+                      "dam:processingAttempts": 1,
+                      "dam:processingId": "1b4adec2-4d03-487e-a9cc-075adb0b9fdf",
+                      "dam:assetState": "processed",
+                      "dam:runPostProcess": true,
+                      "jcr:lastModified": "Sun Dec 01 2024 14:32:29 GMT+0000",
+                      "dam:processingRenditions": [
+                        "cq5dam.thumbnail.140.100.png",
+                        "cq5dam.preview.pdf",
+                        "cqdam.machine.metadata.colors.json",
+                        "cq5dam.thumbnail.319.319.png",
+                        "cq5dam.thumbnail.48.48.png",
+                        "cqdam.machine.metadata.tags.json",
+                        "cqdam.text.txt",
+                        "cq5dam.preview.mp4",
+                        "cq5dam.zoom.2048.2048.jpeg",
+                        "cqdam.machine.metadata.features.json",
+                        "cqdam.metadata.xml",
+                        "cq5dam.web.1280.1280.jpeg"
+                      ],
+                      "dam:jobId": "8f2f8851-5008-467a-a6ba-8918249a488f",
+                      "jcr:primaryType": "dam:AssetContent",
+                      "dam:processingRequestedDate": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                      "dam:runDMProcess": true,
+                      "dam:failedRenditions": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metadata": {
+                        "dam:Bitsperpixel": 24,
+                        "dam:MIMEtype": "image/jpeg",
+                        "dam:Numberoftextualcomments": 0,
+                        "dam:Physicalheightininches": "-1.0",
+                        "dam:Physicalwidthininches": "-1.0",
+                        "tiff:ImageLength": 203,
+                        "dc:format": "image/jpeg",
+                        "dam:Physicalheightindpi": -1,
+                        "dam:Numberofimages": 1,
+                        "dam:extracted": "Sun Dec 01 2024 14:32:23 GMT+0000",
+                        "tiff:BitsPerSample": [8, 8, 8],
+                        "dam:Physicalwidthindpi": -1,
+                        "cq:tags": ["properties:orientation/landscape"],
+                        "dam:Progressive": "no",
+                        "dam:Fileformat": "JPEG",
+                        "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                        "dam:size": 3928,
+                        "dam:predictedColors": [13057, 15020, 14013, 16011],
+                        "jcr:mixinTypes": ["cq:Taggable"],
+                        "dam:sha1": "931b559a36524c6e813411dd47786c3534b909b1",
+                        "jcr:primaryType": "nt:unstructured",
+                        "tiff:ImageWidth": 248
+                      },
+                      "related": {
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "renditions": {
+                        "jcr:created": "Sun Dec 01 2024 14:32:04 GMT+0000",
+                        "jcr:createdBy": "jasper@digital-herd.com",
+                        "jcr:primaryType": "nt:folder"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Detail Test 1",
+      "method": "detail",
+      "arguments": {
+        "id": "{\"id\":\"urn:aaid:aem:c089ea47-6b96-4a60-b953-006009c16716\",\"renditions\":{\"thumb\":\"cq5dam.thumbnail.48.48.png\",\"web\":\"cq5dam.web.1280.1280.jpeg\"},\"path\":\"/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 11 Pro.png\"}",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/content/dam/Test folder/Electronics/Tablets/CHILLtronics Tablet 11 Pro.png.-1.json",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "jcr:created": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                "jcr:mixinTypes": ["mix:referenceable"],
+                "jcr:createdBy": "pblondeel@chili-publish.com",
+                "jcr:primaryType": "dam:Asset",
+                "jcr:uuid": "c089ea47-6b96-4a60-b953-006009c16716",
+                "jcr:content": {
+                  "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                  "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                  "dam:assetState": "processed",
+                  "dam:runPostProcess": true,
+                  "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                  "dam:processingRenditions": [
+                    "cq5dam.thumbnail.140.100.png",
+                    "cq5dam.web.1280.1280.jpeg",
+                    "cqdam.machine.metadata.colors.json",
+                    "cq5dam.thumbnail.319.319.png",
+                    "cqdam.machine.metadata.tags.json",
+                    "cqdam.text.txt",
+                    "cq5dam.zoom.2048.2048.jpeg",
+                    "cqdam.metadata.xml",
+                    "cqdam.machine.metadata.features.json",
+                    "cq5dam.preview.pdf",
+                    "cq5dam.thumbnail.48.48.png",
+                    "cq5dam.preview.mp4"
+                  ],
+                  "jcr:primaryType": "dam:AssetContent",
+                  "dam:processingRequestedDate": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                  "dam:runDMProcess": true,
+                  "dam:failedRenditions": {
+                    "jcr:primaryType": "nt:unstructured",
+                    "cqdam.text.txt": {
+                      "reason": "RenditionFormatUnsupported",
+                      "jcr:primaryType": "nt:unstructured",
+                      "message": "Text extraction (fmt=txt) is not supported for png files"
+                    },
+                    "cq5dam.preview.mp4": {
+                      "reason": "RenditionFormatUnsupported",
+                      "jcr:primaryType": "nt:unstructured",
+                      "message": "Format mp4 is not supported for png files"
+                    },
+                    "cq5dam.preview.pdf": {
+                      "reason": "RenditionFormatUnsupported",
+                      "jcr:primaryType": "nt:unstructured",
+                      "message": "Format pdf is not supported for png files"
+                    }
+                  },
+                  "metadata": {
+                    "dam:Bitsperpixel": 32,
+                    "dam:MIMEtype": "image/png",
+                    "dam:Numberoftextualcomments": 0,
+                    "dam:Physicalheightininches": "-1.0",
+                    "dam:Physicalwidthininches": "-1.0",
+                    "tiff:ImageLength": 1271,
+                    "dc:format": "image/png",
+                    "dam:Physicalheightindpi": -1,
+                    "dam:Numberofimages": 1,
+                    "dam:extracted": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                    "tiff:BitsPerSample": [8, 8, 8, 8],
+                    "dam:Physicalwidthindpi": -1,
+                    "cq:tags": ["properties:orientation/portrait"],
+                    "dam:Progressive": "no",
+                    "dam:Fileformat": "PNG",
+                    "tiff:BitsPerSample_xmpArrayType": "rdf:Seq",
+                    "dam:size": 1571693,
+                    "dam:predictedColors": [12032, 9028, 11021, 8013, 10006],
+                    "photoshop:ColorMode": 3,
+                    "jcr:mixinTypes": ["cq:Taggable"],
+                    "dam:sha1": "f18440850aedd4b5333a2621999f2b1e36a6986f",
+                    "jcr:primaryType": "nt:unstructured",
+                    "tiff:ImageWidth": 1016,
+                    "imageFeatures": {
+                      ":haystack0": 8192,
+                      "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:primaryType": "nt:unstructured"
+                    },
+                    "dam:colorDistribution": {
+                      "jcr:primaryType": "nt:unstructured",
+                      "color1": {
+                        "coverage": 0.3152,
+                        "rgb": [1, 2, 3],
+                        "jcr:mixinTypes": ["dam:color"],
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "name": "BLACK",
+                        "rank": 1,
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "color2": {
+                        "coverage": 0.2832,
+                        "rgb": [1, 22, 64],
+                        "jcr:mixinTypes": ["dam:color"],
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "name": "DARK_BLUE",
+                        "rank": 2,
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "color3": {
+                        "coverage": 0.2063,
+                        "rgb": [8, 59, 155],
+                        "jcr:mixinTypes": ["dam:color"],
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "name": "ROYAL_BLUE",
+                        "rank": 3,
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "color4": {
+                        "coverage": 0.1322,
+                        "rgb": [25, 96, 225],
+                        "jcr:mixinTypes": ["dam:color"],
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "name": "BLUE",
+                        "rank": 4,
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "color5": {
+                        "coverage": 0.0632,
+                        "rgb": [112, 160, 244],
+                        "jcr:mixinTypes": ["dam:color"],
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "name": "LIGHT_BLUE",
+                        "rank": 5,
+                        "jcr:primaryType": "nt:unstructured"
+                      }
+                    },
+                    "predictedTags": {
+                      "jcr:primaryType": "nt:unstructured",
+                      "abstract_photography": {
+                        "confidence": 0.972,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "abstract photography",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "spiral": {
+                        "confidence": 0.854,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "spiral",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "monitor": {
+                        "confidence": 0.841,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "monitor",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "touchscreen": {
+                        "confidence": 0.837,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "touchscreen",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "fractal": {
+                        "confidence": 0.835,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "fractal",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "screen": {
+                        "confidence": 0.822,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "screen",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "touchpad": {
+                        "confidence": 0.821,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "touchpad",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "smartphone": {
+                        "confidence": 0.815,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "smartphone",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "web_icon": {
+                        "confidence": 0.812,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "web icon",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "tablet": {
+                        "confidence": 0.789,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "tablet",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "graphic_design": {
+                        "confidence": 0.787,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "graphic design",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "display_device": {
+                        "confidence": 0.781,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "display device",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "television": {
+                        "confidence": 0.779,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "television",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "synthetic": {
+                        "confidence": 0.777,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "synthetic",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "metallic": {
+                        "confidence": 0.775,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "metallic",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "cellphone": {
+                        "confidence": 0.772,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "cellphone",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "pvc": {
+                        "confidence": 0.77,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "pvc",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "filament": {
+                        "confidence": 0.761,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "filament",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "winding": {
+                        "confidence": 0.76,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "winding",
+                        "jcr:primaryType": "nt:unstructured"
+                      },
+                      "design": {
+                        "confidence": 0.755,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "isCustom": false,
+                        "name": "design",
+                        "jcr:primaryType": "nt:unstructured"
+                      }
+                    }
+                  },
+                  "related": {
+                    "jcr:primaryType": "nt:unstructured"
+                  },
+                  "renditions": {
+                    "jcr:created": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                    "jcr:createdBy": "pblondeel@chili-publish.com",
+                    "jcr:primaryType": "nt:folder",
+                    "cq5dam.thumbnail.140.100.png": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "image/png",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 17041,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "tiff:ImageLength": 100,
+                          "dc:format": "image/png",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                          "dam:size": 17041,
+                          "dam:sha1": "50979c35615ca157df4c38b568c3acc38f3f71a6",
+                          "jcr:primaryType": "nt:unstructured",
+                          "tiff:ImageWidth": 80
+                        }
+                      }
+                    },
+                    "cq5dam.thumbnail.319.319.png": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "image/png",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 137092,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "tiff:ImageLength": 319,
+                          "dc:format": "image/png",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                          "dam:size": 137092,
+                          "dam:sha1": "5c9204eda986ad37cb3bd5b776d7acdc19d10d81",
+                          "jcr:primaryType": "nt:unstructured",
+                          "tiff:ImageWidth": 255
+                        }
+                      }
+                    },
+                    "cq5dam.thumbnail.48.48.png": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "image/png",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 6235,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "tiff:ImageLength": 48,
+                          "dc:format": "image/png",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                          "dam:size": 6235,
+                          "dam:sha1": "1ebc191ca6451b58b972f125aa632d59c8406747",
+                          "jcr:primaryType": "nt:unstructured",
+                          "tiff:ImageWidth": 38
+                        }
+                      }
+                    },
+                    "cq5dam.web.1280.1280.jpeg": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "image/jpeg",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 291167,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "tiff:ImageLength": 1271,
+                          "dc:format": "image/jpeg",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                          "dam:size": 291167,
+                          "dam:sha1": "f3116fedef0337ed78ab880f9ea90e28044c06ed",
+                          "jcr:primaryType": "nt:unstructured",
+                          "tiff:ImageWidth": 1016
+                        }
+                      }
+                    },
+                    "cq5dam.zoom.2048.2048.jpeg": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "image/jpeg",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 291167,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "tiff:ImageLength": 1271,
+                          "dc:format": "image/jpeg",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a",
+                          "dam:size": 291167,
+                          "dam:sha1": "f3116fedef0337ed78ab880f9ea90e28044c06ed",
+                          "jcr:primaryType": "nt:unstructured",
+                          "tiff:ImageWidth": 1016
+                        }
+                      }
+                    },
+                    "cqdam.machine.metadata.colors.json": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:encoding": "us-ascii",
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "application/json",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 0,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "dam:size": 359,
+                          "jcr:primaryType": "nt:unstructured",
+                          "repo:encoding": "us-ascii",
+                          "dc:format": "application/json",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a"
+                        }
+                      }
+                    },
+                    "cqdam.machine.metadata.features.json": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:encoding": "us-ascii",
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "application/json",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 0,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "dam:size": 12759,
+                          "jcr:primaryType": "nt:unstructured",
+                          "repo:encoding": "us-ascii",
+                          "dc:format": "application/json",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a"
+                        }
+                      }
+                    },
+                    "cqdam.machine.metadata.tags.json": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:encoding": "us-ascii",
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "application/json",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 0,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "dam:size": 2063,
+                          "jcr:primaryType": "nt:unstructured",
+                          "repo:encoding": "us-ascii",
+                          "dc:format": "application/json",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a"
+                        }
+                      }
+                    },
+                    "cqdam.metadata.xml": {
+                      "jcr:created": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                      "jcr:createdBy": "dam-writer-service",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:encoding": "us-ascii",
+                        "jcr:lastModifiedBy": "dam-writer-service",
+                        "jcr:mimeType": "text/xml",
+                        "jcr:mixinTypes": ["dam:Metadata"],
+                        ":jcr:data": 991,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:30:09 GMT+0000",
+                        "jcr:primaryType": "oak:Resource",
+                        "metadata": {
+                          "dam:size": 991,
+                          "dam:sha1": "1ee271bc00b57d779d26dea78214657fc712baee",
+                          "jcr:primaryType": "nt:unstructured",
+                          "repo:encoding": "us-ascii",
+                          "dc:format": "text/xml",
+                          "dam:processingId": "bcf8a1ad-636b-4f4c-a7c8-65fd26af1a4a"
+                        }
+                      }
+                    },
+                    "original": {
+                      "jcr:created": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                      "jcr:createdBy": "pblondeel@chili-publish.com",
+                      "jcr:primaryType": "nt:file",
+                      "jcr:content": {
+                        "jcr:lastModifiedBy": "pblondeel@chili-publish.com",
+                        "jcr:mimeType": "image/png",
+                        ":jcr:data": 1571693,
+                        "jcr:lastModified": "Tue Sep 03 2024 13:29:56 GMT+0000",
+                        "jcr:primaryType": "oak:Resource"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
