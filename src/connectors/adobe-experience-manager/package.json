@@ -1,6 +1,6 @@
 {
   "name": "adobe-experience-manager",
-  "description": "",
+  "description": "AEM Chili Publish connector",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
@@ -9,10 +9,11 @@
   },
   "config": {
     "type": "media",
-    "connectorName": "Adobe Experience manager",
+    "connectorName": "Adobe Experience Manager",
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/aem_logo.svg",
     "options": {
-      "BASE_URL": null
+      "BASE_URL": null,
+      "renditionOverrides": ""
     },
     "supportedAuth": [
       "staticKey"

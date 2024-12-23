@@ -184,7 +184,10 @@ export default class MyConnector implements Media.MediaConnector {
   }
 
   private get baseUrl() {
-    const root = (this.runtime.options['BASE_URL'] as string) || '';
+    const root = this.runtime.options['BASE_URL'] as string;
+    if (!root) {
+      throw new Error('"BASE_URL" is not defined in the runtime options');
+    }
     return root.endsWith('/') ? root : `${root}/`;
   }
 
@@ -196,7 +199,26 @@ export default class MyConnector implements Media.MediaConnector {
     if (renditionOverrides.length) {
       try {
         overrides = JSON.parse(renditionOverrides);
-      } catch {}
+
+        const supportedRenditions = Object.values(AemRendition) as string[];
+        // TODO ADD here check for KEYS
+        const renditionKeysThatAreNotCorrect = Object.keys(overrides).filter(
+          (key) => {
+            return !supportedRenditions.includes(key);
+          }
+        );
+        if (!renditionKeysThatAreNotCorrect) {
+          throw new Error(
+            `The renditionOverrides in the runtime options contains not supported renditions ${renditionKeysThatAreNotCorrect.join(
+              ', '
+            )}. The supported renditions are ${Object.values(AemRendition)}`
+          );
+        }
+      } catch {
+        throw new Error(
+          'The renditionOverrides in the runtime options are not the correct format the expected format is JSON'
+        );
+      }
     }
     return {
       [AemRendition.Thumbnail]: 'cq5dam.thumbnail.140.100.png',
@@ -402,7 +424,7 @@ export default class MyConnector implements Media.MediaConnector {
         if (!result.ok) {
           throw new ConnectorHttpError(
             result.status,
-            `Contenthub DAM: Download failed ${result.status} - ${result.statusText}`
+            `AEM: Download failed ${result.status} - ${result.statusText}`
           );
         }
         return result.arrayBuffer;
@@ -535,7 +557,7 @@ export default class MyConnector implements Media.MediaConnector {
     if (!res.ok) {
       throw new ConnectorHttpError(
         res.status,
-        `Contenthub DAM: Query failed ${res.status} - ${res.statusText}`
+        `AEM: Query failed ${res.status} - ${res.statusText}`
       );
     }
     return JSON.parse(res.text) as any;
@@ -553,7 +575,7 @@ export default class MyConnector implements Media.MediaConnector {
     if (!res.ok) {
       throw new ConnectorHttpError(
         res.status,
-        `Contenthub DAM: Query failed ${res.status} - ${res.statusText}`
+        `AEM: Query failed ${res.status} - ${res.statusText}`
       );
     }
     return JSON.parse(res.text) as Return;
