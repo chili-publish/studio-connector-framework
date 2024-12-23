@@ -307,7 +307,7 @@ export default class MyConnector implements Media.MediaConnector {
     let showFolders = context.includeSubfolders ?? true;
 
     // Only flat when not searching
-    let isFlat = !fulltext.length;
+    let isFlat = !fulltext.length && showFolders;
     let path = (context.path as string) || '/content/dam';
 
     // The Home is added to path when you copy it in the studio so remove here
