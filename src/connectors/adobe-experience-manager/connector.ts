@@ -303,8 +303,10 @@ export default class MyConnector implements Media.MediaConnector {
         };
       });
     }
-    // Don't show the folders when a path is set as configuration option
-    let showFolders = !context.path;
+    // Don't show the folders when its set via configuration
+    let showFolders = context.includeSubfolders ?? true;
+
+    // Only flat when not searching
     let isFlat = !fulltext.length;
     let path = (context.path as string) || '/content/dam';
 
@@ -442,6 +444,11 @@ export default class MyConnector implements Media.MediaConnector {
         name: 'query',
         displayName: 'Search Query',
         type: 'text',
+      },
+      {
+        name: 'includeSubfolders',
+        displayName: 'Include subfolders',
+        type: 'boolean',
       },
     ];
   }
