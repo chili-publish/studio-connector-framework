@@ -107,11 +107,12 @@ class AEMTransformer {
     ) {
       const pathSplit = item['jcr:path'].split('/');
       const folderName = pathSplit.pop();
+      const relativePath = item['jcr:path'].replace('/content/dam', '');
       return {
         id: path,
         name: folderName,
         type: 1,
-        relativePath: `${pathSplit.join('/')}/`,
+        relativePath: relativePath,
         extension: 'folder',
         metaData: {},
       };
@@ -315,8 +316,8 @@ export default class MyConnector implements Media.MediaConnector {
       path = path.replace('Home/content/dam', '/content/dam');
     }
     // when the collection starts with /content/dam we know that the user clicked on folder
-    if (options.collection.startsWith('/content/dam')) {
-      path = options.collection;
+    if (options.collection.length) {
+      path = `/content/dam${options.collection}`;
     }
     // Otherwise we do a query call
 
