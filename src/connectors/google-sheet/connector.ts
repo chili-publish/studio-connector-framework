@@ -11,6 +11,9 @@ interface NumberCell extends BaseSheetCells {
 }
 
 interface DateCell extends BaseSheetCells {
+  effectiveValue?: {
+    numberValue: number;
+  };
   effectiveFormat: {
     numberFormat: { type: 'DATE' | 'DATE_TIME' };
   };
@@ -154,8 +157,8 @@ class Converter {
     const tableHeaderValues = tableHeader.values;
     return (
       tableBody
-        .map((row) => {
-          return (
+        .map(
+          (row) =>
             this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
               (item, tableCell, index) => {
                 const { type, cell } = Converter.toTypedCell(tableCell);
@@ -167,9 +170,7 @@ class Converter {
                     break;
                   case 'date':
                     item[tableHeaderValues[index].formattedValue] =
-                      cell.formattedValue
-                        ? new Date(cell.formattedValue)
-                        : null;
+                      this.convertToDate(cell.effectiveValue?.numberValue);
                     break;
                   case 'boolean':
                     item[tableHeaderValues[index].formattedValue] =
@@ -184,8 +185,7 @@ class Converter {
               },
               {} as Data.DataItem
             ) ?? null
-          );
-        })
+        )
         // Filter out empty rows
         .filter((d) => d !== null)
     );
@@ -213,6 +213,21 @@ class Converter {
         ...new Array(columnsLength - row.values.length).fill({}),
       ],
     };
+  }
+
+  /**
+   * The number value that Google sheets represent as date refers to serial number of internal date system
+   * This function takes this into account and transofrm to regular date
+   * @param serialNumber Internal date representation
+   */
+  private static convertToDate(serialNumber?: number) {
+    if (!serialNumber) {
+      return null;
+    }
+    // Google Sheets epoch date is December 30, 1899
+    const epoch = new Date(Date.UTC(1899, 11, 30)); // UTC to avoid timezone issues
+    const date = new Date(epoch.getTime() + serialNumber * 24 * 60 * 60 * 1000); // Add days in milliseconds return
+    return date;
   }
 }
 
