@@ -76,4 +76,4 @@ IN PROGRESS
    - Define boolean columns using checkboxes.
 
 5. **Row Structure**:
-   - The spreadsheet must not contain empty rows between data rows to ensure pagination logic works correctly.
+   - The spreadsheet must not contain empty rows between rows with data, as pagination logic relies on it.
