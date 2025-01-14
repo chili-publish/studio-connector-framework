@@ -1,34 +1,41 @@
 import { Connector, Data } from '@chili-publish/studio-connectors';
 
-/**
- * Limitations:
- *
- * 1. Columns only from A to Z
- * 2. First row is always header
- */
-
 interface BaseSheetCells {
-  formattedValue: string;
-  effectiveFormat?: {
-    numberFormat: { type: string };
-  };
+  formattedValue?: string;
 }
 interface NumberCell extends BaseSheetCells {
-  effectiveValue: { numberValue: number };
+  effectiveValue?: { numberValue: number };
+  effectiveFormat: {
+    numberFormat: { type: 'NUMBER' };
+  };
 }
+
+interface DateCell extends BaseSheetCells {
+  effectiveValue?: {
+    numberValue: number;
+  };
+  effectiveFormat: {
+    numberFormat: { type: 'DATE' | 'DATE_TIME' };
+  };
+}
+
 interface BooleanCell extends BaseSheetCells {
   effectiveValue: { boolValue: boolean };
 }
 
-type CellData = NumberCell | BooleanCell;
+type PlainTextCell = BaseSheetCells;
 
-interface SheetCells {
-  range: string;
-  values: CellData[] | undefined;
+type CellData = NumberCell | BooleanCell | DateCell | PlainTextCell;
+
+interface Row<C = CellData> {
+  values: Array<C>;
 }
 
 interface Spreadsheet {
-  sheets: Array<{ properties: { sheetId: string; title: string } }>;
+  sheets: Array<{
+    properties: { sheetId: string; title: string };
+    data: [{ rowData?: [Row<Required<CellData>>] }, { rowData?: Array<Row> }];
+  }>;
 }
 
 interface ApiError {
@@ -80,57 +87,151 @@ class RangeHelper {
   }
 }
 
-const getType = (cell: CellData) => {
-  if (cell.effectiveFormat?.numberFormat?.type === 'NUMBER') return 'number';
-  if (
-    cell.effectiveFormat?.numberFormat?.type === 'DATE' ||
-    cell.effectiveFormat?.numberFormat?.type === 'DATE_TIME'
-  )
-    return 'date';
-  if (
-    'boolValue' in cell.effectiveValue &&
-    cell.effectiveValue.boolValue !== undefined
-  )
-    return 'boolean';
-  return 'singleLine';
+type TypedNumberCell = {
+  type: 'number';
+  cell: NumberCell;
 };
 
-function convertCellsToDataItems(
-  tableHeader: SheetCells['values'][0],
-  sheetCells: SheetCells[]
-): Array<Data.DataItem> {
-  return sheetCells.map((row) => {
-    return row.values.reduce((item, cell, index) => {
-      const columnType = getType(cell);
+type TypedDateCell = {
+  type: 'date';
+  cell: DateCell;
+};
 
-      switch (columnType) {
-        case 'number':
-          if ('numberValue' in cell.effectiveValue) {
-            item[tableHeader[index].formattedValue] =
-              cell.effectiveValue.numberValue;
-          }
-          break;
-        case 'date':
-          item[tableHeader[index].formattedValue] = new Date(
-            cell.formattedValue
-          );
-          break;
-        case 'boolean':
-          if ('boolValue' in cell.effectiveValue) {
-            item[tableHeader[index].formattedValue] =
-              cell.effectiveValue.boolValue;
-          }
-          break;
-        case 'singleLine':
-          item[tableHeader[index].formattedValue] = cell.formattedValue;
-          break;
-      }
-      return item;
-    }, {} as Data.DataItem);
-  });
+type TypedPlainTextCell = {
+  type: 'singleLine';
+  cell: PlainTextCell;
+};
+
+type TypedBooleanCell = {
+  type: 'boolean';
+  cell: BooleanCell;
+};
+
+class Converter {
+  static toTypedCell(
+    cell: CellData
+  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      cell.effectiveFormat.numberFormat.type === 'NUMBER'
+    ) {
+      return {
+        type: 'number',
+        cell: cell as NumberCell,
+      };
+    }
+
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      (cell.effectiveFormat.numberFormat.type === 'DATE' ||
+        cell.effectiveFormat.numberFormat.type === 'DATE_TIME')
+    ) {
+      return {
+        type: 'date',
+        cell: cell as DateCell,
+      };
+    }
+
+    if (
+      'effectiveValue' in cell &&
+      cell.effectiveValue &&
+      'boolValue' in cell.effectiveValue
+    ) {
+      return {
+        type: 'boolean',
+        cell: cell as BooleanCell,
+      };
+    }
+    return {
+      type: 'singleLine',
+      cell: cell,
+    };
+  }
+
+  static toDataItems(
+    tableHeader: Row<Required<CellData>>,
+    tableBody: Array<Row>
+  ): Array<Data.DataItem> {
+    const tableHeaderValues = tableHeader.values;
+    return (
+      tableBody
+        .map(
+          (row) =>
+            this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
+              (item, tableCell, index) => {
+                const { type, cell } = Converter.toTypedCell(tableCell);
+
+                switch (type) {
+                  case 'number':
+                    item[tableHeaderValues[index].formattedValue] =
+                      cell.effectiveValue?.numberValue ?? null;
+                    break;
+                  case 'date':
+                    item[tableHeaderValues[index].formattedValue] =
+                      this.convertToDate(cell.effectiveValue?.numberValue);
+                    break;
+                  case 'boolean':
+                    item[tableHeaderValues[index].formattedValue] =
+                      cell.effectiveValue.boolValue;
+                    break;
+                  case 'singleLine':
+                    item[tableHeaderValues[index].formattedValue] =
+                      cell.formattedValue ?? null;
+                    break;
+                }
+                return item;
+              },
+              {} as Data.DataItem
+            ) ?? null
+        )
+        // Filter out empty rows
+        .filter((d) => d !== null)
+    );
+  }
+
+  /**
+   * Depends on whether row contains custom formatting or not Google Sheets API return data in different way
+   * This function is reponsible to handle all such use cases and return Row always in regular form as well as handling empty rows use case
+   *
+   * @param row
+   * @param columnsLength
+   * @returns
+   */
+  private static normalizeRow(row: Row, columnsLength: number): Row | null {
+    const emptyRow = row.values.every((c) => !c.formattedValue);
+    if (emptyRow) {
+      return null;
+    }
+    if (row.values.length === columnsLength) {
+      return row;
+    }
+    return {
+      values: [
+        ...row.values,
+        ...new Array(columnsLength - row.values.length).fill({}),
+      ],
+    };
+  }
+
+  /**
+   * The number value that Google sheets represent as date refers to serial number of internal date system
+   * This function takes this into account and transofrm to regular date
+   * @param serialNumber Internal date representation
+   */
+  private static convertToDate(serialNumber?: number) {
+    if (!serialNumber) {
+      return null;
+    }
+    // Google Sheets epoch date is December 30, 1899
+    const epoch = new Date(Date.UTC(1899, 11, 30)); // UTC to avoid timezone issues
+    const date = new Date(epoch.getTime() + serialNumber * 24 * 60 * 60 * 1000); // Add days in milliseconds return
+    return date;
+  }
 }
 
-const fieldsMask = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
+const FIELDS_MASK = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
 export default class GoogleSheetConnector implements Data.DataConnector {
   private runtime: Connector.ConnectorRuntimeContext;
   constructor(runtime: Connector.ConnectorRuntimeContext) {
@@ -160,7 +261,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     // 1. Header range to properly map to DataItem
     // 2. Next batch of values
     const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${fieldsMask}&ranges=${encodeURIComponent(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
         RangeHelper.buildHeaderRange(sheetName)
       )}&ranges=${encodeURIComponent(cellsRange)}`,
       {
@@ -188,24 +289,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       }
     }
 
-    if (!res.ok) {
-      throw new ConnectorHttpError(
-        res.status,
-        `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
-      );
-    }
-    const sheetData = JSON.parse(res.text).sheets[0].data;
+    const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
 
-    if (!sheetData[0].rowData) {
-      throw new Error(
-        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
-      );
-    }
-    const headerRow = sheetData[0].rowData[0].values;
-    const values = sheetData[1].rowData;
-
-    // When we request for range that contains only empty rows, "values" will be undefined => we return empty data
-    const data = values ? convertCellsToDataItems(headerRow, values) : [];
+    const data = Converter.toDataItems(headerRow, bodyRows);
 
     return {
       continuationToken: this.isNextPageAvailable(config.limit, data.length)
@@ -225,32 +311,25 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         RangeHelper.buildHeaderRange(sheetName)
       )}&ranges=${encodeURIComponent(
         RangeHelper.buildRange(sheetName, 2, 2)
-      )}&fields=${fieldsMask}`,
+      )}&fields=${FIELDS_MASK}`,
       {
         method: 'GET',
       }
     );
 
-    if (!res.ok) {
-      throw new ConnectorHttpError(
-        res.status,
-        `Google Sheet: GetModel failed ${res.status} - ${res.statusText}`
-      );
-    }
-    const sheetData = JSON.parse(res.text).sheets[0].data;
-    if (!sheetData[0].rowData) {
-      throw new Error(
-        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
-      );
-    }
-    const headerRow = sheetData[0].rowData[0].values;
+    const [headerRow, bodyRows] = this.parseResponse(res, 'GetModel');
 
-    const { values }: SheetCells = sheetData[1].rowData[0];
+    if (!bodyRows.length) {
+      throw new Error(
+        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      );
+    }
+    const { values } = bodyRows[0];
 
     return {
-      properties: headerRow.map((column, idx) => {
+      properties: headerRow.values.map((column, idx) => {
         return {
-          type: getType(values[idx]),
+          type: Converter.toTypedCell(values[idx]).type,
           name: column.formattedValue,
         };
       }),
@@ -273,6 +352,37 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       sorting: false,
       model: true,
     };
+  }
+
+  /**
+   * Parse response and extract header and body data for the further processing
+   * @param response
+   * @returns [headerRow, bodyRows]
+   */
+  private parseResponse(
+    response: Connector.ChiliResponse,
+    method: 'GetPage' | 'GetModel'
+  ): [Row<Required<CellData>>, Array<Row>] {
+    if (!response.ok) {
+      throw new ConnectorHttpError(
+        response.status,
+        `Google Sheet: "${method}" failed ${response.status} - ${response.statusText}`
+      );
+    }
+    const spreadsheet: Spreadsheet = JSON.parse(response.text);
+    const sheetData = spreadsheet.sheets[0].data;
+    const [headerData, regularData] = sheetData;
+
+    if (!headerData.rowData) {
+      throw new Error(
+        'Header of the spreadsheet document is missing. Ensure that the first row of the sheet always contains data.'
+      );
+    }
+    const headerRow = headerData.rowData[0];
+
+    const bodyRows = regularData.rowData;
+    // When we request for range that contains only empty rows (without any custom styling), "bodyRows" will be undefined => we return empty data
+    return [headerRow, bodyRows ?? []];
   }
 
   private extractSheetIdentityFromContext(context: Connector.Dictionary): {
