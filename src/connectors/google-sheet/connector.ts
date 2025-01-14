@@ -355,7 +355,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
   }
 
   /**
-   * Parse response and extrat header and body data for the futher processing
+   * Parse response and extract header and body data for the further processing
    * @param response
    * @returns [headerRow, bodyRows]
    */
