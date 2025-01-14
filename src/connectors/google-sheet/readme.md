@@ -55,10 +55,25 @@ IN PROGRESS
 
 ## Limitations
 
-- Columns only from A to Z
-- First row is always header with values (not empty cells)
-- By default all columns considered as 'singleLine' text. To make them 'number' or 'date' corresponding formatting should be enabled for the column
-  - 'number' Format => Number => Number
-  - 'date' Format => Number => Date or Format => Number => Date Time
-- Boolean column should always provide value (cell can not be empty). Can be defined via checkboxes
-- Spreadsheet document shouldn't have empty row in between of rows with data, because pagination logic relies on it.
+1. **Column Range**:
+
+   - Only columns from A to Z are used.
+
+2. **Header Row**:
+
+   - The first row must always contain header values
+
+3. **Column Data Types**:
+
+   - By default, all columns are considered as 'singleLine' text.
+   - To format columns as 'number' or 'date', enable the corresponding formatting:
+     - **Number**: Format => Number => Number.
+     - **Date**: Format => Number => Date or Format => Number => Date Time.
+
+4. **Boolean Columns**:
+
+   - Boolean columns must always have a value (cells cannot be empty).
+   - Define boolean columns using checkboxes.
+
+5. **Row Structure**:
+   - The spreadsheet must not contain empty rows between data rows to ensure pagination logic works correctly.
