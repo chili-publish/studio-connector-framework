@@ -316,7 +316,7 @@ export default class MyConnector implements Media.MediaConnector {
       path = path.replace('Home/content/dam', '/content/dam');
     }
     // when the collection starts with /content/dam we know that the user clicked on folder
-    if (options.collection.length && options.collection !== '/') {
+    if (options.collection && options.collection.length && options.collection !== '/') {
       path = `/content/dam${options.collection}`;
     }
     // Otherwise we do a query call
