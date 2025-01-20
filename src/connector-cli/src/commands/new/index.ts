@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { info, startCommand, verbose } from '../../core';
-import { Type as ConnectorType, ExecutionError } from '../../core/types';
+import { ConnectorType, ExecutionError } from '../../core/types';
 import { isGitDirectory } from './isGitDirectory';
 import { getProjectParams } from './steps/getProjectParams';
 import {

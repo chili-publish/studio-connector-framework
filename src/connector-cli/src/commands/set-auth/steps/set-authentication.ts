@@ -1,4 +1,4 @@
-import { httpErrorHandler, verbose } from '../../../core';
+import { httpErrorHandler, info, isDryRun, verbose } from '../../../core';
 import { APIConnectorAuthentication } from '../types';
 
 export async function setAuthentication(
@@ -6,13 +6,18 @@ export async function setAuthentication(
   payload: APIConnectorAuthentication,
   token: string
 ) {
-  verbose(
-    `Deploying connector:\n requestUrl: "${requestUrl}\n payload:${JSON.stringify(
-      payload,
-      null,
-      2
-    )}\n`
-  );
+  const msg = `Deploying connector:\n requestUrl: "${requestUrl}\n payload:${JSON.stringify(
+    payload,
+    null,
+    2
+  )}\n`;
+
+  if (isDryRun()) {
+    info(msg);
+    return;
+  }
+
+  verbose(msg);
 
   const res = await fetch(requestUrl, {
     method: 'PUT',

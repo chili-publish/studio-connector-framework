@@ -1,4 +1,4 @@
-import { Type } from '../../../core/types';
+import { ConnectorType } from '../../../core/types';
 import {
   outputDirectory,
   outputFilename,
@@ -6,7 +6,7 @@ import {
 
 export const getPackageJson = (
   projectName: string,
-  type: Type,
+  type: ConnectorType,
   connectorName: string
 ) => ({
   name: projectName,

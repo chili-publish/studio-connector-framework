@@ -11,10 +11,10 @@ import { runSetAuth } from './commands/set-auth';
 import { AuthenticationUsage } from './commands/set-auth/types';
 import { runStressTest } from './commands/stress';
 import { runDemo, runTests } from './commands/test';
-import { withErrorHandlerAction } from './core';
+import { supportedDryRunCommands, withErrorHandlerAction } from './core';
 import {
   SupportedAuth as AuthenticationType,
-  Type as ConnectorType,
+  ConnectorType,
   Tenant,
 } from './core/types';
 import { connectorProject } from './utils/connector-project';
@@ -24,7 +24,13 @@ function main() {
     .name('connector-cli')
     .version(info.version, '-v, --version')
     .description('Tool to manage connector build, test and deploy process')
-    .option('--verbose', 'Enable verbose logging');
+    .option('--verbose', 'Enable verbose logging')
+    .option(
+      '--dry-run [dryRun]',
+      `Log action result instead of real HTTP request. Supported commands: ${supportedDryRunCommands.join(
+        ', '
+      )}`
+    );
 
   program
     .command('new')
@@ -123,7 +129,7 @@ function main() {
       'Get connectors information, like capabilities, connector settings and etc.'
     )
     .addArgument(connectorProject)
-    .option('-o, --out <out>', 'Output json file')
+    .option('-o, --out [out]', 'Output json file')
     .action(withErrorHandlerAction(runGetInfo));
 
   program

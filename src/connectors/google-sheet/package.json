@@ -24,6 +24,30 @@
             "client_secret_post"
           ]
         }
+      },
+      "oAuth2JwtBearer": {
+        "tokenEndpoint": "https://oauth2.googleapis.com/token",
+        "jwtPayload": [
+          {
+            "key": "iss",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Issuer",
+              "description": "The email address of the service account",
+              "placeholder": "Enter the token issuer."
+            }
+          },
+          {
+            "key": "aud",
+            "value": "https://oauth2.googleapis.com/token"
+          },
+          {
+            "key": "scope",
+            "value": "https://www.googleapis.com/auth/spreadsheets.readonly"
+          }
+        ],
+        "jwtTokenParamName": "assertion"
       }
     }
   },

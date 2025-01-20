@@ -1,6 +1,12 @@
 import { buildRequestUrl } from '../../common/build-request-url';
 import { getConnectorById } from '../../common/get-connector';
-import { info, readConnectorConfig, startCommand, success } from '../../core';
+import {
+  info,
+  isDryRun,
+  readConnectorConfig,
+  startCommand,
+  success,
+} from '../../core';
 import { readAccessToken } from '../../core/read-access-token';
 import {
   SupportedAuth as AuthenticationType,
@@ -12,9 +18,10 @@ import {
   extractAuthData,
   getRequestUrl,
   setAuthentication,
-  validateAuthType,
+  transformAndValidate,
 } from './steps';
-import { AuthenticationUsage } from './types';
+import { prefillWithDefaults } from './steps/prefill-defaults-auth-config';
+import { APIConnectorAuthentication, AuthenticationUsage } from './types';
 
 interface SetAuthenticationCommandOptions {
   tenant: Tenant;
@@ -48,15 +55,23 @@ export async function runSetAuth(
     );
   }
 
-  info('Reading auth data...');
-  const dirtyAuthData = extractAuthData(authDataFile);
+  if (!connectorConfig.supportedAuth.includes(type)) {
+    throw new ExecutionError(
+      `You are trying to set unsupported authentication "${type}". Please specify one of [${connectorConfig.supportedAuth
+        .map((sa) => '"' + sa + '"')
+        .join(', ')}]`
+    );
+  }
 
-  info('Validating auth data...');
-  const authData = validateAuthType(
+  info('Reading auth data...');
+  const rawData = await prefillWithDefaults(
     type,
-    dirtyAuthData,
-    connectorConfig.supportedAuth
+    extractAuthData(authDataFile),
+    connectorConfig.authenticationConfig
   );
+
+  info('Transforming and validating auth data...');
+  const authData = transformAndValidate(type, rawData);
 
   info('Retrieving connector to update...');
   const { id, name } = await getConnectorById({
@@ -78,13 +93,18 @@ export async function runSetAuth(
     {
       usage,
       ...authData,
-    },
+    } as APIConnectorAuthentication,
     accessToken
   );
 
-  success(`"${type}" authentication is applied for "${name}" connector`, {
-    id,
-    name,
-    type,
-  });
+  success(
+    `${
+      isDryRun() ? '[Dry-run] ' : ''
+    }"${type}" authentication is applied for "${name}" connector`,
+    {
+      id,
+      name,
+      type,
+    }
+  );
 }
