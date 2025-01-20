@@ -184,8 +184,6 @@ function appendDefaults(
         {} as OAuth2JwtBearer['jwtPayload']
       ),
       ...basicData.jwtPayload,
-      exp: Date.now() + 3600, // Expiration time
-      iat: Date.now(), // Issuing time
     },
     requestBodyParams:
       staticRequestBodyParams?.length ||
