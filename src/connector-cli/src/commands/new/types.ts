@@ -1,4 +1,4 @@
-import { Type as ConnectorType } from '../../core/types';
+import { ConnectorType } from '../../core/types';
 
 export interface NewCommandOptions {
   type?: ConnectorType;

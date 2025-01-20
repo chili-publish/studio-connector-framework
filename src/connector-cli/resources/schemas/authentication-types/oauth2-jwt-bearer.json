@@ -1,14 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
+  "title": "oAuth2JwtBearer",
   "type": "object",
   "properties": {
     "name": {
-      "type": "string"
-    },
-    "issuer": {
-      "type": "string"
-    },
-    "scope": {
       "type": "string"
     },
     "tokenEndpoint": {
@@ -27,8 +22,36 @@
       },
       "required": ["algorithm", "privateKey"],
       "additionalProperties": false
+    },
+    "jwtPayload": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "number" }
+        ]
+      }
+    },
+    "requestBodyParams": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "number" }
+        ]
+      }
+    },
+    "jwtTokenParamName": {
+      "type": "string"
     }
   },
-  "required": ["issuer", "tokenEndpoint", "signatureConfig"],
+  "required": [
+    "tokenEndpoint",
+    "signatureConfig",
+    "jwtPayload",
+    "jwtTokenParamName"
+  ],
   "additionalProperties": false
 }

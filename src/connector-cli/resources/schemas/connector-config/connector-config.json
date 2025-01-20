@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "title": "ConnectorConfig",
+  "type": "object",
+  "properties": {
+    "connectorName": {
+      "type": "string"
+    },
+    "type": {
+      "title": "ConnectorType",
+      "type": "string",
+      "enum": ["media", "data"]
+    },
+    "iconUrl": {
+      "type": "string"
+    },
+    "options": {
+      "type": "object"
+    },
+    "supportedAuth": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "staticKey",
+          "oAuth2ClientCredentials",
+          "oAuth2ResourceOwnerPassword",
+          "oAuth2AuthorizationCode",
+          "oAuth2JwtBearer"
+        ]
+      }
+    },
+    "authenticationConfig": {
+      "type": "object",
+      "properties": {
+        "oAuth2ResourceOwnerPassword": {
+          "$ref": "./authentication/oauth2-resource-owner-password.json"
+        },
+        "oAuth2AuthorizationCode": {
+          "$ref": "./authentication/oauth2-authorization-code.json"
+        },
+        "oAuth2JwtBearer": {
+          "$ref": "./authentication/oauth2-jwt-bearer.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mappings": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["type", "options", "supportedAuth"]
+}
