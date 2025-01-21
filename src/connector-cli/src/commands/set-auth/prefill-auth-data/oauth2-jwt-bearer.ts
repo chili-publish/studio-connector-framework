@@ -15,6 +15,7 @@ import {
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import url from 'url';
 import { verbose } from '../../../core';
 
 type EditableOption = Required<Omit<OAuth2JwtBearerOption, 'value'>>;
@@ -140,8 +141,10 @@ async function transformAndValidate(
   rawData: Record<string, unknown>,
   file: string
 ) {
+  const fileUrl = url.pathToFileURL(file).href;
+  verbose(`File URL with dynamic schema : "${fileUrl}"`);
   try {
-    const module: TransformerFile = await import(file);
+    const module: TransformerFile = await import(fileUrl);
     return module.toSchema(JSON.stringify(rawData));
   } catch (error) {
     // Invalid data provided
