@@ -1,8 +1,8 @@
-import path from 'node:path';
-import fs from 'node:fs';
 import { load } from 'js-yaml';
-import { ExecutionError } from '../../../core/types';
+import fs from 'node:fs';
+import path from 'node:path';
 import { verbose } from '../../../core';
+import { ExecutionError } from '../../../core/types';
 
 export function extractAuthData(filePath: string): Record<string, unknown> {
   const authDataFile = path.resolve(filePath);
@@ -12,17 +12,16 @@ export function extractAuthData(filePath: string): Record<string, unknown> {
     throw new ExecutionError('There is no file specified by "auth-data-file"');
   }
 
-  let dirtyAuthData;
-
   if (authDataFile.endsWith('.json')) {
-    dirtyAuthData = require(authDataFile);
+    return require(authDataFile);
   } else if (authDataFile.endsWith('.yaml') || authDataFile.endsWith('.yml')) {
-    dirtyAuthData = load(fs.readFileSync(authDataFile, 'utf-8'));
+    return load(fs.readFileSync(authDataFile, 'utf-8')) as Record<
+      string,
+      unknown
+    >;
   } else {
     throw new ExecutionError(
       'Unsupported file format of the "auth-data-file". Should be one of "json", "yaml" or "yml"'
     );
   }
-
-  return dirtyAuthData;
 }
