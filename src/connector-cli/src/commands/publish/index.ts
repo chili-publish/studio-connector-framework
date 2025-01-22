@@ -69,6 +69,16 @@ export async function runPublish(
 
   validateRuntimeOptions(runtimeOptions, config.options);
 
+  let rOptions = runtimeOptions;
+
+  const defaultRuntimeOptionValues = Object.values(config.options).filter(
+    (o) => o !== null && o !== undefined
+  );
+  if (defaultRuntimeOptionValues.length > 0) {
+    info('Reading default runtime optinos...');
+    rOptions = { ...config.options, ...runtimeOptions };
+  }
+
   info('Extracting package information...');
 
   const { description, version, apiVersion } = extractPackageInfo(
@@ -92,7 +102,7 @@ export async function runPublish(
     version,
     type: config.type,
     iconUrl: config.iconUrl,
-    options: runtimeOptions,
+    options: rOptions,
     script: connectorJs,
     apiVersion,
     allowedDomains: proxyOptions.allowedDomains ?? ['*'],
