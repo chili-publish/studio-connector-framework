@@ -67,7 +67,7 @@
             "ui": {
               "label": "Client Id",
               "description": "The client ID of technical account",
-              "placeholder": "Enter the client secret."
+              "placeholder": "Enter the client id."
             }
           },
           {
