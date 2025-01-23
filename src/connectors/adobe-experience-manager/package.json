@@ -16,10 +16,74 @@
       "renditionOverrides": ""
     },
     "supportedAuth": [
-      "staticKey"
+      "staticKey",
+      "oAuth2JwtBearer"
     ],
     "mappings": {},
-    "authenticationConfig": {}
+    "authenticationConfig": {
+      "oAuth2JwtBearer": {
+        "tokenEndpoint": "https://ims-na1.adobelogin.com/ims/exchange/jwt",
+        "jwtPayload": [
+          {
+            "key": "iss",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Issuer",
+              "description": "The organization ID",
+              "placeholder": "Enter the token issuer."
+            }
+          },
+          {
+            "key": "sub",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Subject",
+              "description": "The technical account ID",
+              "placeholder": "Enter the token subject."
+            }
+          },
+          {
+            "key": "aud",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Audience",
+              "description": "The token endpoint URL concatenated with your client ID (Example: 'https://ims-na1.adobelogin.com/c/your-client-id')",
+              "placeholder": "Enter the token audience."
+            }
+          },
+          {
+            "key": "https://ims-na1.adobelogin.com/s/ent_aem_cloud_api",
+            "value": true
+          }
+        ],
+        "requestBodyParams": [
+          {
+            "key": "client_id",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Client Id",
+              "description": "The client ID of technical account",
+              "placeholder": "Enter the client secret."
+            }
+          },
+          {
+            "key": "client_secret",
+            "required": true,
+            "type": "secret",
+            "ui": {
+              "label": "Client Id",
+              "description": "The client secret of technical account",
+              "placeholder": "Enter the client secret."
+            }
+          }
+        ],
+        "jwtTokenParamName": "jwt_token"
+      }
+    }
   },
   "license": "MIT",
   "main": "out/connector.js",
