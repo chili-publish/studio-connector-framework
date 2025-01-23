@@ -51,7 +51,17 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
 
 `"oauth-jwt-bearer.json"`
 
-IN PROGRESS
+```json
+{
+  "jwtPayload": {
+    "iss": "serviceUserEmail"
+  },
+  "signatureConfig": {
+    "algorithm": "RS256",
+    "privateKey": "secretPrivateKeyValueInPemFormat"
+  }
+}
+```
 
 ## Limitations
 

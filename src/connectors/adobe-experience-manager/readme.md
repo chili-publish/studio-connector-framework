@@ -1,6 +1,9 @@
+# Adobe Experience Manager
 
+This connector allows you to fetch the data from your AEM Site
 
 ## Publish
+
 ```
 connector-cli publish \
     -e {ENVIRONMENT} \
@@ -11,33 +14,10 @@ connector-cli publish \
     --connectorId={CONNECTOR_ID}
 ```
 
-
-## Set authenticator
-
-```
-connector-cli set-auth \
-    --connectorId {CONNECTOR_ID} \
-    -e {ENVIRONMENT} \
-    -b https://{ENVIRONMENT}.chili-publish.online/grafx \
-    -au server \
-    -at staticKey \
-    --auth-data-file static-key.json
-```
-
-```
-connector-cli set-auth \
-    --connectorId {CONNECTOR_ID} \
-    -e {ENVIRONMENT} \
-    -b https://c{ENVIRONMENT}.chili-publish.online/grafx \
-    -au browser \
-    -at staticKey \
-    --auth-data-file static-key.json
-```
-
-
- ## Renditions
+## Renditions
 
 For Aem we use the Renditions specified in the AEM platform, These renditions are default used
+
 ```
 {
   "thumbnail": "cq5dam.thumbnail.140.100.png",
@@ -61,9 +41,43 @@ connector-cli publish \
     --connectorId={CONNECTOR_ID}
 ```
 
-
-
 ## Docs Querybuilder
+
 We use the querybuilder to load the different assets + folders you can extend these query by the Search Query Field
 
 https://experienceleague.adobe.com/en/docs/experience-manager-65/content/implementing/developing/platform/query-builder/querybuilder-api
+
+## Authorization setup
+
+### Supported authentication
+
+- OAuth2JwtBearer
+- StaticKey
+
+### Setup Service account
+
+Following [instructions](https://experienceleague.adobe.com/en/docs/experience-manager-learn/getting-started-with-aem-headless/authentication/service-credentials) setup service credentials for OAuth2JwtBearer authentication flow
+
+### Authentication json files
+
+https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connectors/
+
+`"oauth-jwt-bearer.json"`
+
+```json
+{
+  "signatureConfig": {
+    "algorithm": "RS256",
+    "privateKey": "secretPrivateKeyValueInPemFormat"
+  },
+  "jwtPayload": {
+    "iss": "organizationId",
+    "sub": "technicalAccountId",
+    "aud": "https://ims-na1.adobelogin.com/c/your-client-id"
+  },
+  "requestBodyParams": {
+    "client_id": "your-client-id",
+    "client_secret": "your-client-secret"
+  }
+}
+```
