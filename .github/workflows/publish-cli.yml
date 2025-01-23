@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
+      - '.github/workflows/publish-cli.yml'
 
 jobs:
   publish:
@@ -21,12 +22,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@chili-publish'
       - name: Install dependencies
         run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Build
         run: yarn workspace @chili-publish/connector-cli run build
       - name: Bump version
@@ -38,6 +35,12 @@ jobs:
         with:
           version-type: 'prerelease'
           commit-message: 'CI: bumps version to {{version}} [skip ci]'
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@chili-publish'
       - name: Publish
         run: yarn publish src/connector-cli
         env:

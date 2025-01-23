@@ -1,6 +1,6 @@
 # Adobe Experience Manager
 
-This connector allows you to fetch the data from your AEM Site
+This connector allows you to fetch the data from your AEM Site.
 
 ## Publish
 
