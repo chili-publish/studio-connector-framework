@@ -75,7 +75,7 @@
             "required": true,
             "type": "secret",
             "ui": {
-              "label": "Client Id",
+              "label": "Client Secret",
               "description": "The client secret of technical account",
               "placeholder": "Enter the client secret."
             }
