@@ -16,7 +16,7 @@
     "publish-all": "node scripts/publish.js"
   },
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1.9.6-rc.0",
+    "@chili-publish/connector-cli": "^1.9.7-rc.0",
     "prettier": "^3.0.3"
   }
 }
