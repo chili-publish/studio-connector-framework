@@ -31,8 +31,8 @@ interface Row<C = CellData> {
   values: Array<C>;
 }
 
-// Whe you insert empty row in spreadhsheet document it will have following type
-type InsertedEmptyRow = Partial<Row>;
+// Whe you insert empty row in spreadhsheet document and there is no formatting at any cell of this row it will have following type
+type EmptyRowWithoutFormatting = Omit<Row, 'values'> & { values: undefined };
 
 interface Spreadsheet {
   sheets: Array<{
@@ -203,7 +203,7 @@ class Converter {
    * @returns
    */
   private static normalizeRow(
-    row: Row | InsertedEmptyRow,
+    row: Row | EmptyRowWithoutFormatting,
     columnsLength: number
   ): Row | null {
     if (!row.values) {
@@ -214,7 +214,7 @@ class Converter {
       return null;
     }
     if (row.values.length === columnsLength) {
-      return row as Row;
+      return row;
     }
     return {
       values: [
