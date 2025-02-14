@@ -426,6 +426,9 @@ export default class MyConnector implements Media.MediaConnector {
     return this.runtime
       .fetch(`${this.baseUrl}${downloadPath}`, {
         method: 'GET',
+        headers: {
+          'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
+        },
       })
       .then((result) => {
         if (!result.ok) {
