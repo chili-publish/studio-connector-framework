@@ -31,6 +31,9 @@ interface Row<C = CellData> {
   values: Array<C>;
 }
 
+// Whe you insert empty row in spreadhsheet document it will have following type
+type InsertedEmptyRow = Partial<Row>;
+
 interface Spreadsheet {
   sheets: Array<{
     properties: { sheetId: string; title: string };
@@ -199,13 +202,19 @@ class Converter {
    * @param columnsLength
    * @returns
    */
-  private static normalizeRow(row: Row, columnsLength: number): Row | null {
+  private static normalizeRow(
+    row: Row | InsertedEmptyRow,
+    columnsLength: number
+  ): Row | null {
+    if (!row.values) {
+      return null;
+    }
     const emptyRow = row.values.every((c) => !c.formattedValue);
     if (emptyRow) {
       return null;
     }
     if (row.values.length === columnsLength) {
-      return row;
+      return row as Row;
     }
     return {
       values: [
