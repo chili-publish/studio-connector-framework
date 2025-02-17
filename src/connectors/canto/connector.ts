@@ -5,7 +5,7 @@ type CantoFolder = {
   id: string,
   idPath: string,
   name: string,
-  namePath:string
+  namePath: string
   scheme: "folder",
   size: number,
   children: CantoItem[]
@@ -15,7 +15,7 @@ type CantoAlbum = {
   id: string,
   idPath: string,
   name: string,
-  namePath:string,
+  namePath: string,
   size: number,
   scheme: "album"
 }
@@ -76,11 +76,32 @@ export default class MyConnector implements Media.MediaConnector {
     // Search query
     return this.handleSearchQuery(contextOptions);
   }
-  detail(
+  async detail(
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    throw new Error("Method not implemented.");
+    const url = `${this.runtime.options["baseURL"]}/api/v1/image/${id}`;
+    const resp = await this.runtime.fetch(url, {
+      method: "GET"
+    });
+
+    if (!resp.ok) {
+      throw new ConnectorHttpError(
+        resp.status,
+        `Canto: Detail failed ${resp.status} - ${resp.statusText}`
+      );
+    }
+    const data = JSON.parse(resp.text);
+
+    return {
+        id: data.id,
+        name: data.name,
+        relativePath: "",
+        type: 0,
+        metaData: parseMetadata(data),
+        width: Number(data.width),
+        height: Number(data.height)
+    };
   }
   async download(
     id: string,
@@ -99,7 +120,10 @@ export default class MyConnector implements Media.MediaConnector {
       });
 
       if (!resp.ok) {
-        throw new Error("Failed to fetch info from Canto");
+        throw new ConnectorHttpError(
+          resp.status,
+          `Canto: Download failed ${resp.status} - ${resp.statusText}`
+        );
       }
 
       const data = JSON.parse(resp.text);
@@ -207,7 +231,10 @@ export default class MyConnector implements Media.MediaConnector {
     });
 
     if (!resp.ok) {
-      throw new Error("Failed to fetch info from Canto");
+      throw new ConnectorHttpError(
+        resp.status,
+        `Canto: Query failed ${resp.status} - ${resp.statusText}`
+      );
     }
 
     const data = JSON.parse(resp.text);
@@ -228,7 +255,7 @@ export default class MyConnector implements Media.MediaConnector {
     }
   }
 
-  async handleFolderBrowsing(contextOptions: ContextOptions): Promise<Media.MediaPage> { 
+  async handleFolderBrowsing(contextOptions: ContextOptions): Promise<Media.MediaPage> {
     this.runtime.logError("BROSWER");
     this.runtime.logError(JSON.stringify(contextOptions));
 
@@ -252,9 +279,9 @@ export default class MyConnector implements Media.MediaConnector {
 
     return currentCantoItem.scheme == "folder"
       ? buildMediaPage(
-          contextOptions,
-          formatData(currentCantoItem.children, contextOptions.pageSize, previousPath, true),
-        )
+        contextOptions,
+        formatData(currentCantoItem.children, contextOptions.pageSize, previousPath, true),
+      )
       : this.handleSearchAlbum(contextOptions, currentCantoItem);
   }
 
@@ -267,44 +294,45 @@ export default class MyConnector implements Media.MediaConnector {
     });
 
 
-    if (resp.ok) {
-
-      const rootCantoItems = JSON.parse(resp.text).results as CantoItem[];
-      const toplevelFolder: CantoFolder = {
-        children: rootCantoItems,
-        id: "",
-        idPath: "/",
-        namePath: "/",
-        name: "/",
-        scheme: "folder",
-        size: rootCantoItems.length,
-      };
-
-       return pathParts.reduce(
-        (currentCantoFolder: CantoFolder, pathPart:string, index) => {
-          const matchCantoItem = currentCantoFolder.children
-            .filter((item) => item.scheme == "folder" || item.scheme == "album")
-            .find((item) => item.name == pathPart);
-
-          if (!matchCantoItem)
-            throw new Error(`Could not find item with name: ${pathPart} on ${pathParts.join("/")}`);
-
-          if (pathParts.length == index + 1) return matchCantoItem;
-
-          if (matchCantoItem.scheme == "album")
-            throw new Error(`Expecting folder but got album at ${pathPart} path on ${pathParts.join("/")}`);
-
-          return matchCantoItem;
-        },
-        toplevelFolder,
+    if (!resp.ok) {
+      throw new ConnectorHttpError(
+        resp.status,
+        `Canto: Query failed ${resp.status} - ${resp.statusText}`
       );
-
-
     }
-    throw new Error("Failed to fetch tree directory from Canto!")
+
+    const rootCantoItems = JSON.parse(resp.text).results as CantoItem[];
+    const toplevelFolder: CantoFolder = {
+      children: rootCantoItems,
+      id: "",
+      idPath: "/",
+      namePath: "/",
+      name: "/",
+      scheme: "folder",
+      size: rootCantoItems.length,
+    };
+
+    return pathParts.reduce(
+      (currentCantoFolder: CantoFolder, pathPart: string, index) => {
+        const matchCantoItem = currentCantoFolder.children
+          .filter((item) => item.scheme == "folder" || item.scheme == "album")
+          .find((item) => item.name == pathPart);
+
+        if (!matchCantoItem)
+          throw new Error(`Could not find item with name: ${pathPart} on ${pathParts.join("/")}`);
+
+        if (pathParts.length == index + 1) return matchCantoItem;
+
+        if (matchCantoItem.scheme == "album")
+          throw new Error(`Expecting folder but got album at ${pathPart} path on ${pathParts.join("/")}`);
+
+        return matchCantoItem;
+      },
+      toplevelFolder,
+    );
   }
 
-  async handleSearchAlbum(contextOptions:ContextOptions, cantoAlbum: CantoAlbum): Promise<Media.MediaPage> {
+  async handleSearchAlbum(contextOptions: ContextOptions, cantoAlbum: CantoAlbum): Promise<Media.MediaPage> {
     // The album search endpoint used here normally behaves very differently to the one used everywhere else. I've replaced it, but keeping the old one in comments for now
     let url = this.buildSearchURL('', '', cantoAlbum.id, false, contextOptions.pageSize, contextOptions.startindex);
     // let url = `${this.runtime.options["baseURL"]}/rest/search/album/${id}?aggsEnabled=true&sortBy=created&sortDirection=false&size=${options.pageSize}&type=image&start=${startIndex}`;
@@ -321,15 +349,18 @@ export default class MyConnector implements Media.MediaConnector {
       const imagesFound = JSON.parse(resp.text).results;
 
       const dataFormatted = formatData(
-              imagesFound ?? [],
-              contextOptions.pageSize,
-              cantoAlbum.namePath.replace(cantoAlbum.name, ""),
-            )
+        imagesFound ?? [],
+        contextOptions.pageSize,
+        cantoAlbum.namePath.replace(cantoAlbum.name, ""),
+      )
 
       return buildMediaPage(contextOptions, dataFormatted);
     }
 
-    throw new Error(`Failed to fetch images from album ${JSON.stringify(cantoAlbum)}!`)
+    throw new ConnectorHttpError(
+      resp.status,
+      `Canto: Query failed ${resp.status} - ${resp.statusText}`
+    );
   }
 
   async handleSearchQuery(contextOptions: ContextOptions): Promise<Media.MediaPage> {
@@ -355,7 +386,10 @@ export default class MyConnector implements Media.MediaConnector {
           dataFormatted = dataFormatted.concat(formatData(data, contextOptions.pageSize));
         }
       } else {
-        throw new Error("Failed to fetch images from Canto!")
+        throw new ConnectorHttpError(
+          resp.status,
+          `Canto: Query failed ${resp.status} - ${resp.statusText}`
+        );
       }
     }
     return buildMediaPage(contextOptions, dataFormatted);
@@ -380,7 +414,10 @@ export default class MyConnector implements Media.MediaConnector {
       const dataFormatted = formatData(data, contextOptions.pageSize);
       return buildMediaPage(contextOptions, dataFormatted);
     }
-    throw new Error("Failed to fetch images from Canto!")
+    throw new ConnectorHttpError(
+      resp.status,
+      `Canto: Query failed ${resp.status} - ${resp.statusText}`
+    );
   }
 }
 
@@ -424,7 +461,7 @@ function parseMetadata(data: any): Record<string, string | boolean> {
   };
 }
 
-function formatData(results: any[], pageSize: number, previousPath?:string, isFolder?: boolean): Array<any> {
+function formatData(results: any[], pageSize: number, previousPath?: string, isFolder?: boolean): Array<any> {
 
   // I don't really like this being a whole if/else block
   let dataFormatted;
@@ -450,15 +487,15 @@ function formatData(results: any[], pageSize: number, previousPath?:string, isFo
   return !previousPath
     ? dataFormatted
     : [
-        {
-          id: "back",
-          name: "../",
-          relativePath: previousPath + "/",
-          type: 1,
-          metaData: {},
-        },
-        ...dataFormatted,
-      ];
+      {
+        id: "back",
+        name: "../",
+        relativePath: previousPath + "/",
+        type: 1,
+        metaData: {},
+      },
+      ...dataFormatted,
+    ];
 }
 
 function buildMediaPage(contextOptions: ContextOptions, data: any[]): Media.MediaPage {

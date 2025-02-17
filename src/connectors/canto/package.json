@@ -1,6 +1,6 @@
 {
   "name": "canto-media-connector",
-  "description": "",
+  "description": "GraFx Media Connector for Canto DAM",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
@@ -8,6 +8,7 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
+    "connectorName": "Canto",
     "type": "media",
     "options": {"baseURL": null},
     "mappings": {},
