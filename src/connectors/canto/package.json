@@ -8,11 +8,16 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
-    "connectorName": "Canto",
     "type": "media",
-    "options": {"baseURL": null},
+    "connectorName": "Canto",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Canto_logo.svg",
+    "options": {
+      "baseURL": null
+    },
     "mappings": {},
-    "supportedAuth": ["oAuth2ClientCredentials"]
+    "supportedAuth": [
+      "oAuth2ClientCredentials"
+    ]
   },
   "license": "MIT",
   "main": "out/connector.js",
