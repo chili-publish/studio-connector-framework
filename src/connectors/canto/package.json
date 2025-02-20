@@ -1,0 +1,30 @@
+{
+  "name": "canto-media-connector",
+  "description": "GraFx Media Connector for Canto DAM",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "Canto",
+    "type": "media",
+    "options": {"baseURL": null},
+    "mappings": {},
+    "supportedAuth": ["oAuth2ClientCredentials"]
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "typescript": "^5.2.2",
+    "@chili-publish/studio-connectors": "^1.17.1"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.9.0"
+  }
+}
