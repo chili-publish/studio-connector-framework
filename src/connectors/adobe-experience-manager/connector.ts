@@ -316,7 +316,11 @@ export default class MyConnector implements Media.MediaConnector {
       path = path.replace('Home/content/dam', '/content/dam');
     }
     // when the collection starts with /content/dam we know that the user clicked on folder
-    if (options.collection && options.collection.length && options.collection !== '/') {
+    if (
+      options.collection &&
+      options.collection.length &&
+      options.collection !== '/'
+    ) {
       path = `/content/dam${options.collection}`;
     }
     // Otherwise we do a query call
@@ -422,6 +426,9 @@ export default class MyConnector implements Media.MediaConnector {
     return this.runtime
       .fetch(`${this.baseUrl}${downloadPath}`, {
         method: 'GET',
+        headers: {
+          'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
+        },
       })
       .then((result) => {
         if (!result.ok) {
@@ -560,6 +567,9 @@ export default class MyConnector implements Media.MediaConnector {
 
     const res = await this.runtime.fetch(`${this.baseUrl}${queryingRoute}`, {
       method: 'GET',
+      headers: {
+        'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
+      },
     });
 
     if (!res.ok) {
@@ -578,6 +588,9 @@ export default class MyConnector implements Media.MediaConnector {
     }
     const res = await this.runtime.fetch(`${this.baseUrl}${detailPath}`, {
       method: 'GET',
+      headers: {
+        'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
+      },
     });
 
     if (!res.ok) {
