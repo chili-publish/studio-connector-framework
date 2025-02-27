@@ -3,9 +3,9 @@
   "description": "GraFx Media Connector for Canto DAM",
   "version": "1.0.0",
   "author": {
-    "name": "CHILI publish",
-    "email": "info@chili-publish.com",
-    "url": "https://github.com/chili-publish"
+    "name": "Spicy Labs",
+    "email": "admin@spicy-labs.com",
+    "url": "https://github.com/spicy-labs"
   },
   "config": {
     "type": "media",
