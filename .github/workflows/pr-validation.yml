@@ -55,7 +55,7 @@ jobs:
   validate-version:
     runs-on: ubuntu-latest
     needs: check-connector
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'dev') }}
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-version-validation') }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
