@@ -4,13 +4,14 @@ on:
   pull_request:
     paths:
       - 'src/connectors/**'
+    types: [opened, labeled, unlabeled, synchronize]
 
 jobs:
-  build-and-test:
+  check-connector:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -42,7 +43,29 @@ jobs:
             fi
           done
           echo "::set-output name=connector::$connector_changed"
-      
+
+      - name: Add labels
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            ${{ steps.check_connector.outputs.connector }}
+            connector-change
+
+  validate-version:
+    runs-on: ubuntu-latest
+    needs: check-connector
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-version-validation') }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: files
+        uses: jitterbit/get-changed-files@v1
+
       - name: Ensure connector version is bumped
         run: |
           connector_changed=""
@@ -65,11 +88,3 @@ jobs:
               fi
             fi
           done
-
-      - name: Add labels
-        uses: actions-ecosystem/action-add-labels@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          labels: |
-            ${{ steps.check_connector.outputs.connector }}
-            connector-change
