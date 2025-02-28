@@ -1,6 +1,6 @@
 {
   "name": "google-sheet",
-  "description": "Connect to Google Sheets to use data from your spreadsheets.",
+  "description": "Connect to Google Sheets to use data from your spreadsheet document.",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
