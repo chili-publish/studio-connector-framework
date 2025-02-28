@@ -4,8 +4,7 @@ on:
   pull_request:
     paths:
       - 'src/connectors/**'
-  pull_request_target:
-    types: [labeled, unlabeled]
+    types: [opened, labeled, unlabeled, synchronize]
 
 jobs:
   check-connector:
