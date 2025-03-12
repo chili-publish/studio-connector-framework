@@ -47,7 +47,6 @@ jobs:
       - name: Add labels
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           labels: |
             ${{ steps.check_connector.outputs.connector }}
             connector-change
