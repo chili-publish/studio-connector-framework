@@ -17,7 +17,15 @@ jobs:
 
       - name: Fetch head branch
         run: |
-          git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          # Check if the PR is from a fork
+          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            echo "Pull request is from a fork. Fetching head branch from the fork repository."
+            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          else
+            echo "Pull request is from the same repository. Fetching head branch locally."
+            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          fi
 
       - name: Get changed files
         id: files
@@ -73,7 +81,15 @@ jobs:
 
       - name: Fetch head branch
         run: |
-          git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          # Check if the PR is from a fork
+          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            echo "Pull request is from a fork. Fetching head branch from the fork repository."
+            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          else
+            echo "Pull request is from the same repository. Fetching head branch locally."
+            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          fi
 
       - name: Get changed files
         id: files
