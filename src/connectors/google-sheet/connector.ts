@@ -31,6 +31,9 @@ interface Row<C = CellData> {
   values: Array<C>;
 }
 
+// Whe you insert empty row in spreadhsheet document and there is no formatting at any cell of this row it will have following type
+type EmptyRowWithoutFormatting = Omit<Row, 'values'> & { values: undefined };
+
 interface Spreadsheet {
   sheets: Array<{
     properties: { sheetId: string; title: string };
@@ -199,7 +202,13 @@ class Converter {
    * @param columnsLength
    * @returns
    */
-  private static normalizeRow(row: Row, columnsLength: number): Row | null {
+  private static normalizeRow(
+    row: Row | EmptyRowWithoutFormatting,
+    columnsLength: number
+  ): Row | null {
+    if (!row.values) {
+      return null;
+    }
     const emptyRow = row.values.every((c) => !c.formattedValue);
     if (emptyRow) {
       return null;
