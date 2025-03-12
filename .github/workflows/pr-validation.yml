@@ -20,6 +20,7 @@ jobs:
         run: |
           # Get the list of changed files as a comma-separated string
           files=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }} | tr '\n' ',')
+          echo "files=$files"
           echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure only one connector is changed
