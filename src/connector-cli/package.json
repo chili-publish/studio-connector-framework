@@ -1,6 +1,6 @@
 {
   "name": "@chili-publish/connector-cli",
-  "version": "1.9.6-rc.0",
+  "version": "1.9.7-rc.0",
   "main": "out/src/index.js",
   "license": "MIT",
   "bin": {
@@ -10,6 +10,9 @@
     "out",
     "bin"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@chili-publish/studio-connectors": "^1",
     "@inquirer/prompts": "^7.2.0",
@@ -22,7 +25,9 @@
     "open": "^9.1.0",
     "prettier": "^3.0.3",
     "quickjs-emscripten": "^0.23.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "deepmerge-json": "^1.5.0",
+    "quicktype-core": "23.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
@@ -41,6 +46,6 @@
     "debugger": "yarn run ts-node src/index.ts login && yarn run ts-node src/index.ts publish ../connectors/acquia/connector.ts",
     "update": "yarn build && npm version patch && yarn pack",
     "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'",
-    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json ./resources/schemas/*.json -o src/core/types/gen-types.ts"
+    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json -o src/core/types/gen-types.ts"
   }
 }
