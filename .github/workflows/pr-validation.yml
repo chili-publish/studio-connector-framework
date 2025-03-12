@@ -24,7 +24,6 @@ jobs:
         run: |
           # Get the list of changed files as a comma-separated string
           files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
-          echo "files=$files"
           echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure only one connector is changed
@@ -72,11 +71,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch head branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+
       - name: Get changed files
         id: files
         run: |
           # Get the list of changed files as a comma-separated string
-          files=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }} | tr '\n' ',')
+          files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
           echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure connector version is bumped
