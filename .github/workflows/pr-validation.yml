@@ -1,16 +1,13 @@
 name: Validate Connector PR
 
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - 'src/connectors/**'
     types: [opened, labeled, unlabeled, synchronize]
 
 jobs:
   check-connector:
-    permissions:
-      contents: read
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -50,7 +47,6 @@ jobs:
       - name: Add labels
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           labels: |
             ${{ steps.check_connector.outputs.connector }}
             connector-change
