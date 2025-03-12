@@ -1,4 +1,4 @@
-# Google Sheets 1
+# Google Sheets
 
 This connector allows you to fetch the data from the Google spreadsheet document.
 
