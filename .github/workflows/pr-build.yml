@@ -17,12 +17,8 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@chili-publish'
       - name: Install dependencies
         run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Build CLI
         run: yarn run build-cli
       - name: Build connectors

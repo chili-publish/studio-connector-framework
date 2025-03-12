@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "title": "oAuth2JwtBearer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "tokenEndpoint": {
+      "type": "string"
+    },
+    "signatureConfig": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["RS256"]
+        },
+        "privateKey": {
+          "type": "string"
+        }
+      },
+      "required": ["algorithm", "privateKey"],
+      "additionalProperties": false
+    },
+    "jwtPayload": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "number" }
+        ]
+      }
+    },
+    "requestBodyParams": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "number" }
+        ]
+      }
+    },
+    "jwtTokenParamName": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tokenEndpoint",
+    "signatureConfig",
+    "jwtPayload",
+    "jwtTokenParamName"
+  ],
+  "additionalProperties": false
+}

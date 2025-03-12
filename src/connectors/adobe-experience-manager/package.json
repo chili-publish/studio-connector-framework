@@ -1,0 +1,101 @@
+{
+  "name": "adobe-experience-manager",
+  "description": "AEM Chili Publish connector",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "type": "media",
+    "connectorName": "Adobe Experience Manager",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/aem_logo.svg",
+    "options": {
+      "BASE_URL": null,
+      "renditionOverrides": ""
+    },
+    "supportedAuth": [
+      "staticKey",
+      "oAuth2JwtBearer"
+    ],
+    "mappings": {},
+    "authenticationConfig": {
+      "oAuth2JwtBearer": {
+        "tokenEndpoint": "https://ims-na1.adobelogin.com/ims/exchange/jwt",
+        "jwtPayload": [
+          {
+            "key": "iss",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Issuer",
+              "description": "The organization ID",
+              "placeholder": "Enter the token issuer."
+            }
+          },
+          {
+            "key": "sub",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Subject",
+              "description": "The technical account ID",
+              "placeholder": "Enter the token subject."
+            }
+          },
+          {
+            "key": "aud",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Audience",
+              "description": "The token endpoint URL concatenated with your client ID (Example: 'https://ims-na1.adobelogin.com/c/your-client-id')",
+              "placeholder": "Enter the token audience."
+            }
+          },
+          {
+            "key": "https://ims-na1.adobelogin.com/s/ent_aem_cloud_api",
+            "value": true
+          }
+        ],
+        "requestBodyParams": [
+          {
+            "key": "client_id",
+            "required": true,
+            "type": "text",
+            "ui": {
+              "label": "Client Id",
+              "description": "The client ID of technical account",
+              "placeholder": "Enter the client id."
+            }
+          },
+          {
+            "key": "client_secret",
+            "required": true,
+            "type": "secret",
+            "ui": {
+              "label": "Client Secret",
+              "description": "The client secret of technical account",
+              "placeholder": "Enter the client secret."
+            }
+          }
+        ],
+        "jwtTokenParamName": "jwt_token"
+      }
+    }
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1.15.0",
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.6.2"
+  }
+}

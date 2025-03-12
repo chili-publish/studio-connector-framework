@@ -48,6 +48,13 @@ export async function runGetInfo(
   // API version
   info(`Framework version: ${apiVersion}`);
 
+  // Project name - npm package name
+  const { name } = require(packageJson);
+  info(`Project name: "${name}"`);
+
+  connectorConfig.connectorName &&
+    info(`Connector name: "${connectorConfig.connectorName}"`);
+
   // Connector type
   info(`Type: "${connectorConfig.type}"`);
 
@@ -93,10 +100,10 @@ export async function runGetInfo(
     }
   }
 
-  // Runtime settings
+  // Runtime options
   if (Object.values(connectorConfig.options).length === 0) {
     info(
-      'Runtime settings: Connector does not have any runtime settings defined'
+      'Runtime options: Connector does not have any runtime options defined'
     );
   } else {
     const formattedOptinos = Object.entries(connectorConfig.options).map(
@@ -110,7 +117,7 @@ export async function runGetInfo(
       }
     );
 
-    info('Runtime settings...');
+    info('Runtime options...');
     console.table(formattedOptinos, ['name', 'required', 'default']);
   }
 

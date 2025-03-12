@@ -1,23 +1,11 @@
-import { program } from 'commander';
-import version from '../../package.json';
 import chalk from 'chalk';
 
 const startTime = Date.now();
 let verboseEnabled: boolean = false;
 
-export function startCommand(command: string, options: any) {
-  if (program.opts().verbose) {
-    verboseEnabled = true;
-  }
-
+export function enableVerboseLogging() {
+  verboseEnabled = true;
   verbose(`Verbose logging enabled`);
-
-  info(`connector-cli v${version.version}`);
-  verbose(
-    `Running command: '${chalk.bold(command)}' with options: ${JSON.stringify(
-      options
-    )}`
-  );
 }
 
 export function info(arg0: string) {

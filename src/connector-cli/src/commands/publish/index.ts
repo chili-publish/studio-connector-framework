@@ -7,6 +7,7 @@ import {
   validateRuntimeOptions,
 } from '../../core';
 import { readAccessToken } from '../../core/read-access-token';
+import { ExecutionError } from '../../core/types';
 import { getConnectorProjectFileInfo } from '../../utils/connector-project';
 import { compileConnector } from './steps/compile';
 import { createNewConnector } from './steps/create-connector';
@@ -19,7 +20,7 @@ interface PublishCommandOptions {
   tenant: 'dev' | 'prod';
   baseUrl: string;
   environment: string;
-  name: string;
+  name?: string;
   connectorId?: string;
   runtimeOption?: Record<string, unknown>;
   ['proxyOption.allowedDomains']?: Array<string>;
@@ -38,7 +39,6 @@ export async function runPublish(
   const {
     baseUrl,
     environment,
-    name,
     connectorId,
     runtimeOption: runtimeOptions,
     ...rawProxyOptions
@@ -54,6 +54,13 @@ export async function runPublish(
 
   const config = readConnectorConfig(packageJson);
 
+  info('Validating connector name...');
+
+  const connectorName = options.name || config.connectorName;
+  if (!connectorName) {
+    throw new ExecutionError('You must define connector name for deploy');
+  }
+
   info('Validating allowed domains option...');
 
   validateAllowedDomains(proxyOptions.allowedDomains);
@@ -61,6 +68,16 @@ export async function runPublish(
   info('Validating runtime options...');
 
   validateRuntimeOptions(runtimeOptions, config.options);
+
+  let rOptions = runtimeOptions;
+
+  const defaultRuntimeOptionValues = Object.values(config.options).filter(
+    (o) => o !== null && o !== undefined
+  );
+  if (defaultRuntimeOptionValues.length > 0) {
+    info('Reading default runtime optinos...');
+    rOptions = { ...config.options, ...runtimeOptions };
+  }
 
   info('Extracting package information...');
 
@@ -80,12 +97,12 @@ export async function runPublish(
   const requestUrl = buildRequestUrl(baseUrl, environment);
 
   const connectorPayload = {
-    name,
+    name: connectorName,
     description,
     version,
     type: config.type,
     iconUrl: config.iconUrl,
-    options: runtimeOptions,
+    options: rOptions,
     script: connectorJs,
     apiVersion,
     allowedDomains: proxyOptions.allowedDomains ?? ['*'],

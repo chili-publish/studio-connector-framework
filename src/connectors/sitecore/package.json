@@ -1,0 +1,53 @@
+{
+  "name": "contenthub",
+  "description": "The Sitecore Content Hub connector makes it possible to import assets and related metadata into GraFx Studio templates.",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "Sitecore Content Hub",
+    "type": "media",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Sitecore_logo.svg",
+    "options": {
+      "BASE_URL": null,
+      "relationMetadataIncludes": ""
+    },
+    "supportedAuth": [
+      "oAuth2ResourceOwnerPassword",
+      "oAuth2AuthorizationCode"
+    ],
+    "mappings": {},
+    "authenticationConfig": {
+      "oAuth2ResourceOwnerPassword": {
+        "authorizationServerMetadata": {
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_post"
+          ]
+        }
+      },
+      "oAuth2AuthorizationCode": {
+        "authorizationServerMetadata": {
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_post"
+          ]
+        }
+      }
+    }
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1.15.0",
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.6.2"
+  }
+}

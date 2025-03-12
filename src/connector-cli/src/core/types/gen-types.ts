@@ -1,23 +1,19 @@
 // To parse this data:
 //
-//   import { Convert, ChiliToken, Oauth2AuthorizationCode, Oauth2ClientCredentials, Oauth2ResourceOwnerPassword, StaticKey, ConnectorConfig } from "./file";
+//   import { Convert, OAuth2AuthorizationCode, OAuth2ClientCredentials, OAuth2JwtBearer, OAuth2ResourceOwnerPassword, StaticKey, ConnectorConfig } from "./file";
 //
-//   const chiliToken = Convert.toChiliToken(json);
-//   const oauth2AuthorizationCode = Convert.toOauth2AuthorizationCode(json);
-//   const oauth2ClientCredentials = Convert.toOauth2ClientCredentials(json);
-//   const oauth2ResourceOwnerPassword = Convert.toOauth2ResourceOwnerPassword(json);
+//   const oAuth2AuthorizationCode = Convert.toOAuth2AuthorizationCode(json);
+//   const oAuth2ClientCredentials = Convert.toOAuth2ClientCredentials(json);
+//   const oAuth2JwtBearer = Convert.toOAuth2JwtBearer(json);
+//   const oAuth2ResourceOwnerPassword = Convert.toOAuth2ResourceOwnerPassword(json);
 //   const staticKey = Convert.toStaticKey(json);
 //   const connectorConfig = Convert.toConnectorConfig(json);
 //
 // These functions will throw an error if the JSON doesn't
 // match the expected interface, even if the JSON is valid.
 
-export interface ChiliToken {
-    name?: string;
-}
-
-export interface Oauth2AuthorizationCode {
-    authorizationServerMetadata: Oauth2AuthorizationCodeAuthorizationServerMetadata;
+export interface OAuth2AuthorizationCode {
+    authorizationServerMetadata: OAuth2AuthorizationCodeAuthorizationServerMetadata;
     clientId:                    string;
     clientSecret:                string;
     name?:                       string;
@@ -25,7 +21,7 @@ export interface Oauth2AuthorizationCode {
     specCustomization?:          SpecCustomization;
 }
 
-export interface Oauth2AuthorizationCodeAuthorizationServerMetadata {
+export interface OAuth2AuthorizationCodeAuthorizationServerMetadata {
     authorization_endpoint:                string;
     token_endpoint:                        string;
     token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
@@ -46,7 +42,7 @@ export enum RequestContentType {
     FormURLEncoded = "formUrlEncoded",
 }
 
-export interface Oauth2ClientCredentials {
+export interface OAuth2ClientCredentials {
     clientId:      string;
     clientSecret:  string;
     name?:         string;
@@ -54,8 +50,26 @@ export interface Oauth2ClientCredentials {
     tokenEndpoint: string;
 }
 
-export interface Oauth2ResourceOwnerPassword {
-    authorizationServerMetadata?: Oauth2ResourceOwnerPasswordAuthorizationServerMetadata;
+export interface OAuth2JwtBearer {
+    jwtPayload:         { [key: string]: boolean | number | string };
+    jwtTokenParamName:  string;
+    name?:              string;
+    requestBodyParams?: { [key: string]: boolean | number | string };
+    signatureConfig:    SignatureConfig;
+    tokenEndpoint:      string;
+}
+
+export interface SignatureConfig {
+    algorithm:  Algorithm;
+    privateKey: string;
+}
+
+export enum Algorithm {
+    Rs256 = "RS256",
+}
+
+export interface OAuth2ResourceOwnerPassword {
+    authorizationServerMetadata?: OAuth2ResourceOwnerPasswordAuthorizationServerMetadata;
     bodyFormat?:                  RequestContentType;
     clientId:                     string;
     clientSecret:                 string;
@@ -66,7 +80,7 @@ export interface Oauth2ResourceOwnerPassword {
     username:                     string;
 }
 
-export interface Oauth2ResourceOwnerPasswordAuthorizationServerMetadata {
+export interface OAuth2ResourceOwnerPasswordAuthorizationServerMetadata {
     token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
 }
 
@@ -83,20 +97,21 @@ export interface ConnectorConfig {
     mappings?:             { [key: string]: any };
     options:               { [key: string]: any };
     supportedAuth:         SupportedAuth[];
-    type:                  Type;
+    type:                  ConnectorType;
 }
 
 export interface AuthenticationConfig {
-    oAuth2AuthorizationCode?:     OAuth2AuthorizationCode;
-    oAuth2ResourceOwnerPassword?: OAuth2ResourceOwnerPassword;
+    oAuth2AuthorizationCode?:     OAuth2AuthorizationCodeAuthenticationConfig;
+    oAuth2JwtBearer?:             OAuth2JwtBearerAuthenticationConfig;
+    oAuth2ResourceOwnerPassword?: OAuth2ResourceOwnerPasswordAuthenticationConfig;
 }
 
-export interface OAuth2AuthorizationCode {
-    authorizationServerMetadata: OAuth2AuthorizationCodeAuthorizationServerMetadata;
+export interface OAuth2AuthorizationCodeAuthenticationConfig {
+    authorizationServerMetadata: OAuth2AuthorizationCodeAuthorizationServerMetadataClass;
     specCustomization?:          OAuth2AuthorizationCodeSpecCustomization;
 }
 
-export interface OAuth2AuthorizationCodeAuthorizationServerMetadata {
+export interface OAuth2AuthorizationCodeAuthorizationServerMetadataClass {
     token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
 }
 
@@ -105,24 +120,50 @@ export interface OAuth2AuthorizationCodeSpecCustomization {
     requestContentType?: RequestContentType;
 }
 
-export interface OAuth2ResourceOwnerPassword {
-    authorizationServerMetadata?: OAuth2ResourceOwnerPasswordAuthorizationServerMetadata;
+export interface OAuth2JwtBearerAuthenticationConfig {
+    jwtPayload:         OAuth2JwtBearerOption[];
+    jwtTokenParamName:  string;
+    requestBodyParams?: OAuth2JwtBearerOption[];
+    tokenEndpoint?:     string;
+}
+
+export interface OAuth2JwtBearerOption {
+    key:       string;
+    required?: boolean;
+    type?:     EditableOptionType;
+    ui?:       UI;
+    value?:    boolean | number | string;
+}
+
+export enum EditableOptionType {
+    Secret = "secret",
+    Text = "text",
+}
+
+export interface UI {
+    description: string;
+    label:       string;
+    placeholder: string;
+}
+
+export interface OAuth2ResourceOwnerPasswordAuthenticationConfig {
+    authorizationServerMetadata?: OAuth2ResourceOwnerPasswordAuthorizationServerMetadataClass;
     bodyFormat?:                  RequestContentType;
 }
 
-export interface OAuth2ResourceOwnerPasswordAuthorizationServerMetadata {
+export interface OAuth2ResourceOwnerPasswordAuthorizationServerMetadataClass {
     token_endpoint_auth_methods_supported: TokenEndpointAuthMethodsSupported[];
 }
 
 export enum SupportedAuth {
-    Chili = "chili",
     OAuth2AuthorizationCode = "oAuth2AuthorizationCode",
     OAuth2ClientCredentials = "oAuth2ClientCredentials",
+    OAuth2JwtBearer = "oAuth2JwtBearer",
     OAuth2ResourceOwnerPassword = "oAuth2ResourceOwnerPassword",
     StaticKey = "staticKey",
 }
 
-export enum Type {
+export enum ConnectorType {
     Data = "data",
     Media = "media",
 }
@@ -130,36 +171,36 @@ export enum Type {
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
-    public static toChiliToken(json: string): ChiliToken {
-        return cast(JSON.parse(json), r("ChiliToken"));
+    public static toOAuth2AuthorizationCode(json: string): OAuth2AuthorizationCode {
+        return cast(JSON.parse(json), r("OAuth2AuthorizationCode"));
     }
 
-    public static chiliTokenToJson(value: ChiliToken): string {
-        return JSON.stringify(uncast(value, r("ChiliToken")), null, 2);
+    public static oAuth2AuthorizationCodeToJson(value: OAuth2AuthorizationCode): string {
+        return JSON.stringify(uncast(value, r("OAuth2AuthorizationCode")), null, 2);
     }
 
-    public static toOauth2AuthorizationCode(json: string): Oauth2AuthorizationCode {
-        return cast(JSON.parse(json), r("Oauth2AuthorizationCode"));
+    public static toOAuth2ClientCredentials(json: string): OAuth2ClientCredentials {
+        return cast(JSON.parse(json), r("OAuth2ClientCredentials"));
     }
 
-    public static oauth2AuthorizationCodeToJson(value: Oauth2AuthorizationCode): string {
-        return JSON.stringify(uncast(value, r("Oauth2AuthorizationCode")), null, 2);
+    public static oAuth2ClientCredentialsToJson(value: OAuth2ClientCredentials): string {
+        return JSON.stringify(uncast(value, r("OAuth2ClientCredentials")), null, 2);
     }
 
-    public static toOauth2ClientCredentials(json: string): Oauth2ClientCredentials {
-        return cast(JSON.parse(json), r("Oauth2ClientCredentials"));
+    public static toOAuth2JwtBearer(json: string): OAuth2JwtBearer {
+        return cast(JSON.parse(json), r("OAuth2JwtBearer"));
     }
 
-    public static oauth2ClientCredentialsToJson(value: Oauth2ClientCredentials): string {
-        return JSON.stringify(uncast(value, r("Oauth2ClientCredentials")), null, 2);
+    public static oAuth2JwtBearerToJson(value: OAuth2JwtBearer): string {
+        return JSON.stringify(uncast(value, r("OAuth2JwtBearer")), null, 2);
     }
 
-    public static toOauth2ResourceOwnerPassword(json: string): Oauth2ResourceOwnerPassword {
-        return cast(JSON.parse(json), r("Oauth2ResourceOwnerPassword"));
+    public static toOAuth2ResourceOwnerPassword(json: string): OAuth2ResourceOwnerPassword {
+        return cast(JSON.parse(json), r("OAuth2ResourceOwnerPassword"));
     }
 
-    public static oauth2ResourceOwnerPasswordToJson(value: Oauth2ResourceOwnerPassword): string {
-        return JSON.stringify(uncast(value, r("Oauth2ResourceOwnerPassword")), null, 2);
+    public static oAuth2ResourceOwnerPasswordToJson(value: OAuth2ResourceOwnerPassword): string {
+        return JSON.stringify(uncast(value, r("OAuth2ResourceOwnerPassword")), null, 2);
     }
 
     public static toStaticKey(json: string): StaticKey {
@@ -332,18 +373,15 @@ function r(name: string) {
 }
 
 const typeMap: any = {
-    "ChiliToken": o([
-        { json: "name", js: "name", typ: u(undefined, "") },
-    ], false),
-    "Oauth2AuthorizationCode": o([
-        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("Oauth2AuthorizationCodeAuthorizationServerMetadata") },
+    "OAuth2AuthorizationCode": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("OAuth2AuthorizationCodeAuthorizationServerMetadata") },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
         { json: "name", js: "name", typ: u(undefined, "") },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "specCustomization", js: "specCustomization", typ: u(undefined, r("SpecCustomization")) },
     ], false),
-    "Oauth2AuthorizationCodeAuthorizationServerMetadata": o([
+    "OAuth2AuthorizationCodeAuthorizationServerMetadata": o([
         { json: "authorization_endpoint", js: "authorization_endpoint", typ: "" },
         { json: "token_endpoint", js: "token_endpoint", typ: "" },
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
@@ -352,15 +390,27 @@ const typeMap: any = {
         { json: "codeParameterName", js: "codeParameterName", typ: u(undefined, "") },
         { json: "requestContentType", js: "requestContentType", typ: u(undefined, r("RequestContentType")) },
     ], false),
-    "Oauth2ClientCredentials": o([
+    "OAuth2ClientCredentials": o([
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
         { json: "name", js: "name", typ: u(undefined, "") },
         { json: "scope", js: "scope", typ: u(undefined, "") },
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
     ], false),
-    "Oauth2ResourceOwnerPassword": o([
-        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("Oauth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
+    "OAuth2JwtBearer": o([
+        { json: "jwtPayload", js: "jwtPayload", typ: m(u(true, 3.14, "")) },
+        { json: "jwtTokenParamName", js: "jwtTokenParamName", typ: "" },
+        { json: "name", js: "name", typ: u(undefined, "") },
+        { json: "requestBodyParams", js: "requestBodyParams", typ: u(undefined, m(u(true, 3.14, ""))) },
+        { json: "signatureConfig", js: "signatureConfig", typ: r("SignatureConfig") },
+        { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
+    ], false),
+    "SignatureConfig": o([
+        { json: "algorithm", js: "algorithm", typ: r("Algorithm") },
+        { json: "privateKey", js: "privateKey", typ: "" },
+    ], false),
+    "OAuth2ResourceOwnerPassword": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
         { json: "bodyFormat", js: "bodyFormat", typ: u(undefined, r("RequestContentType")) },
         { json: "clientId", js: "clientId", typ: "" },
         { json: "clientSecret", js: "clientSecret", typ: "" },
@@ -370,7 +420,7 @@ const typeMap: any = {
         { json: "tokenEndpoint", js: "tokenEndpoint", typ: "" },
         { json: "username", js: "username", typ: "" },
     ], false),
-    "Oauth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
+    "OAuth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
     ], false),
     "StaticKey": o([
@@ -385,28 +435,47 @@ const typeMap: any = {
         { json: "mappings", js: "mappings", typ: u(undefined, m("any")) },
         { json: "options", js: "options", typ: m("any") },
         { json: "supportedAuth", js: "supportedAuth", typ: a(r("SupportedAuth")) },
-        { json: "type", js: "type", typ: r("Type") },
+        { json: "type", js: "type", typ: r("ConnectorType") },
     ], false),
     "AuthenticationConfig": o([
-        { json: "oAuth2AuthorizationCode", js: "oAuth2AuthorizationCode", typ: u(undefined, r("OAuth2AuthorizationCode")) },
-        { json: "oAuth2ResourceOwnerPassword", js: "oAuth2ResourceOwnerPassword", typ: u(undefined, r("OAuth2ResourceOwnerPassword")) },
+        { json: "oAuth2AuthorizationCode", js: "oAuth2AuthorizationCode", typ: u(undefined, r("OAuth2AuthorizationCodeAuthenticationConfig")) },
+        { json: "oAuth2JwtBearer", js: "oAuth2JwtBearer", typ: u(undefined, r("OAuth2JwtBearerAuthenticationConfig")) },
+        { json: "oAuth2ResourceOwnerPassword", js: "oAuth2ResourceOwnerPassword", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthenticationConfig")) },
     ], false),
-    "OAuth2AuthorizationCode": o([
-        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("OAuth2AuthorizationCodeAuthorizationServerMetadata") },
+    "OAuth2AuthorizationCodeAuthenticationConfig": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: r("OAuth2AuthorizationCodeAuthorizationServerMetadataClass") },
         { json: "specCustomization", js: "specCustomization", typ: u(undefined, r("OAuth2AuthorizationCodeSpecCustomization")) },
     ], false),
-    "OAuth2AuthorizationCodeAuthorizationServerMetadata": o([
+    "OAuth2AuthorizationCodeAuthorizationServerMetadataClass": o([
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
     ], false),
     "OAuth2AuthorizationCodeSpecCustomization": o([
         { json: "codeParameterName", js: "codeParameterName", typ: u(undefined, "") },
         { json: "requestContentType", js: "requestContentType", typ: u(undefined, r("RequestContentType")) },
     ], false),
-    "OAuth2ResourceOwnerPassword": o([
-        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthorizationServerMetadata")) },
+    "OAuth2JwtBearerAuthenticationConfig": o([
+        { json: "jwtPayload", js: "jwtPayload", typ: a(r("OAuth2JwtBearerOption")) },
+        { json: "jwtTokenParamName", js: "jwtTokenParamName", typ: "" },
+        { json: "requestBodyParams", js: "requestBodyParams", typ: u(undefined, a(r("OAuth2JwtBearerOption"))) },
+        { json: "tokenEndpoint", js: "tokenEndpoint", typ: u(undefined, "") },
+    ], false),
+    "OAuth2JwtBearerOption": o([
+        { json: "key", js: "key", typ: "" },
+        { json: "required", js: "required", typ: u(undefined, true) },
+        { json: "type", js: "type", typ: u(undefined, r("EditableOptionType")) },
+        { json: "ui", js: "ui", typ: u(undefined, r("UI")) },
+        { json: "value", js: "value", typ: u(undefined, u(true, 3.14, "")) },
+    ], false),
+    "UI": o([
+        { json: "description", js: "description", typ: "" },
+        { json: "label", js: "label", typ: "" },
+        { json: "placeholder", js: "placeholder", typ: "" },
+    ], false),
+    "OAuth2ResourceOwnerPasswordAuthenticationConfig": o([
+        { json: "authorizationServerMetadata", js: "authorizationServerMetadata", typ: u(undefined, r("OAuth2ResourceOwnerPasswordAuthorizationServerMetadataClass")) },
         { json: "bodyFormat", js: "bodyFormat", typ: u(undefined, r("RequestContentType")) },
     ], false),
-    "OAuth2ResourceOwnerPasswordAuthorizationServerMetadata": o([
+    "OAuth2ResourceOwnerPasswordAuthorizationServerMetadataClass": o([
         { json: "token_endpoint_auth_methods_supported", js: "token_endpoint_auth_methods_supported", typ: a(r("TokenEndpointAuthMethodsSupported")) },
     ], false),
     "TokenEndpointAuthMethodsSupported": [
@@ -417,14 +486,21 @@ const typeMap: any = {
         "applicationJson",
         "formUrlEncoded",
     ],
+    "Algorithm": [
+        "RS256",
+    ],
+    "EditableOptionType": [
+        "secret",
+        "text",
+    ],
     "SupportedAuth": [
-        "chili",
         "oAuth2AuthorizationCode",
         "oAuth2ClientCredentials",
+        "oAuth2JwtBearer",
         "oAuth2ResourceOwnerPassword",
         "staticKey",
     ],
-    "Type": [
+    "ConnectorType": [
         "data",
         "media",
     ],

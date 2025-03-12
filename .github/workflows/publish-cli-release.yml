@@ -16,8 +16,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@chili-publish'
       - name: Check version correctness
         env:
           GITHUB_REF: ${{ github.ref }}
@@ -35,8 +33,6 @@ jobs:
           fi
       - name: Install dependencies
         run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
       - name: Build
         run: yarn workspace @chili-publish/connector-cli run build
       - name: Use Node.js ${{ matrix.node-version }}

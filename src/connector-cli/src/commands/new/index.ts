@@ -1,9 +1,10 @@
 import { execSync } from 'child_process';
-import { program } from 'commander';
 import fs from 'fs';
 import path from 'path';
 import { info, startCommand, verbose } from '../../core';
-import { Type as ConnectorType, ExecutionError } from '../../core/types';
+import { ConnectorType, ExecutionError } from '../../core/types';
+import { isGitDirectory } from './isGitDirectory';
+import { getProjectParams } from './steps/getProjectParams';
 import {
   getDataConnectorFile,
   getGitIgnoreFile,
@@ -12,40 +13,28 @@ import {
   getPackageJson,
   getTsConfig,
 } from './templates';
+import { NewCommandOptions } from './types';
 
-interface InitCommandOptions {
-  name: string;
-  type: ConnectorType;
-  out: string;
-}
-
-export async function runInit(options: InitCommandOptions): Promise<void> {
-  const [commandName] = program.args as ['new' | 'init'];
-  startCommand(commandName, { options });
-
-  // validate project name
-  verbose(`Validating project name "${options.name}"`);
-  if (!/^(\w+-?)*\w+$/.test(options.name)) {
-    throw new ExecutionError(
-      'Invalid project name. The name must consist of letters, numbers, underscores, and hyphens'
-    );
-  }
-
-  let relDirectory = options.out;
-  if (commandName === 'new') {
-    relDirectory = path.join(relDirectory, options.name);
-  }
-  const projectDir = path.resolve(relDirectory);
+export async function runNewProject(
+  projectNameOrOptions: string | NewCommandOptions,
+  options: NewCommandOptions | undefined
+): Promise<void> {
+  startCommand('new', { projectNameOrOptions, options });
+  const [projectDir, projectName, config] = await getProjectParams(
+    typeof projectNameOrOptions === 'string'
+      ? { projectName: projectNameOrOptions, ...options }
+      : { ...projectNameOrOptions }
+  );
 
   verbose(
-    `Create "${options.name}" project in ${projectDir} for ${options.type} type`
+    `Create "${projectName}" project in ${projectDir} for ${config.type} type`
   );
 
   info(`Generating connector's project...`);
   // 1. intialize a new project in "projectDir" directory
   if (!fs.existsSync(projectDir)) {
     verbose('Creating directory ' + projectDir);
-    fs.mkdirSync(projectDir);
+    fs.mkdirSync(projectDir, { recursive: true });
   }
 
   // Check if no existing projects in "resultDirectory"
@@ -56,7 +45,11 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   }
 
   // 2. create package.json
-  const packageJson = getPackageJson(options.name, options.type);
+  const packageJson = getPackageJson(
+    projectName,
+    config.type,
+    config.connectorName
+  );
   info('Creating package.json...');
   fs.writeFileSync(
     path.join(projectDir, './package.json'),
@@ -73,14 +66,14 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
 
   // 4. create connector file
   const { content, fileName } =
-    options.type === ConnectorType.Media
+    config.type === ConnectorType.Media
       ? getMediaConnectorFile()
       : getDataConnectorFile();
 
   info('Creating ' + fileName);
   fs.writeFileSync(path.join(projectDir, fileName), content);
 
-  if (options.type === ConnectorType.Media) {
+  if (config.type === ConnectorType.Media) {
     // 5. create tests.json
     const testsJson = getMediaConnectorTestFile();
     info('Creating tests.json');
@@ -96,18 +89,8 @@ export async function runInit(options: InitCommandOptions): Promise<void> {
   info('Creating .gitignore');
   fs.writeFileSync(path.join(projectDir, './.gitignore'), gitIgnore);
 
-  // Checking whether currenct directory is a git directory
-  const response = execSync(`git rev-parse --is-inside-work-tree`, {
-    cwd: projectDir,
-    encoding: 'utf-8',
-  });
-
-  verbose(
-    `Checking whether the current directory is a git directory\n ${response}`
-  );
-
   // 7. init or add files to git project
-  if (response.trim() === 'true') {
+  if (isGitDirectory(projectDir)) {
     info('Adding generated project files to the git...');
   } else {
     info(

@@ -1,10 +1,14 @@
-import { Type } from '../../../core/types';
+import { ConnectorType } from '../../../core/types';
 import {
   outputDirectory,
   outputFilename,
 } from '../../../utils/connector-project';
 
-export const getPackageJson = (projectName: string, type: Type) => ({
+export const getPackageJson = (
+  projectName: string,
+  type: ConnectorType,
+  connectorName: string
+) => ({
   name: projectName,
   description: '',
   version: '1.0.0',
@@ -14,6 +18,7 @@ export const getPackageJson = (projectName: string, type: Type) => ({
     url: 'https://github.com/chili-publish',
   },
   config: {
+    connectorName,
     type: type,
     options: {},
     mappings: {},
@@ -23,7 +28,7 @@ export const getPackageJson = (projectName: string, type: Type) => ({
   main: `${outputDirectory}/${outputFilename}`,
   dependencies: {
     typescript: '^5.2.2',
-    '@chili-publish/studio-connectors': '^1.16.0',
+    '@chili-publish/studio-connectors': '^1.17.1',
   },
   scripts: {
     build: 'yarn connector-cli build',
