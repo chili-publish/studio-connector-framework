@@ -1,5 +1,5 @@
 import path from 'path';
-import { Type as ConnectorType } from '../../../core/types';
+import { ConnectorType } from '../../../core/types';
 
 import { input, select } from '@inquirer/prompts';
 import { NewCommandOptions } from '../types';

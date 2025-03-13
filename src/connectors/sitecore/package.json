@@ -1,6 +1,6 @@
 {
   "name": "contenthub",
-  "description": "",
+  "description": "The Sitecore Content Hub connector makes it possible to import assets and related metadata into GraFx Studio templates.",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",

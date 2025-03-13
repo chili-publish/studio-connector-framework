@@ -219,20 +219,22 @@
     to-fast-properties "^2.0.0"
 
 "@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@^1.6.2", "@chili-publish/connector-cli@^1.9.0":
-  version "1.9.5"
-  resolved "https://registry.yarnpkg.com/@chili-publish/connector-cli/-/connector-cli-1.9.5.tgz#4048cab1c141e80c14033a8a762312116ce74dbe"
-  integrity sha512-cAFwG0gnXNt6ERdOOJ0bXzUfQKP54mS0JQgfO6P5DjIa1rZiN/gjOpmAEYxsGEyH80ZgXLb+85+UWSy+rLV7Lg==
+  version "1.9.6"
+  resolved "https://registry.yarnpkg.com/@chili-publish/connector-cli/-/connector-cli-1.9.6.tgz#af0f5e39fee6aa1f931ac2faeeab2b12ab6c8aa0"
+  integrity sha512-hw1tMciObe1Dxfk1LctQluPpoHhQY4uA5naCj0rF4eu1busW9xfzkNEakFmAZkUJUPP67glK59r1dnKqrJ089Q==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
     chalk "^4"
     commander "^12.0.0"
+    deepmerge-json "^1.5.0"
     dot-object "^2.1.4"
     express "^4.21.0"
     js-yaml "^4.1.0"
     open "^9.1.0"
     prettier "^3.0.3"
     quickjs-emscripten "^0.23.0"
+    quicktype-core "23.0.0"
     reload "^3.2.1"
     typescript "^5.2.2"
 
@@ -416,9 +418,9 @@
   integrity sha512-tLjfhinr6doUBcWi7BWnkT2zT6G5UhiZftsiIH6xVvykeXE+FU7Wr0MyqwmqideWlDD5rG+VjVLptLviGo04CA==
 
 "@glideapps/ts-necessities@^2.1.2":
-  version "2.2.4"
-  resolved "https://registry.npmjs.org/@glideapps/ts-necessities/-/ts-necessities-2.2.4.tgz"
-  integrity sha512-CB3XZe+MlpxByzJR+oxsK6OY9ImGQC9lfAteG74XpNAV3e3SzntpHUuJ+lX6fLdSBtBI0L/6GzvHfjuPkArXug==
+  version "2.3.2"
+  resolved "https://registry.npmjs.org/@glideapps/ts-necessities/-/ts-necessities-2.3.2.tgz"
+  integrity sha512-tOXo3SrEeLu+4X2q6O2iNPXdGI1qoXEz/KrbkElTsWiWb69tFH4GzWz2K++0nBD6O3qO2Ft1C4L4ZvUfE2QDlQ==
 
 "@humanwhocodes/config-array@^0.11.13":
   version "0.11.14"
@@ -1441,9 +1443,9 @@ command-line-usage@^6.1.3:
     typical "^5.2.0"
 
 commander@^12.0.0:
-  version "12.0.0"
-  resolved "https://registry.npmjs.org/commander/-/commander-12.0.0.tgz"
-  integrity sha512-MwVNWlYjDTtOjX5PiD7o5pK0UrFU/OYgcJfjjK4RaHZETNtjJqrZa9Y9ds88+A+f+d5lv+561eZ+yCKoS3gbAA==
+  version "12.1.0"
+  resolved "https://registry.npmjs.org/commander/-/commander-12.1.0.tgz"
+  integrity sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==
 
 commander@^4.0.0:
   version "4.1.1"
@@ -1511,11 +1513,11 @@ create-require@^1.1.0:
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
 
 cross-fetch@^3.1.5:
-  version "3.1.8"
-  resolved "https://registry.npmjs.org/cross-fetch/-/cross-fetch-3.1.8.tgz"
-  integrity sha512-cvA+JwZoU0Xq+h6WkMvAUqPEYy92Obet6UdKLfW60qn99ftItKjB5T+BkyWOFWe2pUyfQ+IJHmpOTznqk1M6Kg==
+  version "3.2.0"
+  resolved "https://registry.npmjs.org/cross-fetch/-/cross-fetch-3.2.0.tgz"
+  integrity sha512-Q+xVJLoGOeIMXZmbUK4HYk+69cQH6LudR0Vu/pRm2YlU/hDV9CiS0gKUMaWY5f2NeUH9C1nV3bsTlCo0FsTV1Q==
   dependencies:
-    node-fetch "^2.6.12"
+    node-fetch "^2.7.0"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
   version "7.0.6"
@@ -1567,6 +1569,11 @@ deep-is@^0.1.3:
   version "0.1.4"
   resolved "https://registry.npmjs.org/deep-is/-/deep-is-0.1.4.tgz"
   integrity sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==
+
+deepmerge-json@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.npmjs.org/deepmerge-json/-/deepmerge-json-1.5.0.tgz"
+  integrity sha512-jZRrDmBKjmGcqMFEUJ14FjMJwm05Qaked+1vxaALRtF0UAl7lPU8OLWXFxvoeg3jbQM249VPFVn8g2znaQkEtA==
 
 default-browser-id@^3.0.0:
   version "3.0.0"
@@ -2796,7 +2803,7 @@ next-tick@^1.1.0:
   resolved "https://registry.npmjs.org/next-tick/-/next-tick-1.1.0.tgz"
   integrity sha512-CXdUiJembsNjuToQvxayPZF9Vqht7hewsvy2sOWafLvi2awflj9mOC6bHIg50orX8IJvWKY9wYQ/zB2kogPslQ==
 
-node-fetch@^2.6.12:
+node-fetch@^2.7.0:
   version "2.7.0"
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.7.0.tgz"
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
@@ -3275,9 +3282,9 @@ readable-stream@^3.4.0:
     util-deprecate "^1.0.1"
 
 readable-stream@^4.3.0:
-  version "4.5.2"
-  resolved "https://registry.npmjs.org/readable-stream/-/readable-stream-4.5.2.tgz"
-  integrity sha512-yjavECdqeZ3GLXNgRXgeQEdz9fvDDkNKyHnbHRFtOr7/LcfgBcmct7t/ET+HaCTqfh06OzoAxrkN/IfjJBVe+g==
+  version "4.7.0"
+  resolved "https://registry.npmjs.org/readable-stream/-/readable-stream-4.7.0.tgz"
+  integrity sha512-oIGGmcpTLwPga8Bn6/Z75SVaH1z5dUut2ibSyAMVhmUggWpmDn2dapB0n7f8nwaSiRtepAsfJyfXIO5DCVAODg==
   dependencies:
     abort-controller "^3.0.0"
     buffer "^6.0.3"
@@ -4103,9 +4110,9 @@ yallist@^4.0.0:
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
 
 yaml@^2.2.1:
-  version "2.4.2"
-  resolved "https://registry.npmjs.org/yaml/-/yaml-2.4.2.tgz"
-  integrity sha512-B3VqDZ+JAg1nZpaEmWtTXUlBneoGx6CPM9b0TENK6aoSu5t73dItudwdgmi6tHlIZZId4dZ9skcAQ2UbcyAeVA==
+  version "2.7.0"
+  resolved "https://registry.npmjs.org/yaml/-/yaml-2.7.0.tgz"
+  integrity sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==
 
 yaml@^2.3.4:
   version "2.3.4"

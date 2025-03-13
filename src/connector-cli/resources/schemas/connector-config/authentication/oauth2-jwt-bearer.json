@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "definitions": {
+    "editableOption": {
+      "title": "OAuth2JwtBearerEditableOption",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "type": {
+          "title": "EditableOptionType",
+          "type": "string",
+          "enum": ["text", "secret"]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "ui": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "placeholder": {
+              "type": "string"
+            }
+          },
+          "required": ["label", "description", "placeholder"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["key", "type", "required", "ui"],
+      "additionalProperties": false
+    },
+    "staticOption": {
+      "title": "OAuth2JwtBearerStaticOption",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "required": ["key", "value"],
+      "additionalProperties": false
+    }
+  },
+  "title": "OAuth2JwtBearerAuthenticationConfig",
+  "type": "object",
+  "properties": {
+    "tokenEndpoint": {
+      "type": "string"
+    },
+    "jwtPayload": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/editableOption"
+          },
+          {
+            "$ref": "#/definitions/staticOption"
+          }
+        ]
+      }
+    },
+    "requestBodyParams": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/editableOption"
+          },
+          {
+            "$ref": "#/definitions/staticOption"
+          }
+        ]
+      }
+    },
+    "jwtTokenParamName": {
+      "type": "string"
+    }
+  },
+  "required": ["jwtPayload", "jwtTokenParamName"],
+  "additionalProperties": false
+}
