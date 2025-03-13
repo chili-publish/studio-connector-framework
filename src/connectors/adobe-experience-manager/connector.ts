@@ -412,15 +412,15 @@ export default class MyConnector implements Media.MediaConnector {
     if (downloadPath.startsWith('/')) {
       downloadPath = path.substring(1);
     }
-    let rendition = this.getCorrectRendition(
-      availableRenditions,
-      previewType,
-      intent,
-      isImage
-    );
+    // let rendition = this.getCorrectRendition(
+    //   availableRenditions,
+    //   previewType,
+    //   intent,
+    //   isImage
+    // );
 
-    if (rendition) {
-      downloadPath += `/_jcr_content/renditions/${rendition}`;
+    if (intent !== 'print') {
+      downloadPath += '/_jcr_content/renditions/chili-template-preview.png';
     }
 
     return this.runtime
@@ -451,6 +451,11 @@ export default class MyConnector implements Media.MediaConnector {
       {
         name: 'query',
         displayName: 'Search Query',
+        type: 'text',
+      },
+      {
+        name: 'previewRendering',
+        displayName: 'Use Custom Rendering For Editor',
         type: 'text',
       },
       {
@@ -534,6 +539,7 @@ export default class MyConnector implements Media.MediaConnector {
   ): Promise<AemQueryResponse> {
     const allQuery = {
       ...queryParams,
+      nodename: queryParams.fulltext,
       'p.guessTotal': pageSize,
       'p.offset': offset,
       'p.limit': pageSize,
