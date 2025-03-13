@@ -12,10 +12,6 @@ export function getRequestUrl(
   }
   connectorEndpointBaseUrl.pathname += `api/v1/environment/${environment}/connectors/${connectorId}`;
   switch (type) {
-    case SupportedAuth.Chili: {
-      connectorEndpointBaseUrl.pathname += '/auth/chili';
-      break;
-    }
     case SupportedAuth.StaticKey: {
       connectorEndpointBaseUrl.pathname += '/auth/static';
       break;
