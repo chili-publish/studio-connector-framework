@@ -29,6 +29,6 @@
     "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
   },
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1"
+    "@chili-publish/connector-cli": "^1.9.0"
   }
 }
