@@ -1,13 +1,49 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
 
+interface MediaLinks {
+  large: string;
+  medium: string;
+  preview: string;
+  small: string;
+  whr: string;
+  xlarge: string;
+}
+interface KeepeekLink {
+  href: string;
+}
+
+interface KeepeekMediaItem {
+  id: number;
+  title: string;
+  statusUpdateDate: string;
+  permission: string;
+  mediaType: string;
+  fileSize: number;
+  fileSizeString: string;
+  updateDate: string;
+  duplicationStatus: string;
+  thumbnailGenerationStatus: string;
+  _links: KeepeekMediaLinks;
+}
+
+interface KeepeekMediaLinks {
+  self: KeepeekLink;
+  'kpk:large'?: KeepeekLink;
+  'kpk:medium'?: KeepeekLink;
+  preview?: KeepeekLink;
+  'kpk:small'?: KeepeekLink;
+  'kpk:whr'?: KeepeekLink;
+  'kpk:xlarge'?: KeepeekLink;
+}
+
 export default class KeepeekConnector implements Media.MediaConnector {
   private runtime: Connector.ConnectorRuntimeContext;
 
   // Get the DataCache singleton
-  private DataCache: DataCache = DataCache.getInstance();
+  private DataCache = DataCache.getInstance();
 
   // Get the KeepeekHelper singleton
-  private KeepeekHelper: KeepeekHelper = new KeepeekHelper();
+  private KeepeekHelper = new KeepeekHelper();
 
   private allowedMimeType: string[] = [
     'application/pdf', // PDF
@@ -103,6 +139,13 @@ export default class KeepeekConnector implements Media.MediaConnector {
   ): Promise<Connector.ArrayBufferPointer> {
     let mediaLinks: MediaLinks = this.KeepeekHelper.getMediaLinks(id);
 
+    if (previewType === 'thumbnail') {
+      const picture = await this.runtime.fetch(mediaLinks.small, {
+        method: 'GET',
+      });
+      return picture.arrayBuffer;
+    }
+
     if (previewType === 'mediumres') {
       const picture = await this.runtime.fetch(mediaLinks.medium, {
         method: 'GET',
@@ -170,6 +213,7 @@ export default class KeepeekConnector implements Media.MediaConnector {
 
       return response;
     } catch (error) {
+      // Handle error case here
       throw new Error('Error while making Keepeek request => ' + error);
     }
   }
@@ -185,7 +229,7 @@ export default class KeepeekConnector implements Media.MediaConnector {
   async getDataFoldersFormatted(
     route: string,
     options: Connector.QueryOptions
-  ): Promise<any> {
+  ): Promise<Media.Media[]> {
     try {
       let response = await this.makeKeepeekRequest(route);
 
@@ -207,13 +251,13 @@ export default class KeepeekConnector implements Media.MediaConnector {
       const type = 1; // 0: image, 1: folder
 
       // Transform the data to match the Media type
-      const dataFormatted = data.map((d) => ({
+      const dataFormatted: Media.Media[] = data.map((d: KeepeekMediaItem) => ({
         id: String(d.id),
         name: d.title,
         relativePath: options.collection + '/', // Add a slash to the end of the path to get a good folder path "foldername/subfoldername/..."
         type: type,
         metaData: {},
-      })) as Array<any>;
+      }));
 
       return dataFormatted;
     } catch (error) {
@@ -233,7 +277,7 @@ export default class KeepeekConnector implements Media.MediaConnector {
   async getDataMediaFormatted(
     route: string,
     options: Connector.QueryOptions
-  ): Promise<any> {
+  ): Promise<Media.Media[]> {
     try {
       if (route == '') {
         return [];
@@ -252,7 +296,7 @@ export default class KeepeekConnector implements Media.MediaConnector {
       }
 
       // Filter data by allowed mime types
-      data = data.filter((item: any) =>
+      data = data.filter((item: KeepeekMediaItem) =>
         this.allowedMimeType.includes(item.mediaType)
       );
 
@@ -261,14 +305,14 @@ export default class KeepeekConnector implements Media.MediaConnector {
       const type = 0; // 0: image, 1: folder
 
       // Transform the data to match the Media type
-      const dataFormatted = data.map((d) => ({
+      const dataFormatted: Media.Media[] = data.map((d: KeepeekMediaItem) => ({
         id: String(d.id),
         name: d.title,
         relativePath: options.collection,
         type: type,
         extension: d.mediaType,
         metaData: {},
-      })) as Array<any>;
+      }));
 
       return dataFormatted;
     } catch (error) {
@@ -307,7 +351,9 @@ export default class KeepeekConnector implements Media.MediaConnector {
 
       for (let i = 0; i < folders.length; i++) {
         if (folders[i] != '') {
-          let found = data.find((item: any) => item.title == folders[i]);
+          let found = data.find(
+            (item: KeepeekMediaItem) => item.title == folders[i]
+          );
           if (!found) throw new Error('Folder not found');
 
           if (found) {
@@ -364,15 +410,6 @@ export default class KeepeekConnector implements Media.MediaConnector {
   }
 }
 
-interface MediaLinks {
-  large: string;
-  medium: string;
-  preview: string;
-  small: string;
-  whr: string;
-  xlarge: string;
-}
-
 class KeepeekHelper {
   // Get the DataCache singleton
   private DataCache: DataCache = DataCache.getInstance();
@@ -417,7 +454,7 @@ class KeepeekHelper {
       let links: MediaLinks | null = null;
 
       if (medias) {
-        medias.forEach((element: any) => {
+        medias.forEach((element: KeepeekMediaItem) => {
           if (String(element.id) == id) {
             links = {
               large: element._links['kpk:large'].href,
@@ -478,7 +515,7 @@ class KeepeekHelper {
 
 class DataCache {
   private static instance: DataCache;
-  private mediaTree: any[] | null = null;
+  private mediaTree: KeepeekMediaItem[] | null = null;
 
   private constructor() {}
 
@@ -489,11 +526,11 @@ class DataCache {
     return DataCache.instance;
   }
 
-  setMediaTree(data: any[]): void {
+  setMediaTree(data: KeepeekMediaItem[]): void {
     this.mediaTree = data;
   }
 
-  getMediaTree(): any[] | null {
+  getMediaTree(): KeepeekMediaItem[] | null {
     return this.mediaTree;
   }
 }

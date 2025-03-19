@@ -6,12 +6,6 @@
 | | Built by CHILI publish |
 | :fontawesome-regular-square-check:  | Third party |
 
-## Installation
-
-How to deploy or install a connector to your environment?
-
-[See Installation Through Connector Hub](/GraFx-Studio/guides/connector-hub/)
-
 ## Keepeek Configuration 
 
 Contact us on [Graphique alliance - Contact](https://graphique-alliance.com/contact/) or by email (info@graphique-alliance.com) to get an access to the connector.
@@ -30,12 +24,7 @@ Contact us on [Graphique alliance - Contact](https://graphique-alliance.com/cont
 ## CHILI GraFx Connector Configuration 
 
 From the overview of Environments, click on "Settings" on the right to your environment, where you want to install or configure the Connector.
-
-![screenshot-full](sch13.jpg)
-
 Then click the installed Connector to access the configuration.
-
-![screenshot-full](sch12.png)
 
 ### Base Configuration
 
@@ -44,20 +33,13 @@ Your instance of the Connector needs to know which **Keepeek** instance it shoul
 - **Runtime options** 
     - **KEEPEEK_URL** https://{client-name}.keepeek.com
 
-![screenshot-full](sch01.png)
-
 ### Authentication
 
 **Supported on Browser:** OAuth 2.0 Client Credentials
 
-![screenshot](sch02.png)
-
 - **Client ID** and **Client Secret**: These are customer-specific credentials provided by [Graphique alliance](https://graphique-alliance.com/contact/).
 - **Token Endpoint**: Developer-oriented settings available in **Keepeek** documentation. These settings depends on each **Keepeek** clients.
 - **Scope**: openid.
-
-![screenshot-full](sch04.png)
-
 - **Token Endpoint** https://auth.keepeek.com/auth/realms/{env-name}/protocol/openid-connect/token
 
 Consult Graphique alliance for assistance in configuring these fields.
@@ -80,20 +62,8 @@ GraFx Studio accesses assets available in your Media Provider via impersonation,
 
 - Select the **Keepeek** Connector.
 
-![screenshot-full](sch07.png)
-
-![screenshot-full](sch08.png)
-
-![screenshot-full](sch09.png)
-
-Depending on the configuration, you may need to authenticate.
-
-![screenshot-full](sch10.png)
-
-- Once authenticated, **Keepeek** assets behave like any other asset in GraFx Studio.
+- **Keepeek** assets behave like any other asset in GraFx Studio.
 
 ### Image Variables
 
-When using [image variables](/GraFx-Studio/guides/template-variables/assign/#assign-template-variable-to-image-frame), you will see the same list of assets when selecting an image.
-
-![screenshot-full](var01.png)
+When using image variables, you will see the same list of assets when selecting an image.
