@@ -38,9 +38,8 @@ Your instance of the Connector needs to know which **Keepeek** instance it shoul
 **Supported on Browser:** OAuth 2.0 Client Credentials
 
 - **Client ID** and **Client Secret**: These are customer-specific credentials provided by [Graphique alliance](https://graphique-alliance.com/contact/).
-- **Token Endpoint**: Developer-oriented settings available in **Keepeek** documentation. These settings depends on each **Keepeek** clients.
-- **Scope**: openid.
-- **Token Endpoint** https://auth.keepeek.com/auth/realms/{env-name}/protocol/openid-connect/token
+- **Token Endpoint**: Developer-oriented settings available in **Keepeek** documentation. These settings depends on each **Keepeek** clients (e.g., https://auth.keepeek.com/auth/realms/{env-name}/protocol/openid-connect/token)
+- **Scope**: openid. 
 
 Consult Graphique alliance for assistance in configuring these fields.
 
