@@ -1,7 +1,7 @@
 name: Validate Connector PR
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - 'src/connectors/**'
     types: [opened, labeled, unlabeled, synchronize]
@@ -15,15 +15,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch head branch
+        run: |
+          # Check if the PR is from a fork
+          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            echo "Pull request is from a fork. Fetching head branch from the fork repository."
+            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          else
+            echo "Pull request is from the same repository. Fetching head branch locally."
+            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          fi
+
       - name: Get changed files
         id: files
-        uses: jitterbit/get-changed-files@v1
+        run: |
+          # Get the list of changed files as a comma-separated string
+          files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
+          echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure only one connector is changed
         id: check_connector
         run: |
           connector_changed=""
-          for changed_file in ${{ steps.files.outputs.all }}
+          # Split the comma-separated list of files into an array
+          IFS=',' read -ra changed_files <<< "${{ env.files }}"
+          for changed_file in "${changed_files[@]}"
           do
             # Extract the first tree segments of the path (e.g., src/connectors/connector-name)
             connector_path=$(echo "$changed_file" | cut -d'/' -f1-3)
@@ -42,12 +59,12 @@ jobs:
               fi
             fi
           done
+          echo "Connector changed: $connector_changed"
           echo "::set-output name=connector::$connector_changed"
 
       - name: Add labels
         uses: actions-ecosystem/action-add-labels@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           labels: |
             ${{ steps.check_connector.outputs.connector }}
             connector-change
@@ -62,14 +79,31 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch head branch
+        run: |
+          # Check if the PR is from a fork
+          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            echo "Pull request is from a fork. Fetching head branch from the fork repository."
+            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          else
+            echo "Pull request is from the same repository. Fetching head branch locally."
+            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          fi
+
       - name: Get changed files
         id: files
-        uses: jitterbit/get-changed-files@v1
+        run: |
+          # Get the list of changed files as a comma-separated string
+          files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
+          echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure connector version is bumped
         run: |
           connector_changed=""
-          for changed_file in ${{ steps.files.outputs.all }}
+          # Split the comma-separated list of files into an array
+          IFS=',' read -ra changed_files <<< "${{ env.files }}"
+          for changed_file in "${changed_files[@]}"
           do
             # Extract the first tree segments of the path (e.g., src/connectors/connector-name)
             connector_path=$(echo "$changed_file" | cut -d'/' -f1-3)
