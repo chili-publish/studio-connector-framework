@@ -62,8 +62,8 @@ export default class KeepeekConnector implements Media.MediaConnector {
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
-    // When pageSize is 1 & collection is null, we know that query is called before download
-    if (options.pageSize == 1 && !options.collection) {
+    // query is called before download
+    if (!options.collection && options.filter.length === 1) {
       const id = options.filter[0];
       const url = `${this.runtime.options['KEEPEEK_URL']}/api/dam/medias/${id}`;
 
@@ -71,19 +71,18 @@ export default class KeepeekConnector implements Media.MediaConnector {
 
       return {
         pageSize: options.pageSize, // Note: pageSize is not currently used by the UI
-
         data: [
           {
             id: options.filter[0],
-            name: '',
+            name: response.title,
             relativePath: '',
+            extension: response.mediaType.split('/')[1],
             type: 0,
             metaData: this.KeepeekHelper.buildMediaMetadata(
               response._embedded.metadata
             ),
           },
         ],
-
         links: {
           nextPage: '', // Pagination is ignored in this example
         },
@@ -138,7 +137,6 @@ export default class KeepeekConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     let mediaLinks: MediaLinks = this.KeepeekHelper.getMediaLinks(id);
-
     if (previewType === 'thumbnail') {
       const picture = await this.runtime.fetch(mediaLinks.small, {
         method: 'GET',
@@ -254,7 +252,8 @@ export default class KeepeekConnector implements Media.MediaConnector {
       const dataFormatted: Media.Media[] = data.map((d: KeepeekMediaItem) => ({
         id: String(d.id),
         name: d.title,
-        relativePath: options.collection + '/', // Add a slash to the end of the path to get a good folder path "foldername/subfoldername/..."
+        relativePath:
+          options.collection != undefined ? options.collection + '/' : '', // Add a slash to the end of the path to get a good folder path "foldername/subfoldername/..."
         type: type,
         metaData: {},
       }));
@@ -308,7 +307,8 @@ export default class KeepeekConnector implements Media.MediaConnector {
       const dataFormatted: Media.Media[] = data.map((d: KeepeekMediaItem) => ({
         id: String(d.id),
         name: d.title,
-        relativePath: options.collection,
+        relativePath:
+          options.collection != undefined ? options.collection : '/',
         type: type,
         extension: d.mediaType,
         metaData: {},

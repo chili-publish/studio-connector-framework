@@ -1,6 +1,6 @@
 {
   "name": "keepeek",
-  "description": "Keepeek Media",
+  "description": "GraFx Media Connector for Keepeek DAM",
   "version": "1.0.0-beta.0",
   "author": {
     "name": "Graphique Alliance",
@@ -9,6 +9,7 @@
   },
   "config": {
     "type": "media",
+    "connectorName": "Keepeek",
     "iconUrl": "https://graphique-alliance.com/wp-content/uploads/2020/05/Logo_Keepeek_2.svg",
     "options": {
       "KEEPEEK_URL": null
@@ -21,7 +22,7 @@
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
-    "@chili-publish/studio-connectors": "^1.15.0",
+    "@chili-publish/studio-connectors": "^1.17.1",
     "typescript": "^5.2.2"
   },
   "scripts": {
@@ -29,6 +30,6 @@
     "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
   },
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1.9.0"
+    "@chili-publish/connector-cli": "^1.9.6"
   }
 }
