@@ -310,7 +310,7 @@ export default class KeepeekConnector implements Media.MediaConnector {
         relativePath:
           options.collection != undefined ? options.collection : '/',
         type: type,
-        extension: d.mediaType,
+        extension: d.mediaType.split('/')[1],
         metaData: {},
       }));
 
