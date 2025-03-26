@@ -276,9 +276,10 @@ export default class MyConnector implements Media.MediaConnector {
       data: [
         {
           id: contextOptions.filter,
-          name: '',
+          name: data.name,
           relativePath: '',
           type: 0,
+          extension: data.default?.['Content Type'].split('/')[1],
           metaData: parseMetadata(data),
         },
       ],
