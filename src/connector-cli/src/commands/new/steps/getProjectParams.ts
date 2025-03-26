@@ -2,7 +2,7 @@ import path from 'path';
 import { ConnectorType } from '../../../core/types';
 
 import { input, select } from '@inquirer/prompts';
-import { error } from 'console';
+import { error } from '../../../core';
 import { NewCommandOptions } from '../types';
 
 type ProjectParams = [
