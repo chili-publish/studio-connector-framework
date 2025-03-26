@@ -2,6 +2,7 @@ import path from 'path';
 import { ConnectorType } from '../../../core/types';
 
 import { input, select } from '@inquirer/prompts';
+import { error } from 'console';
 import { NewCommandOptions } from '../types';
 
 type ProjectParams = [
@@ -19,16 +20,23 @@ const packageNameRegex =
 export async function getProjectParams(
   options: NewCommandOptions & { projectName?: string }
 ): Promise<ProjectParams> {
-  const projectName = await input({
-    message: "Connector's project name",
-    default: options.projectName || 'connector',
-    validate: (value) => {
-      return (
-        packageNameRegex.test(value) ||
-        'Invalid project name. The name must be a valid npm package name'
-      );
-    },
-  });
+  let inputProjectName = options.projectName;
+  if (inputProjectName && !packageNameRegex.test(inputProjectName)) {
+    error('Invalid project name. The name must be a valid npm package name');
+    inputProjectName = undefined;
+  }
+  const projectName =
+    inputProjectName ||
+    (await input({
+      message: "Connector's project name",
+      default: 'connector',
+      validate: (value) => {
+        return (
+          packageNameRegex.test(value) ||
+          'Invalid project name. The name must be a valid npm package name'
+        );
+      },
+    }));
 
   const type =
     options.type ||
