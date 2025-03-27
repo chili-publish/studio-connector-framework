@@ -1,12 +1,15 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
-import { httpErrorHandler, info, warn } from '../core';
+import { httpErrorHandler, info, logRequest, warn } from '../core';
 
 export async function selectAvailableConnector(
   connectorEndpointBaseUrl: string,
   token: string
 ): Promise<string> {
   info(`Requesting the list of available connectors...`);
+
+  logRequest(connectorEndpointBaseUrl);
+
   const res = await fetch(connectorEndpointBaseUrl, {
     headers: {
       Authorization: token,

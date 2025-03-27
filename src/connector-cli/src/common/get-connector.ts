@@ -1,4 +1,4 @@
-import { httpErrorHandler, verbose, warn } from '../core';
+import { httpErrorHandler, logRequest, verbose, warn } from '../core';
 import { ExecutionError } from '../core/types';
 import { selectAvailableConnector } from './select-available-connector';
 
@@ -20,9 +20,8 @@ export async function getConnectorById(
 ): Promise<EnvironmentConnector> {
   const getConnectorEnpdoint = `${request.baseUrl}/${request.connectorId}`;
 
-  verbose(
-    `Checking connector's existing with id ${request.connectorId} -> ${getConnectorEnpdoint}`
-  );
+  logRequest(getConnectorEnpdoint);
+
   const res = await fetch(getConnectorEnpdoint, {
     headers: {
       Authorization: request.token,
