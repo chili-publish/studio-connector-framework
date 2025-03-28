@@ -116,8 +116,9 @@ jobs:
                 MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
                 # Use GITHUB_SHA to ensure we get the correct commit from either fork or origin
                 PR_VERSION=$(git show ${{ github.event.pull_request.head.sha }}:src/connectors/$connector_name/package.json | jq -r .version)
+                echo "Comparing main version: '$MAIN_VERSION' and PR version: '$PR_VERSION'"
                 if [ "$MAIN_VERSION" = "$PR_VERSION" ]; then
-                  echo "Error: The version in src/connectors/$connector_name/package.json '$PR_VERSION' is the same as in the main branch - '$MAIN_VERSION'. Please bump the version"
+                  echo "Error: The version in '$connector_name' is the same as in the main branch. Please bump the version"
                   exit 1
                 fi
               fi
