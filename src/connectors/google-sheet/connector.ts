@@ -70,7 +70,7 @@ class RangeHelper {
     start: number,
     end: number
   ) {
-    return sheetName ? `${sheetName}!A${start}:Z${end}` : `A${start}:Z${end}`;
+    return sheetName ? `${sheetName}!${start}:${end}` : `${start}:${end}`;
   }
 
   private static extractFromRange(
@@ -82,11 +82,7 @@ class RangeHelper {
     const cellsQuery = splitted.length === 1 ? splitted[0] : splitted[1];
 
     const splittedCells = cellsQuery.split(':');
-    return [
-      sheetName,
-      Number(splittedCells[0].replace('A', '')),
-      Number(splittedCells[1].replace('Z', '')),
-    ];
+    return [sheetName, Number(splittedCells[0]), Number(splittedCells[1])];
   }
 }
 
