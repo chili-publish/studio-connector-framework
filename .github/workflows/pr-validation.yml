@@ -9,6 +9,8 @@ on:
 jobs:
   check-connector:
     runs-on: ubuntu-latest
+    outputs:
+      connector: ${{ steps.check_connector.outputs.connector }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -60,7 +62,7 @@ jobs:
             fi
           done
           echo "Connector changed: $connector_changed"
-          echo "::set-output name=connector::$connector_changed"
+          echo "connector=$connector_changed" >> $GITHUB_OUTPUT
 
       - name: Add labels
         uses: actions-ecosystem/action-add-labels@v1
@@ -79,48 +81,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch head branch
-        run: |
-          # Check if the PR is from a fork
-          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
-            echo "Pull request is from a fork. Fetching head branch from the fork repository."
-            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          else
-            echo "Pull request is from the same repository. Fetching head branch locally."
-            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          fi
-
-      - name: Get changed files
-        id: files
-        run: |
-          # Get the list of changed files as a comma-separated string
-          files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
-          echo "files=$files" >> $GITHUB_ENV
-
       - name: Ensure connector version is bumped
         run: |
-          connector_changed=""
-          # Split the comma-separated list of files into an array
-          IFS=',' read -ra changed_files <<< "${{ env.files }}"
-          for changed_file in "${changed_files[@]}"
-          do
-            # Extract the first tree segments of the path (e.g., src/connectors/connector-name)
-            connector_path=$(echo "$changed_file" | cut -d'/' -f1-3)
-            if [[ "$connector_path" == src/connectors/* ]]
-            then
-              # Extract the connector name (e.g., connector-name)
-              connector_name=$(echo "$connector_path" | cut -d'/' -f3)
-              if [[ -z "$connector_changed" ]]
-              then
-                MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
-                # Use GITHUB_SHA to ensure we get the correct commit from either fork or origin
-                PR_VERSION=$(git show ${{ github.event.pull_request.head.sha }}:src/connectors/$connector_name/package.json | jq -r .version)
-                echo "Comparing main version: '$MAIN_VERSION' and PR version: '$PR_VERSION'"
-                if [ "$MAIN_VERSION" = "$PR_VERSION" ]; then
-                  echo "Error: The version in '$connector_name' is the same as in the main branch. Please bump the version"
-                  exit 1
-                fi
-              fi
-            fi
-          done
+          if [[ -z "${{ needs.check-connector.outputs.connector }}" ]]; then
+            echo "Error: No connector name provided from check-connector job"
+            exit 1
+          fi
+
+          connector_name="${{ needs.check-connector.outputs.connector }}"
+          MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
+          PR_VERSION=$(git show ${{ github.event.pull_request.head.sha }}:src/connectors/$connector_name/package.json | jq -r .version)
+
+          echo "Comparing versions for connector '$connector_name':"
+          echo "Main version: '$MAIN_VERSION'"
+          echo "PR version: '$PR_VERSION'"
+
+          if [ "$MAIN_VERSION" = "$PR_VERSION" ]; then
+            echo "Error: The version in '$connector_name' is the same as in the main branch. Please bump the version"
+            exit 1
+          fi
