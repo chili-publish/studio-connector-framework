@@ -303,7 +303,7 @@ export default class MyConnector implements Media.MediaConnector {
     }
 
     // If id fetch the detail object and place it in the response
-    if (detailId) {
+    if (detailId && options.collection === null) {
       return this.detail(detailId, context).then((data) => {
         return {
           pageSize: 1,
