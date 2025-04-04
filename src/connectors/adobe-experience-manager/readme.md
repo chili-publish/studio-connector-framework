@@ -41,6 +41,21 @@ connector-cli publish \
     --connectorId={CONNECTOR_ID}
 ```
 
+## Root path
+
+By default connector uses `/content/dam` as root path of requested assets. If you want to be more specific or don't need the all available assets from your AEM instance, you can change the defaults using runtime option `rootPath`
+
+```
+connector-cli publish \
+    -e {ENVIRONMENT} \
+    -b https://{ENVIRONMENT}.chili-publish.online/grafx \
+    -n "Adobe Experience Manager" \
+    --proxyOption.allowedDomains "*.adobeaemcloud.com" \
+    --runtimeOption="BASE_URL=https://{AUTHOR_ENVIRONMENT}.adobeaemcloud.com/" \
+    --runtimeOption="rootPath=/content/dam/sub-folder/sub-sub-folder" \
+    --connectorId={CONNECTOR_ID}
+```
+
 ## Docs Querybuilder
 
 We use the querybuilder to load the different assets + folders you can extend these query by the Search Query Field

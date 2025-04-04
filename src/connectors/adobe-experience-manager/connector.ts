@@ -100,6 +100,7 @@ class AEMTransformer {
   static assetToMedia(
     item: AemEntry,
     neededRenditions: string[],
+    rootPath: string,
     path: string = item['jcr:path']
   ): Media.Media {
     if (
@@ -107,7 +108,7 @@ class AEMTransformer {
     ) {
       const pathSplit = item['jcr:path'].split('/');
       const folderName = pathSplit.pop();
-      const relativePath = item['jcr:path'].replace('/content/dam', '');
+      const relativePath = item['jcr:path'].replace(rootPath, '');
       return {
         id: path,
         name: folderName,
@@ -139,11 +140,12 @@ class AEMTransformer {
   static assetToMediaDetail(
     data: AemEntry,
     neededRenditions: string[],
-    path: string
+    path: string,
+    rootPath: string
   ): Media.MediaDetail {
     const metadata = data['jcr:content']['metadata'];
     return {
-      ...this.assetToMedia(data, neededRenditions, path),
+      ...this.assetToMedia(data, neededRenditions, rootPath, path),
       height: metadata['tiff:ImageLength'],
       width: metadata['tiff:ImageWidth'],
       metaData: this.getMetaDataObject(metadata),
@@ -241,6 +243,14 @@ export default class MyConnector implements Media.MediaConnector {
     ];
   }
 
+  private get rootPath() {
+    const rootPath = this.runtime.options['rootPath'] as string | undefined;
+    if (rootPath) {
+      return rootPath.endsWith('/') ? rootPath.slice(0, -1) : rootPath;
+    }
+    return '/content/dam';
+  }
+
   query(
     options: Connector.QueryOptions,
     context: Connector.Dictionary
@@ -293,7 +303,7 @@ export default class MyConnector implements Media.MediaConnector {
     }
 
     // If id fetch the detail object and place it in the response
-    if (detailId) {
+    if (detailId && options.collection === null) {
       return this.detail(detailId, context).then((data) => {
         return {
           pageSize: 1,
@@ -309,19 +319,18 @@ export default class MyConnector implements Media.MediaConnector {
 
     // Only flat when not searching
     let isFlat = !fulltext.length && showFolders;
-    let path = (context.path as string) || '/content/dam';
 
-    // The Home is added to path when you copy it in the studio so remove here
-    if (path.startsWith('Home/content/dam')) {
-      path = path.replace('Home/content/dam', '/content/dam');
+    const contextPath = context.path as string;
+    if (contextPath && contextPath.length < this.rootPath.length) {
+      throw new Error(
+        `The provided "path" (${contextPath}) is invalid. It cannot exceed the directory level of the specified root path (${this.rootPath}).`
+      );
     }
-    // when the collection starts with /content/dam we know that the user clicked on folder
-    if (
-      options.collection &&
-      options.collection.length &&
-      options.collection !== '/'
-    ) {
-      path = `/content/dam${options.collection}`;
+    let path = (context.path as string) || this.rootPath;
+
+    // when there is a collection other than root, we know that user clicks on folder item
+    if (options.collection?.length && options.collection !== '/') {
+      path = `${this.rootPath}${options.collection}`;
     }
     // Otherwise we do a query call
 
@@ -344,7 +353,7 @@ export default class MyConnector implements Media.MediaConnector {
             ? {
                 '1_group.1_group.type': 'sling:Folder',
                 '1_group.2_group.property': 'jcr:path',
-                '1_group.2_group.property.value': '/content/dam/appdata',
+                '1_group.2_group.property.value': `${this.rootPath}/appdata`,
                 '1_group.2_group.property.operation': 'unequals',
               }
             : {}),
@@ -371,7 +380,8 @@ export default class MyConnector implements Media.MediaConnector {
       const formattedData = data.hits.map((item) => {
         const data = AEMTransformer.assetToMedia(
           item,
-          Object.values(this.aemRenditions)
+          Object.values(this.aemRenditions),
+          this.rootPath
         );
         return data;
       });
@@ -393,7 +403,8 @@ export default class MyConnector implements Media.MediaConnector {
       const detail = AEMTransformer.assetToMediaDetail(
         data,
         Object.values(this.aemRenditions),
-        path
+        path,
+        this.rootPath
       );
       return detail;
     });
