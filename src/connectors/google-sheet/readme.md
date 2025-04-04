@@ -65,25 +65,21 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
 
 ## Limitations
 
-1. **Column Range**:
-
-   - Only columns from A to Z are used.
-
-2. **Header Row**:
+1. **Header Row**:
 
    - The first row must always contain header values
 
-3. **Column Data Types**:
+2. **Column Data Types**:
 
    - By default, all columns are considered as 'singleLine' text.
    - To format columns as 'number' or 'date', enable the corresponding formatting:
      - **Number**: Format => Number => Number.
      - **Date**: Format => Number => Date or Format => Number => Date Time.
 
-4. **Boolean Columns**:
+3. **Boolean Columns**:
 
    - Boolean columns must always have a value (cells cannot be empty).
    - Define boolean columns using checkboxes.
 
-5. **Row Structure**:
+4. **Row Structure**:
    - The spreadsheet must not contain empty rows between rows with data, as pagination logic relies on it.
