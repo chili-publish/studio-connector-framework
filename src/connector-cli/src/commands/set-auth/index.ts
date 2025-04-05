@@ -41,7 +41,9 @@ export async function runSetAuth(
 
   const { packageJson } = getConnectorProjectFileInfo(projectPath);
 
-  const accessToken = await readAccessToken(options.tenant);
+  const accessToken = isDryRun()
+    ? 'Bearer Token'
+    : await readAccessToken(options.tenant);
 
   // store all options as vars
   const { baseUrl, environment, connectorId, usage, type, authDataFile } =
@@ -74,11 +76,13 @@ export async function runSetAuth(
   const authData = transformAndValidate(type, rawData);
 
   info('Retrieving connector to update...');
-  const { id, name } = await getConnectorById({
-    baseUrl: buildRequestUrl(baseUrl, environment),
-    connectorId,
-    token: accessToken,
-  });
+  const { id, name } = isDryRun()
+    ? { id: connectorId, name: 'DryRunConnector' }
+    : await getConnectorById({
+        baseUrl: buildRequestUrl(baseUrl, environment),
+        connectorId,
+        token: accessToken,
+      });
 
   if (!authData.name) {
     authData.name = `${id}-${usage}-${type}`;
@@ -97,14 +101,9 @@ export async function runSetAuth(
     accessToken
   );
 
-  success(
-    `${
-      isDryRun() ? '[Dry-run] ' : ''
-    }"${type}" authentication is applied for "${name}" connector`,
-    {
-      id,
-      name,
-      type,
-    }
-  );
+  success(`"${type}" authentication is applied for "${name}" connector`, {
+    id,
+    name,
+    type,
+  });
 }

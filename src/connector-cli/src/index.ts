@@ -23,11 +23,17 @@ function main() {
   program
     .name('connector-cli')
     .version(info.version, '-v, --version')
-    .description('Tool to manage connector build, test and deploy process')
+    .description("Tool to manage connector's build, test and deploy process")
     .option('--verbose', 'Enable verbose logging')
     .option(
       '--dry-run [dryRun]',
-      `Log action result instead of real HTTP request. Supported commands: ${supportedDryRunCommands.join(
+      `Log to console the command\'s result instead of real HTTP request. Supported commands: ${supportedDryRunCommands.join(
+        ', '
+      )}`
+    )
+    .option(
+      '--dry-run-out [dryRunOut]',
+      `Log to JSON file the command\'s result instead of real HTTP request. Supported commands: ${supportedDryRunCommands.join(
         ', '
       )}`
     );
@@ -159,7 +165,7 @@ function main() {
         .choices(Object.values(Tenant))
         .default(Tenant.Prod)
     )
-    .action(runLogin);
+    .action(withErrorHandlerAction(runLogin));
 
   program
     .command('set-auth')
