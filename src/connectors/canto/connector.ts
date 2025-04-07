@@ -1,39 +1,38 @@
-import { Connector, Media } from "@chili-publish/studio-connectors";
+import { Connector, Media } from '@chili-publish/studio-connectors';
 type CantoItem = CantoFolder | CantoAlbum;
 
 type CantoFolder = {
-  id: string,
-  idPath: string,
-  name: string,
-  namePath: string
-  scheme: "folder",
-  size: number,
-  children: CantoItem[]
-}
+  id: string;
+  idPath: string;
+  name: string;
+  namePath: string;
+  scheme: 'folder';
+  size: number;
+  children: CantoItem[];
+};
 
 type CantoAlbum = {
-  id: string,
-  idPath: string,
-  name: string,
-  namePath: string,
-  size: number,
-  scheme: "album"
-}
+  id: string;
+  idPath: string;
+  name: string;
+  namePath: string;
+  size: number;
+  scheme: 'album';
+};
 
 type ContextOptions = {
-  startindex: number,
-  pageSize: number,
-  filter: string,
-  collection: any,
-  query: string,
-  tagFilter: string,
-  albumFilter: string,
-  folderView: boolean,
-  approved: boolean,
-}
+  startindex: number;
+  pageSize: number;
+  filter: string;
+  collection: any;
+  query: string;
+  tagFilter: string;
+  albumFilter: string;
+  folderView: boolean;
+  approved: boolean;
+};
 
 export default class MyConnector implements Media.MediaConnector {
-
   private runtime: Connector.ConnectorRuntimeContext;
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
@@ -44,7 +43,6 @@ export default class MyConnector implements Media.MediaConnector {
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
-
     // Hold context options
     const contextOptions = {
       startindex: Number(options.pageToken) || 0,
@@ -80,9 +78,9 @@ export default class MyConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    const url = `${this.runtime.options["baseURL"]}/api/v1/image/${id}`;
+    const url = `${this.runtime.options['baseURL']}/api/v1/image/${id}`;
     const resp = await this.runtime.fetch(url, {
-      method: "GET"
+      method: 'GET',
     });
 
     if (!resp.ok) {
@@ -94,13 +92,13 @@ export default class MyConnector implements Media.MediaConnector {
     const data = JSON.parse(resp.text);
 
     return {
-        id: data.id,
-        name: data.name,
-        relativePath: "",
-        type: 0,
-        metaData: parseMetadata(data),
-        width: Number(data.width),
-        height: Number(data.height)
+      id: data.id,
+      name: data.name,
+      relativePath: '',
+      type: 0,
+      metaData: parseMetadata(data),
+      width: Number(data.width),
+      height: Number(data.height),
     };
   }
   async download(
@@ -109,14 +107,11 @@ export default class MyConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-
-
-    if (context["failNotApproved"]) {
-
-      const url = `${this.runtime.options["baseURL"]}/api/v1/image/${id}`;
+    if (context['failNotApproved']) {
+      const url = `${this.runtime.options['baseURL']}/api/v1/image/${id}`;
 
       const resp = await this.runtime.fetch(url, {
-        method: "GET"
+        method: 'GET',
       });
 
       if (!resp.ok) {
@@ -128,37 +123,54 @@ export default class MyConnector implements Media.MediaConnector {
 
       const data = JSON.parse(resp.text);
 
-      if (data.approvalStatus != "Approved") {
-        throw new Error("Image Not Approve");
+      if (data.approvalStatus != 'Approved') {
+        throw new Error('Image Not Approve');
       }
-
     }
 
-    this.runtime.logError(id)
+    this.runtime.logError(id);
 
     switch (previewType) {
-      case "thumbnail": {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}/preview/240`, { method: "GET" });
+      case 'thumbnail': {
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}/preview/240`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
-      case "mediumres": {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}/preview/400`, { method: "GET" });
+      case 'mediumres': {
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}/preview/400`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
-      case "highres": {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}/preview/400`, { method: "GET" });
+      case 'highres': {
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}/preview/400`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
-      case "fullres": {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}/PNG`, { method: "GET" });
+      case 'fullres': {
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}/PNG`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
-      case "original": {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}`, { method: "GET" });
+      case 'original': {
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
       default: {
-        const picture = await this.runtime.fetch(`${this.runtime.options["baseURL"]}/api_binary/v1/image/${id}/preview/240`, { method: "GET" });
+        const picture = await this.runtime.fetch(
+          `${this.runtime.options['baseURL']}/api_binary/v1/image/${id}/preview/240`,
+          { method: 'GET' }
+        );
         return picture.arrayBuffer;
       }
     }
@@ -166,34 +178,36 @@ export default class MyConnector implements Media.MediaConnector {
   getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
     return [
       {
-        name: "folderView",
-        displayName: "Folder View (keyword and tag will be ignored)",
-        type: "boolean"
+        name: 'folderView',
+        displayName: 'Folder View (keyword and tag will be ignored)',
+        type: 'boolean',
       },
       {
-        name: "query",
-        displayName: "Keyword filter",
-        type: "text"
-      }, {
-        name: "tagFilter",
-        displayName: "Tag filter",
-        type: "text"
+        name: 'query',
+        displayName: 'Keyword filter',
+        type: 'text',
       },
       {
-        name: "albumFilter",
-        displayName: "Album filter",
-        type: "text"
+        name: 'tagFilter',
+        displayName: 'Tag filter',
+        type: 'text',
       },
       {
-        name: "approved",
-        displayName: "Only show approved",
-        type: "boolean"
+        name: 'albumFilter',
+        displayName: 'Album filter',
+        type: 'text',
       },
       {
-        name: "failNotApproved",
-        displayName: "Fail Loading and Output if not approved",
-        type: "boolean"
-      }];
+        name: 'approved',
+        displayName: 'Only show approved',
+        type: 'boolean',
+      },
+      {
+        name: 'failNotApproved',
+        displayName: 'Fail Loading and Output if not approved',
+        type: 'boolean',
+      },
+    ];
   }
   getCapabilities(): Media.MediaConnectorCapabilities {
     return {
@@ -204,11 +218,26 @@ export default class MyConnector implements Media.MediaConnector {
     };
   }
   // custom functions
-  buildSearchURL(keyword: string, tag: string, album: string, approved: boolean, pageSize: number, startIndex: number) {
-    let url = `${this.runtime.options["baseURL"]}/api/v1/search?scheme=image&limit=${pageSize}&start=${startIndex * pageSize}`;
+  buildSearchURL(
+    keyword: string,
+    tag: string,
+    album: string,
+    approved: boolean,
+    pageSize: number,
+    startIndex: number
+  ) {
+    let url = `${
+      this.runtime.options['baseURL']
+    }/api/v1/search?scheme=image&limit=${pageSize}&start=${
+      startIndex * pageSize
+    }`;
     // Check if there's an album provided first, that changes the base endpoint
     if (album != '') {
-      url = `${this.runtime.options["baseURL"]}/api/v1/album/${album}?scheme=image&limit=${pageSize}&start=${startIndex * pageSize}`;
+      url = `${
+        this.runtime.options['baseURL']
+      }/api/v1/album/${album}?scheme=image&limit=${pageSize}&start=${
+        startIndex * pageSize
+      }`;
     }
     if (keyword != '') {
       url += `&keyword=${keyword}`;
@@ -223,11 +252,13 @@ export default class MyConnector implements Media.MediaConnector {
     return url;
   }
 
-  async handleQueryBeforeDownload(contextOptions: ContextOptions): Promise<Media.MediaPage> {
+  async handleQueryBeforeDownload(
+    contextOptions: ContextOptions
+  ): Promise<Media.MediaPage> {
     const id = contextOptions.filter;
-    const url = `${this.runtime.options["baseURL"]}/api/v1/image/${id}`;
+    const url = `${this.runtime.options['baseURL']}/api/v1/image/${id}`;
     const resp = await this.runtime.fetch(url, {
-      method: "GET"
+      method: 'GET',
     });
 
     if (!resp.ok) {
@@ -242,57 +273,69 @@ export default class MyConnector implements Media.MediaConnector {
     // For now, doesn't use buildMediaPage, as this is its own unique case
     return {
       pageSize: contextOptions.pageSize,
-      data: [{
-        id: contextOptions.filter,
-        name: "",
-        relativePath: "",
-        type: 0,
-        metaData: parseMetadata(data),
-      }],
+      data: [
+        {
+          id: contextOptions.filter,
+          name: data.name,
+          relativePath: '',
+          type: 0,
+          extension: data.default?.['Content Type'].split('/')[1],
+          metaData: parseMetadata(data),
+        },
+      ],
       links: {
-        nextPage: ""
-      }
-    }
+        nextPage: '',
+      },
+    };
   }
 
-  async handleFolderBrowsing(contextOptions: ContextOptions): Promise<Media.MediaPage> {
-    this.runtime.logError("BROSWER");
+  async handleFolderBrowsing(
+    contextOptions: ContextOptions
+  ): Promise<Media.MediaPage> {
+    this.runtime.logError('BROSWER');
     this.runtime.logError(JSON.stringify(contextOptions));
 
-    const [_, ...pathParts] = (contextOptions.collection ?? "/")
-      .split("/") as string[];
+    const [_, ...pathParts] = (contextOptions.collection ?? '/').split(
+      '/'
+    ) as string[];
 
     if (pathParts == null) {
-      throw new Error("pathParts was null");
+      throw new Error('pathParts was null');
       // super rare with behavior - not sure is possible, but do something about it
     }
 
-    const pathPartsClean = pathParts.filter(s => s).filter(s => s != "..");
+    const pathPartsClean = pathParts.filter((s) => s).filter((s) => s != '..');
 
     this.runtime.logError(JSON.stringify(pathParts));
 
     const currentCantoItem = await this.getCurrentCantoItem(pathPartsClean);
-    const previousPath = (currentCantoItem.namePath == "/") ? null : currentCantoItem.namePath.replace(currentCantoItem.name, "/");
+    const previousPath =
+      currentCantoItem.namePath == '/'
+        ? null
+        : currentCantoItem.namePath.replace(currentCantoItem.name, '/');
 
     this.runtime.logError(JSON.stringify(currentCantoItem));
     this.runtime.logError(previousPath);
 
-    return currentCantoItem.scheme == "folder"
+    return currentCantoItem.scheme == 'folder'
       ? buildMediaPage(
-        contextOptions,
-        formatData(currentCantoItem.children, contextOptions.pageSize, previousPath, true),
-      )
+          contextOptions,
+          formatData(
+            currentCantoItem.children,
+            contextOptions.pageSize,
+            previousPath,
+            true
+          )
+        )
       : this.handleSearchAlbum(contextOptions, currentCantoItem);
   }
 
   async getCurrentCantoItem(pathParts: Array<string>): Promise<CantoItem> {
-
-    this.runtime.logError("getCurrentCantoItem");
-    let url = `${this.runtime.options["baseURL"]}/api/v1/tree?sortBy=scheme&sortDirection=ascending&layer=-1`;
+    this.runtime.logError('getCurrentCantoItem');
+    let url = `${this.runtime.options['baseURL']}/api/v1/tree?sortBy=scheme&sortDirection=ascending&layer=-1`;
     const resp = await this.runtime.fetch(url, {
-      method: "GET"
+      method: 'GET',
     });
-
 
     if (!resp.ok) {
       throw new ConnectorHttpError(
@@ -304,46 +347,62 @@ export default class MyConnector implements Media.MediaConnector {
     const rootCantoItems = JSON.parse(resp.text).results as CantoItem[];
     const toplevelFolder: CantoFolder = {
       children: rootCantoItems,
-      id: "",
-      idPath: "/",
-      namePath: "/",
-      name: "/",
-      scheme: "folder",
+      id: '',
+      idPath: '/',
+      namePath: '/',
+      name: '/',
+      scheme: 'folder',
       size: rootCantoItems.length,
     };
 
     return pathParts.reduce(
       (currentCantoFolder: CantoFolder, pathPart: string, index) => {
         const matchCantoItem = currentCantoFolder.children
-          .filter((item) => item.scheme == "folder" || item.scheme == "album")
+          .filter((item) => item.scheme == 'folder' || item.scheme == 'album')
           .find((item) => item.name == pathPart);
 
         if (!matchCantoItem)
-          throw new Error(`Could not find item with name: ${pathPart} on ${pathParts.join("/")}`);
+          throw new Error(
+            `Could not find item with name: ${pathPart} on ${pathParts.join(
+              '/'
+            )}`
+          );
 
         if (pathParts.length == index + 1) return matchCantoItem;
 
-        if (matchCantoItem.scheme == "album")
-          throw new Error(`Expecting folder but got album at ${pathPart} path on ${pathParts.join("/")}`);
+        if (matchCantoItem.scheme == 'album')
+          throw new Error(
+            `Expecting folder but got album at ${pathPart} path on ${pathParts.join(
+              '/'
+            )}`
+          );
 
         return matchCantoItem;
       },
-      toplevelFolder,
+      toplevelFolder
     );
   }
 
-  async handleSearchAlbum(contextOptions: ContextOptions, cantoAlbum: CantoAlbum): Promise<Media.MediaPage> {
+  async handleSearchAlbum(
+    contextOptions: ContextOptions,
+    cantoAlbum: CantoAlbum
+  ): Promise<Media.MediaPage> {
     // The album search endpoint used here normally behaves very differently to the one used everywhere else. I've replaced it, but keeping the old one in comments for now
-    let url = this.buildSearchURL('', '', cantoAlbum.id, false, contextOptions.pageSize, contextOptions.startindex);
+    let url = this.buildSearchURL(
+      '',
+      '',
+      cantoAlbum.id,
+      false,
+      contextOptions.pageSize,
+      contextOptions.startindex
+    );
     // let url = `${this.runtime.options["baseURL"]}/rest/search/album/${id}?aggsEnabled=true&sortBy=created&sortDirection=false&size=${options.pageSize}&type=image&start=${startIndex}`;
 
     const resp = await this.runtime.fetch(url, {
-      method: "GET"
+      method: 'GET',
     });
 
     if (resp.ok) {
-
-
       this.runtime.logError(JSON.parse(resp.text));
 
       const imagesFound = JSON.parse(resp.text).results;
@@ -351,8 +410,8 @@ export default class MyConnector implements Media.MediaConnector {
       const dataFormatted = formatData(
         imagesFound ?? [],
         contextOptions.pageSize,
-        cantoAlbum.namePath.replace(cantoAlbum.name, ""),
-      )
+        cantoAlbum.namePath.replace(cantoAlbum.name, '')
+      );
 
       return buildMediaPage(contextOptions, dataFormatted);
     }
@@ -363,8 +422,10 @@ export default class MyConnector implements Media.MediaConnector {
     );
   }
 
-  async handleSearchQuery(contextOptions: ContextOptions): Promise<Media.MediaPage> {
-    const albums = (contextOptions.albumFilter as string).split("&");
+  async handleSearchQuery(
+    contextOptions: ContextOptions
+  ): Promise<Media.MediaPage> {
+    const albums = (contextOptions.albumFilter as string).split('&');
     let dataFormatted = [];
 
     for (let i = 0; i < albums.length; i++) {
@@ -377,13 +438,15 @@ export default class MyConnector implements Media.MediaConnector {
         contextOptions.startindex
       );
       const resp = await this.runtime.fetch(url, {
-        method: "GET"
+        method: 'GET',
       });
 
       if (resp.ok) {
-        const data = (JSON.parse(resp.text)).results;
+        const data = JSON.parse(resp.text).results;
         if (data) {
-          dataFormatted = dataFormatted.concat(formatData(data, contextOptions.pageSize));
+          dataFormatted = dataFormatted.concat(
+            formatData(data, contextOptions.pageSize)
+          );
         }
       } else {
         throw new ConnectorHttpError(
@@ -393,10 +456,11 @@ export default class MyConnector implements Media.MediaConnector {
       }
     }
     return buildMediaPage(contextOptions, dataFormatted);
-
   }
 
-  async handleFilterQuery(contextOptions: ContextOptions): Promise<Media.MediaPage> {
+  async handleFilterQuery(
+    contextOptions: ContextOptions
+  ): Promise<Media.MediaPage> {
     let url = this.buildSearchURL(
       contextOptions.filter as string,
       contextOptions.tagFilter as string,
@@ -406,11 +470,11 @@ export default class MyConnector implements Media.MediaConnector {
       contextOptions.startindex
     );
     const resp = await this.runtime.fetch(url, {
-      method: "GET"
+      method: 'GET',
     });
 
     if (resp.ok) {
-      const data = (JSON.parse(resp.text)).results;
+      const data = JSON.parse(resp.text).results;
       const dataFormatted = formatData(data, contextOptions.pageSize);
       return buildMediaPage(contextOptions, dataFormatted);
     }
@@ -421,21 +485,27 @@ export default class MyConnector implements Media.MediaConnector {
   }
 }
 
-function toDictionary(obj: Record<string, any>): Record<string, string | boolean> {
+function toDictionary(
+  obj: Record<string, any>
+): Record<string, string | boolean> {
   const result: Record<string, string | boolean> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (value === null || value === undefined) {
-      result[key] = "";
-    } else if (typeof value === "boolean") {
+      result[key] = '';
+    } else if (typeof value === 'boolean') {
       result[key] = value;
     } else if (Array.isArray(value)) {
-      result[key] = value.join(",");
+      result[key] = value.join(',');
     } else if (value instanceof Date) {
       result[key] = value.toISOString();
-    } else if (typeof value === "object") {
+    } else if (typeof value === 'object') {
       result[key] = JSON.stringify(value);
-    } else if (typeof value === "symbol" || typeof value === "bigint" || typeof value === "function") {
+    } else if (
+      typeof value === 'symbol' ||
+      typeof value === 'bigint' ||
+      typeof value === 'function'
+    ) {
       result[key] = value.toString();
     } else {
       result[key] = String(value);
@@ -446,7 +516,7 @@ function toDictionary(obj: Record<string, any>): Record<string, string | boolean
 }
 
 function checkQueryBeforeDownload(options: Connector.QueryOptions): boolean {
-  return options.pageSize === 1 && !options.collection;
+  return !options.collection && options.filter.length === 1;
 }
 
 function parseMetadata(data: any): Record<string, string | boolean> {
@@ -457,54 +527,66 @@ function parseMetadata(data: any): Record<string, string | boolean> {
     width: data.width ?? '',
     height: data.height ?? '',
     ...toDictionary(data.default),
-    ...toDictionary(data.additional)
+    ...toDictionary(data.additional),
   };
 }
 
-function formatData(results: any[], pageSize: number, previousPath?: string, isFolder?: boolean): Array<any> {
-
+function formatData(
+  results: any[],
+  pageSize: number,
+  previousPath?: string,
+  isFolder?: boolean
+): Array<any> {
   // I don't really like this being a whole if/else block
   let dataFormatted;
   if (isFolder) {
-    dataFormatted = results.filter(d => d.scheme == "folder" || d.scheme == "album").map(d => ({
+    dataFormatted = results
+      .filter((d) => d.scheme == 'folder' || d.scheme == 'album')
+      .map((d) => ({
+        id: d.id,
+        name: d.name,
+        relativePath: d.namePath,
+        type: 1,
+        metaData: {},
+      })) as Array<any>;
+  } else {
+    dataFormatted = results.map((d) => ({
       id: d.id,
       name: d.name,
-      relativePath: d.namePath,
-      type: 1,
-      metaData: {}
-    })) as Array<any>;
-  }
-  else {
-    dataFormatted = results.map(d => ({
-      id: d.id,
-      name: d.name,
-      relativePath: "/",
+      relativePath: '/',
       type: 0,
-      metaData: {}
+      metaData: {},
     })) as Array<any>;
   }
 
   return !previousPath
     ? dataFormatted
     : [
-      {
-        id: "back",
-        name: "../",
-        relativePath: previousPath + "/",
-        type: 1,
-        metaData: {},
-      },
-      ...dataFormatted,
-    ];
+        {
+          id: 'back',
+          name: '../',
+          relativePath: previousPath + '/',
+          type: 1,
+          metaData: {},
+        },
+        ...dataFormatted,
+      ];
 }
 
-function buildMediaPage(contextOptions: ContextOptions, data: any[]): Media.MediaPage {
+function buildMediaPage(
+  contextOptions: ContextOptions,
+  data: any[]
+): Media.MediaPage {
   // I'm not sure if having a static pagination string in the nextPage link for everything will break things? I don't think this ever explicitly needs to be blank
   return {
     pageSize: contextOptions.pageSize,
     data: data,
     links: {
-      nextPage: `${data.length < contextOptions.pageSize ? '' : contextOptions.startindex + 1}`
-    }
-  }
+      nextPage: `${
+        data.length < contextOptions.pageSize
+          ? ''
+          : contextOptions.startindex + 1
+      }`,
+    },
+  };
 }
