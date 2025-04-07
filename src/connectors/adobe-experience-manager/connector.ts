@@ -309,7 +309,7 @@ export default class MyConnector implements Media.MediaConnector {
     }
 
     // If id fetch the detail object and place it in the response
-    if (detailId && options.collection === null) {
+    if (detailId) {
       this.log(`Query before download case for: ${detailId}`);
       return this.detail(detailId, context).then((data) => {
         return {
