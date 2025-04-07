@@ -184,6 +184,9 @@ export default class MyConnector implements Media.MediaConnector {
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
+    this.log(
+      `[Runtime options]:\n ${JSON.stringify(this.runtime.options, null, 2)}`
+    );
   }
 
   private get baseUrl() {
@@ -304,6 +307,7 @@ export default class MyConnector implements Media.MediaConnector {
 
     // If id fetch the detail object and place it in the response
     if (detailId && options.collection === null) {
+      this.log(`Query before download case for: ${detailId}`);
       return this.detail(detailId, context).then((data) => {
         return {
           pageSize: 1,
@@ -398,6 +402,7 @@ export default class MyConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
+    this.log(`[Detail]:\n ${id}`);
     const { path } = JSON.parse(id);
     return this.aemResourceCall<AemEntry>(`${path}.-1.json`).then((data) => {
       const detail = AEMTransformer.assetToMediaDetail(
@@ -416,6 +421,17 @@ export default class MyConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
+    this.log(
+      `[Download]:\n${JSON.stringify(
+        {
+          id,
+          previewType,
+          intent,
+        },
+        null,
+        2
+      )}`
+    );
     const { availableRenditions, path, isImage } = JSON.parse(
       id
     ) as InternalAemId;
@@ -434,6 +450,7 @@ export default class MyConnector implements Media.MediaConnector {
       downloadPath += `/_jcr_content/renditions/${rendition}`;
     }
 
+    this.log(`Download path ${downloadPath}`);
     return this.runtime
       .fetch(`${this.baseUrl}${downloadPath}`, {
         method: 'GET',
@@ -611,5 +628,11 @@ export default class MyConnector implements Media.MediaConnector {
       );
     }
     return JSON.parse(res.text) as Return;
+  }
+
+  private log(message: string) {
+    if (this.runtime.options['logEnabled']) {
+      this.runtime.logError(message);
+    }
   }
 }
