@@ -45,6 +45,10 @@ connector-cli publish \
 
 By default connector uses `/content/dam` as root path of requested assets. If you want to be more specific or don't need the all available assets from your AEM instance, you can change the defaults using runtime option `rootPath`
 
+## Logs
+
+If you encounter any problems during the connector's operation, you can enable debugging by specifying the `logEnabled` runtime option.
+
 ```
 connector-cli publish \
     -e {ENVIRONMENT} \

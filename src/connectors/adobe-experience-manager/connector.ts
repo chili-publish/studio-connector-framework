@@ -258,6 +258,9 @@ export default class MyConnector implements Media.MediaConnector {
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
+    this.log(
+      `[Query params]:\n${JSON.stringify({ options, context }, null, 2)}`
+    );
     const offset = Number(options.pageToken) || 0;
     const pageSize = options.pageSize || 20;
     // When collection we fetch the collection resources and create media objects from paths
@@ -389,22 +392,26 @@ export default class MyConnector implements Media.MediaConnector {
         );
         return data;
       });
-      return {
+      const queryResult = {
         pageSize: pageSize,
         data: formattedData,
         links: {
           nextPage: data.more ? `${offset + options.pageSize}` : '',
         },
       };
+      this.log(`[Query results]:\n ${JSON.stringify(queryResult, null, 2)}`);
+      return queryResult;
     });
   }
-  detail(
+  async detail(
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    this.log(`[Detail]:\n ${id}`);
+    this.log(`[Detail params]:\n ${id}`);
     const { path } = JSON.parse(id);
-    return this.aemResourceCall<AemEntry>(`${path}.-1.json`).then((data) => {
+    const detailResult = await this.aemResourceCall<AemEntry>(
+      `${path}.-1.json`
+    ).then((data) => {
       const detail = AEMTransformer.assetToMediaDetail(
         data,
         Object.values(this.aemRenditions),
@@ -413,6 +420,8 @@ export default class MyConnector implements Media.MediaConnector {
       );
       return detail;
     });
+    this.log(`[Detail result]:\n ${JSON.stringify(detailResult, null, 2)}`);
+    return detailResult;
   }
 
   download(
@@ -422,7 +431,7 @@ export default class MyConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     this.log(
-      `[Download]:\n${JSON.stringify(
+      `[Download params]:\n${JSON.stringify(
         {
           id,
           previewType,
@@ -451,8 +460,10 @@ export default class MyConnector implements Media.MediaConnector {
     }
 
     this.log(`Download path ${downloadPath}`);
+    const requestUrl = `${this.baseUrl}${downloadPath}`;
+    this.log(`Request url ${requestUrl}`);
     return this.runtime
-      .fetch(`${this.baseUrl}${downloadPath}`, {
+      .fetch(requestUrl, {
         method: 'GET',
         headers: {
           'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
@@ -593,7 +604,9 @@ export default class MyConnector implements Media.MediaConnector {
     }
     const queryingRoute = `bin/querybuilder.json?${query}`;
 
-    const res = await this.runtime.fetch(`${this.baseUrl}${queryingRoute}`, {
+    const requestUrl = `${this.baseUrl}${queryingRoute}`;
+    this.log(`Request url: ${requestUrl}`);
+    const res = await this.runtime.fetch(requestUrl, {
       method: 'GET',
       headers: {
         'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
@@ -614,7 +627,9 @@ export default class MyConnector implements Media.MediaConnector {
     if (path.startsWith('/')) {
       detailPath = path.substring(1);
     }
-    const res = await this.runtime.fetch(`${this.baseUrl}${detailPath}`, {
+    const requestUrl = `${this.baseUrl}${detailPath}`;
+    this.log(requestUrl);
+    const res = await this.runtime.fetch(requestUrl, {
       method: 'GET',
       headers: {
         'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
