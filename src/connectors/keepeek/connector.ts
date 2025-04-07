@@ -336,6 +336,8 @@ export default class KeepeekConnector implements Media.MediaConnector {
     let route: string = `${this.runtime.options['KEEPEEK_URL']}/api/dam/folder-tree`;
 
     try {
+      const pageNumber = Number(options.pageToken) || 1; // Default to 1 if pageToken is not provided
+
       let folders = folderPath.split(/[\\/]+/); // Split folder path by slash or backslash
 
       let response = await this.makeKeepeekRequest(route);
@@ -377,33 +379,48 @@ export default class KeepeekConnector implements Media.MediaConnector {
       }
 
       // Get folders from Keepeek API
-      let dataFoldersFormatted = await this.getDataFoldersFormatted(
-        route,
-        options
-      );
+      let dataFoldersFormatted: Media.Media[] = [];
+      // [Due to media pagination] we don't want to show the folders again
+      if (pageNumber == 1) {
+        dataFoldersFormatted = await this.getDataFoldersFormatted(
+          route,
+          options
+        );
+      }
+
       // Get media from Keepeek API
-      let dataMediaFormatted = await this.getDataMediaFormatted(
-        this.KeepeekHelper.getMediaRoute(route),
-        options
-      );
+      let dataMediaFormatted: Media.Media[] = [],
+        mediaRoute = this.KeepeekHelper.getMediaRoute(route);
+      if (mediaRoute != '') {
+        mediaRoute += `?page=${pageNumber}&size=${options.pageSize}`;
+
+        dataMediaFormatted = await this.getDataMediaFormatted(
+          mediaRoute,
+          options
+        );
+      }
+
       // Concatenate folders and media
       const dataFormatted = dataFoldersFormatted.concat(dataMediaFormatted);
 
       return {
-        pageSize: 10, // Note: pageSize is not currently used by the UI
+        pageSize: options.pageSize, // Note: We return same pageSize to keep consistency between different page's request
         data: dataFormatted,
         links: {
-          nextPage: '', // Pagination is ignored in this example
+          nextPage:
+            dataFormatted.length === options.pageSize
+              ? `${pageNumber + 1}`
+              : '', // Calculates next page based on recieved assets size
         },
       };
     } catch (error) {
       // Handle error case here
       this.runtime.logError('Error GET_DATA formatting data => ' + error);
       return {
-        pageSize: 10, // Note: pageSize is not currently used by the UI
+        pageSize: options.pageSize, // Note: We return same pageSize to keep consistency between different page's request
         data: [],
         links: {
-          nextPage: '', // Pagination is ignored in this example
+          nextPage: '', // Ignored on error
         },
       };
     }
