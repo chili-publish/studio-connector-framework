@@ -1,0 +1,27 @@
+{
+  "setup": {
+    "runtime_options": {
+      "BASE_URL": "https://localhost:3000"
+    }
+  },
+  "tests": [
+    {
+      "name": "test1",
+      "method": "download",
+      "arguments": {
+        "id": "id",
+        "url": "url",
+        "options": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "url",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    }
+  ]
+}
