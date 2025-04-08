@@ -2,6 +2,7 @@ import dot from 'dot-object';
 import { buildRequestUrl } from '../../common/build-request-url';
 import {
   info,
+  isDryRun,
   readConnectorConfig,
   startCommand,
   validateRuntimeOptions,
@@ -33,7 +34,9 @@ export async function runPublish(
 ): Promise<void> {
   startCommand('publish', { projectPath, options });
 
-  const accessToken = await readAccessToken(options.tenant);
+  const accessToken = isDryRun()
+    ? 'Bearer Token'
+    : await readAccessToken(options.tenant);
 
   // store all options as vars
   const {

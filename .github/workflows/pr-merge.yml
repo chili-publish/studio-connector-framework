@@ -5,22 +5,23 @@ on:
   push:
     branches:
       - main
-
+    paths:
+      - 'src/connectors/**' # Only trigger when files under the cli package have changed
+      - 'scripts/publish.js'
+env:
+  NODE_VERSION: 20
 jobs:
   build-and-publish:
     # checkout the repo
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
         run: yarn
 
@@ -58,7 +59,7 @@ jobs:
           echo "Changed directories: $CHANGED_CONNECTOR"
           echo "CHANGED_CONNECTOR=$CHANGED_CONNECTOR" >> $GITHUB_ENV
 
-      - name: Build Cli
+      - name: Build CLI
         run: yarn run build-cli
 
       - name: Build and Publish connectors
