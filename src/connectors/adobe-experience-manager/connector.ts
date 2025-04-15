@@ -535,7 +535,7 @@ export default class MyConnector implements Media.MediaConnector {
       }
       // We know this one exist beceause of the query
       if (!isImage) {
-        return AemRendition.FullResFallback;
+        return this.aemRenditions[AemRendition.FullResFallback];
       }
       return null;
     };
