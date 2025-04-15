@@ -1,5 +1,12 @@
 import { getConnectorById } from '../../../common/get-connector';
-import { httpErrorHandler, info, success, verbose } from '../../../core';
+import {
+  httpErrorHandler,
+  info,
+  isDryRun,
+  logRequest,
+  success,
+  verbose,
+} from '../../../core';
 import { UpdateConnectorPayload } from '../types';
 
 export async function updateExistingConnector(
@@ -9,11 +16,13 @@ export async function updateExistingConnector(
   payload: UpdateConnectorPayload
 ): Promise<void> {
   info('Retrieving connector to update...');
-  const existingConnector = await getConnectorById({
-    baseUrl: connectorEndpointBaseUrl,
-    connectorId,
-    token,
-  });
+  const existingConnector = isDryRun()
+    ? { id: connectorId }
+    : await getConnectorById({
+        baseUrl: connectorEndpointBaseUrl,
+        connectorId,
+        token,
+      });
   const updatePayload = {
     ...existingConnector,
     ...payload,
@@ -22,36 +31,32 @@ export async function updateExistingConnector(
   info('Updating connector...');
   const updateConnectorEnpdoint = `${connectorEndpointBaseUrl}/${existingConnector.id}`;
 
-  verbose(
-    `Deploying connector with a payload\n ${JSON.stringify(
-      updatePayload,
-      null,
-      2
-    )}\n`
-  );
+  logRequest(updateConnectorEnpdoint, updatePayload);
 
-  verbose('Updating connector to -> ' + updateConnectorEnpdoint);
+  if (!isDryRun()) {
+    const res = await fetch(updateConnectorEnpdoint, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token,
+      },
+      body: JSON.stringify(updatePayload),
+    });
 
-  const res = await fetch(updateConnectorEnpdoint, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: token,
-    },
-    body: JSON.stringify(updatePayload),
-  });
+    if (!res.ok) {
+      await httpErrorHandler(res);
+    }
 
-  if (!res.ok) {
-    await httpErrorHandler(res);
+    const data = await res.json();
+    verbose(`Updated connector payload: \n ${JSON.stringify(data, null, 2)}\n`);
+
+    const result = {
+      id: data.id,
+      name: data.name,
+    };
+
+    success(`Connector "${result.name}" is updated`, result);
+  } else {
+    success(`Connector "${payload.name}" is updated`);
   }
-
-  const data = await res.json();
-  verbose(`Updated connector payload: \n ${JSON.stringify(data, null, 2)}\n`);
-
-  const result = {
-    id: data.id,
-    name: data.name,
-  };
-
-  success(`Connector "${result.name}" is updated`, result);
 }

@@ -2,20 +2,19 @@ name: Publish CLI to NPM (Release)
 on:
   release:
     types: [published]
+env:
+  NODE_VERSION: 20
 jobs:
   publish:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PACKAGE_SECRET }}
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
       - name: Check version correctness
         env:
           GITHUB_REF: ${{ github.ref }}
@@ -34,11 +33,11 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Build
-        run: yarn workspace @chili-publish/connector-cli run build
-      - name: Use Node.js ${{ matrix.node-version }}
+        run: yarn run build-cli
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
           scope: '@chili-publish'
       - name: Publish
