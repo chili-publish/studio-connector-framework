@@ -35,7 +35,7 @@ export type AemRenditions = {
 export interface InternalAemId {
   availableRenditions: string[];
   isImage?: boolean; // Leaved for backward compatibility for used assets. TODO: Should be removed before releasing the connector
-  isNativelySupportedFormat?: boolean; // PNG/JPG/PDF
+  isNativelySupportedFormat?: boolean; // PNG/JPEG/PDF
   path: string;
 }
 
