@@ -515,7 +515,7 @@ export default class MyConnector implements Media.MediaConnector {
   private getCorrectRendition(
     availableRenditions: string[],
     previewType: Media.DownloadType,
-    isSupportedFormat?: boolean
+    isNativelySupportedFormat?: boolean
   ) {
     const getRendition = (renditionType: AemRendition) => {
       let rendition = this.aemRenditions[renditionType];
@@ -540,7 +540,7 @@ export default class MyConnector implements Media.MediaConnector {
       return getRendition(AemRendition.MediumRes);
     } else if (previewType === 'highres') {
       return getRendition(AemRendition.HighRes);
-    } else if (previewType === 'fullres' && !isSupportedFormat) {
+    } else if (previewType === 'fullres' && !isNativelySupportedFormat) {
       return getRendition(AemRendition.Pdf);
     }
     // Original asset
