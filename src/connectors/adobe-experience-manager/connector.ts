@@ -34,12 +34,14 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
-  isImage?: boolean;
+  isImage?: boolean; // Leaved for backward compatibility for used assets. TODO: Should be removed before releasing the connector
+  isNativelySupportedFormat?: boolean; // PNG/JPG/PDF
   path: string;
 }
 
 class AEMTransformer {
   static imageFormats = ['image/jpeg', 'image/png'];
+  static pdfFormat = 'application/pdf';
   static neededProperties = [
     'jcr:path',
     'jcr:primaryType',
@@ -70,8 +72,10 @@ class AEMTransformer {
   ) => {
     var format = item['jcr:content']['metadata']['dc:format'];
 
+    const isImage = format && this.imageFormats.includes(format);
     return JSON.stringify({
-      isImage: format && this.imageFormats.includes(format),
+      isImage,
+      isNativelySupportedFormat: isImage || format === this.pdfFormat,
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -207,7 +211,6 @@ export default class MyConnector implements Media.MediaConnector {
         overrides = JSON.parse(renditionOverrides);
 
         const supportedRenditions = Object.values(AemRendition) as string[];
-        // TODO ADD here check for KEYS
         const renditionKeysThatAreNotCorrect = Object.keys(overrides).filter(
           (key) => {
             return !supportedRenditions.includes(key);
@@ -226,15 +229,18 @@ export default class MyConnector implements Media.MediaConnector {
         );
       }
     }
-    return {
+    const renditions = {
       [AemRendition.Thumbnail]: 'cq5dam.thumbnail.140.100.png',
       [AemRendition.MediumRes]: 'cq5dam.thumbnail.319.319.png',
       [AemRendition.HighRes]: 'cq5dam.web.1280.1280.jpeg',
       [AemRendition.FullResFallback]: 'cq5dam.zoom.2048.2048.jpeg',
       [AemRendition.Pdf]: 'cq5dam.preview.pdf',
       ...overrides,
-      // todo add renditions config
     } as AemRenditions;
+
+    this.log(`Configured renditions \n ${JSON.stringify(renditions, null, 2)}`);
+
+    return renditions;
   }
 
   private get neededProperties() {
@@ -441,9 +447,8 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-    const { availableRenditions, path, isImage } = JSON.parse(
-      id
-    ) as InternalAemId;
+    const { availableRenditions, path, isImage, isNativelySupportedFormat } =
+      JSON.parse(id) as InternalAemId;
     let downloadPath = path;
     if (downloadPath.startsWith('/')) {
       downloadPath = path.substring(1);
@@ -451,8 +456,7 @@ export default class MyConnector implements Media.MediaConnector {
     let rendition = this.getCorrectRendition(
       availableRenditions,
       previewType,
-      intent,
-      isImage
+      isImage || isNativelySupportedFormat
     );
 
     if (rendition) {
@@ -511,18 +515,10 @@ export default class MyConnector implements Media.MediaConnector {
   private getCorrectRendition(
     availableRenditions: string[],
     previewType: Media.DownloadType,
-    intent: Media.DownloadIntent,
-    isImage?: boolean
+    isSupportedFormat?: boolean
   ) {
     const getRendition = (renditionType: AemRendition) => {
       let rendition = this.aemRenditions[renditionType];
-      if (isImage && previewType == 'fullres' && intent !== 'print') {
-        // Original
-        return null;
-      }
-      if (previewType === 'fullres' && intent == 'print') {
-        rendition = this.aemRenditions[AemRendition.Pdf];
-      }
 
       if (availableRenditions.includes(rendition)) {
         return rendition;
@@ -530,25 +526,24 @@ export default class MyConnector implements Media.MediaConnector {
         return getRendition(AemRendition.MediumRes);
       } else if (renditionType === AemRendition.MediumRes) {
         return getRendition(AemRendition.HighRes);
-      } else if (renditionType === AemRendition.HighRes) {
+      } else if (
+        renditionType === AemRendition.HighRes ||
+        renditionType === AemRendition.Pdf
+      ) {
+        // We know it always exist because of the query
         return getRendition(AemRendition.FullResFallback);
       }
-      // We know this one exist beceause of the query
-      if (!isImage) {
-        return this.aemRenditions[AemRendition.FullResFallback];
-      }
-      return null;
     };
     if (previewType === 'thumbnail') {
       return getRendition(AemRendition.Thumbnail);
-    }
-    if (previewType === 'mediumres') {
+    } else if (previewType === 'mediumres') {
       return getRendition(AemRendition.MediumRes);
-    } else if (['highres'].includes(previewType)) {
+    } else if (previewType === 'highres') {
       return getRendition(AemRendition.HighRes);
-    } else if (['fullres'].includes(previewType)) {
-      return getRendition(AemRendition.FullResFallback);
+    } else if (previewType === 'fullres' && !isSupportedFormat) {
+      return getRendition(AemRendition.Pdf);
     }
+    // Original asset
     return null;
   }
 
