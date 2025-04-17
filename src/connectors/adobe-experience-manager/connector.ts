@@ -348,7 +348,7 @@ export default class MyConnector implements Media.MediaConnector {
     // Otherwise we do a query call
 
     return this.aemQueryCall(
-      context["matchExactly"] === true,
+      context['matchExactly'] === true,
       {
         fulltext: fulltext,
         path: path,
