@@ -34,14 +34,13 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
-  isImage?: boolean; // Leaved for backward compatibility for used assets. TODO: Should be removed before releasing the connector
   isNativelySupportedFormat?: boolean; // PNG/JPEG/PDF
   path: string;
 }
 
+const NATIVE_FORMATS = ['image/jpeg', 'image/png', 'application/pdf'];
+
 class AEMTransformer {
-  static imageFormats = ['image/jpeg', 'image/png'];
-  static pdfFormat = 'application/pdf';
   static neededProperties = [
     'jcr:path',
     'jcr:primaryType',
@@ -72,10 +71,8 @@ class AEMTransformer {
   ) => {
     var format = item['jcr:content']['metadata']['dc:format'];
 
-    const isImage = format && this.imageFormats.includes(format);
     return JSON.stringify({
-      isImage,
-      isNativelySupportedFormat: isImage || format === this.pdfFormat,
+      isNativelySupportedFormat: format && NATIVE_FORMATS.includes(format),
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -448,8 +445,9 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-    const { availableRenditions, path, isImage, isNativelySupportedFormat } =
-      JSON.parse(id) as InternalAemId;
+    const { availableRenditions, path, isNativelySupportedFormat } = JSON.parse(
+      id
+    ) as InternalAemId;
     let downloadPath = path;
     if (downloadPath.startsWith('/')) {
       downloadPath = path.substring(1);
@@ -457,7 +455,7 @@ export default class MyConnector implements Media.MediaConnector {
     let rendition = this.getCorrectRendition(
       availableRenditions,
       previewType,
-      isImage || isNativelySupportedFormat
+      isNativelySupportedFormat
     );
 
     if (rendition) {
@@ -499,7 +497,8 @@ export default class MyConnector implements Media.MediaConnector {
       },
       {
         name: 'matchExactly',
-        displayName: 'Match Exactly - when searching, the search name must be an exact match',
+        displayName:
+          'Match Exactly - when searching, the search name must be an exact match',
         type: 'boolean',
       },
       {
