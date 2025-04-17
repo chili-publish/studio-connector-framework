@@ -348,6 +348,7 @@ export default class MyConnector implements Media.MediaConnector {
     // Otherwise we do a query call
 
     return this.aemQueryCall(
+      context['matchExactly'] === true,
       {
         fulltext: fulltext,
         path: path,
@@ -497,6 +498,11 @@ export default class MyConnector implements Media.MediaConnector {
         type: 'text',
       },
       {
+        name: 'matchExactly',
+        displayName: 'Match Exactly - when searching, the search name must be an exact match',
+        type: 'boolean',
+      },
+      {
         name: 'includeSubfolders',
         displayName: 'Include subfolders',
         type: 'boolean',
@@ -548,6 +554,7 @@ export default class MyConnector implements Media.MediaConnector {
   }
 
   private async aemQueryCall(
+    matchExactly: boolean,
     queryParams: Record<string, string | boolean | number | any[]>,
     groups: Record<string, string | number | boolean | any[]>[],
     {
@@ -574,6 +581,9 @@ export default class MyConnector implements Media.MediaConnector {
       sortName,
       sortDir,
     };
+    if (matchExactly) {
+      allQuery['nodename'] = queryParams.fulltext;
+    }
     if (neededProperties) {
       allQuery['p.hits'] = 'selective';
       allQuery['p.properties'] = neededProperties.join(' ');
