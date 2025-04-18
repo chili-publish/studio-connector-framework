@@ -1,7 +1,7 @@
 {
   "name": "adobe-experience-manager",
   "description": "AEM Chili Publish connector",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.7",
   "author": {
     "name": "CHILI publish",
     "email": "info@chili-publish.com",
