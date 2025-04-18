@@ -34,11 +34,9 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
-  isNativelySupportedFormat?: boolean; // PNG/JPEG/PDF
+  format?: string;
   path: string;
 }
-
-const NATIVE_FORMATS = ['image/jpeg', 'image/png', 'application/pdf'];
 
 class AEMTransformer {
   static neededProperties = [
@@ -72,7 +70,7 @@ class AEMTransformer {
     var format = item['jcr:content']['metadata']['dc:format'];
 
     return JSON.stringify({
-      isNativelySupportedFormat: format && NATIVE_FORMATS.includes(format),
+      format,
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -445,7 +443,7 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-    const { availableRenditions, path, isNativelySupportedFormat } = JSON.parse(
+    const { availableRenditions, path, format } = JSON.parse(
       id
     ) as InternalAemId;
     let downloadPath = path;
@@ -455,7 +453,8 @@ export default class MyConnector implements Media.MediaConnector {
     let rendition = this.getCorrectRendition(
       availableRenditions,
       previewType,
-      isNativelySupportedFormat
+      intent,
+      format
     );
 
     if (rendition) {
@@ -520,34 +519,52 @@ export default class MyConnector implements Media.MediaConnector {
   private getCorrectRendition(
     availableRenditions: string[],
     previewType: Media.DownloadType,
-    isNativelySupportedFormat?: boolean
-  ) {
-    const getRendition = (renditionType: AemRendition) => {
-      let rendition = this.aemRenditions[renditionType];
+    intent: Media.DownloadIntent,
+    format?: string
+  ): string | null {
+    const getRendition = (renditionType: AemRendition): string | null => {
+      const rendition = this.aemRenditions[renditionType];
 
       if (availableRenditions.includes(rendition)) {
         return rendition;
-      } else if (renditionType === AemRendition.Thumbnail) {
-        return getRendition(AemRendition.MediumRes);
-      } else if (renditionType === AemRendition.MediumRes) {
-        return getRendition(AemRendition.HighRes);
-      } else if (
-        renditionType === AemRendition.HighRes ||
-        renditionType === AemRendition.Pdf
-      ) {
-        // We know it always exist because of the query
-        return getRendition(AemRendition.FullResFallback);
+      }
+
+      switch (renditionType) {
+        case AemRendition.Thumbnail:
+          return getRendition(AemRendition.MediumRes);
+        case AemRendition.MediumRes:
+          return getRendition(AemRendition.HighRes);
+        case AemRendition.HighRes:
+        case AemRendition.Pdf:
+          return getRendition(AemRendition.FullResFallback);
+        default:
+          // Original asset
+          return null;
       }
     };
-    if (previewType === 'thumbnail') {
-      return getRendition(AemRendition.Thumbnail);
-    } else if (previewType === 'mediumres') {
-      return getRendition(AemRendition.MediumRes);
-    } else if (previewType === 'highres') {
-      return getRendition(AemRendition.HighRes);
-    } else if (previewType === 'fullres' && !isNativelySupportedFormat) {
-      return getRendition(AemRendition.Pdf);
+
+    switch (previewType) {
+      case 'thumbnail':
+        return getRendition(AemRendition.Thumbnail);
+      case 'mediumres':
+        return getRendition(AemRendition.MediumRes);
+      case 'highres':
+        return getRendition(AemRendition.HighRes);
+      case 'fullres':
+        // For 'print' intent we try to get assets other than natively supported in PDF format
+        if (
+          intent === 'print' &&
+          !this.isImage(format) &&
+          !this.isPdf(format)
+        ) {
+          return getRendition(AemRendition.Pdf);
+          // For other intent types we always expect images only
+        } else if (intent !== 'print' && !this.isImage(format)) {
+          return getRendition(AemRendition.FullResFallback);
+        }
+        break;
     }
+
     // Original asset
     return null;
   }
@@ -653,5 +670,13 @@ export default class MyConnector implements Media.MediaConnector {
     if (this.runtime.options['logEnabled']) {
       this.runtime.logError(message);
     }
+  }
+
+  private isImage(format?: string) {
+    return format && ['image/png', 'image/jpeg'].includes(format);
+  }
+
+  private isPdf(format?: string) {
+    return format && format === 'application/pdf';
   }
 }
