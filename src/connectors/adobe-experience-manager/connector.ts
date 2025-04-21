@@ -34,12 +34,11 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
-  isImage?: boolean;
+  format?: string;
   path: string;
 }
 
 class AEMTransformer {
-  static imageFormats = ['image/jpeg', 'image/png'];
   static neededProperties = [
     'jcr:path',
     'jcr:primaryType',
@@ -71,7 +70,7 @@ class AEMTransformer {
     var format = item['jcr:content']['metadata']['dc:format'];
 
     return JSON.stringify({
-      isImage: format && this.imageFormats.includes(format),
+      format,
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -207,7 +206,6 @@ export default class MyConnector implements Media.MediaConnector {
         overrides = JSON.parse(renditionOverrides);
 
         const supportedRenditions = Object.values(AemRendition) as string[];
-        // TODO ADD here check for KEYS
         const renditionKeysThatAreNotCorrect = Object.keys(overrides).filter(
           (key) => {
             return !supportedRenditions.includes(key);
@@ -226,15 +224,18 @@ export default class MyConnector implements Media.MediaConnector {
         );
       }
     }
-    return {
+    const renditions = {
       [AemRendition.Thumbnail]: 'cq5dam.thumbnail.140.100.png',
       [AemRendition.MediumRes]: 'cq5dam.thumbnail.319.319.png',
       [AemRendition.HighRes]: 'cq5dam.web.1280.1280.jpeg',
       [AemRendition.FullResFallback]: 'cq5dam.zoom.2048.2048.jpeg',
       [AemRendition.Pdf]: 'cq5dam.preview.pdf',
       ...overrides,
-      // todo add renditions config
     } as AemRenditions;
+
+    this.log(`Configured renditions \n ${JSON.stringify(renditions, null, 2)}`);
+
+    return renditions;
   }
 
   private get neededProperties() {
@@ -342,6 +343,7 @@ export default class MyConnector implements Media.MediaConnector {
     // Otherwise we do a query call
 
     return this.aemQueryCall(
+      context['matchExactly'] === true,
       {
         fulltext: fulltext,
         path: path,
@@ -441,7 +443,7 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-    const { availableRenditions, path, isImage } = JSON.parse(
+    const { availableRenditions, path, format } = JSON.parse(
       id
     ) as InternalAemId;
     let downloadPath = path;
@@ -452,7 +454,7 @@ export default class MyConnector implements Media.MediaConnector {
       availableRenditions,
       previewType,
       intent,
-      isImage
+      format
     );
 
     if (rendition) {
@@ -493,6 +495,12 @@ export default class MyConnector implements Media.MediaConnector {
         type: 'text',
       },
       {
+        name: 'matchExactly',
+        displayName:
+          'Match Exactly - when searching, the search name must be an exact match',
+        type: 'boolean',
+      },
+      {
         name: 'includeSubfolders',
         displayName: 'Include subfolders',
         type: 'boolean',
@@ -512,47 +520,57 @@ export default class MyConnector implements Media.MediaConnector {
     availableRenditions: string[],
     previewType: Media.DownloadType,
     intent: Media.DownloadIntent,
-    isImage?: boolean
-  ) {
-    const getRendition = (renditionType: AemRendition) => {
-      let rendition = this.aemRenditions[renditionType];
-      if (isImage && previewType == 'fullres' && intent !== 'print') {
-        // Original
-        return null;
-      }
-      if (previewType === 'fullres' && intent == 'print') {
-        rendition = this.aemRenditions[AemRendition.Pdf];
-      }
+    format?: string
+  ): string | null {
+    const getRendition = (renditionType: AemRendition): string | null => {
+      const rendition = this.aemRenditions[renditionType];
 
       if (availableRenditions.includes(rendition)) {
         return rendition;
-      } else if (renditionType === AemRendition.Thumbnail) {
-        return getRendition(AemRendition.MediumRes);
-      } else if (renditionType === AemRendition.MediumRes) {
-        return getRendition(AemRendition.HighRes);
-      } else if (renditionType === AemRendition.HighRes) {
-        return getRendition(AemRendition.FullResFallback);
       }
-      // We know this one exist beceause of the query
-      if (!isImage) {
-        return this.aemRenditions[AemRendition.FullResFallback];
+
+      switch (renditionType) {
+        case AemRendition.Thumbnail:
+          return getRendition(AemRendition.MediumRes);
+        case AemRendition.MediumRes:
+          return getRendition(AemRendition.HighRes);
+        case AemRendition.HighRes:
+        case AemRendition.Pdf:
+          return getRendition(AemRendition.FullResFallback);
+        default:
+          // Original asset
+          return null;
       }
-      return null;
     };
-    if (previewType === 'thumbnail') {
-      return getRendition(AemRendition.Thumbnail);
+
+    switch (previewType) {
+      case 'thumbnail':
+        return getRendition(AemRendition.Thumbnail);
+      case 'mediumres':
+        return getRendition(AemRendition.MediumRes);
+      case 'highres':
+        return getRendition(AemRendition.HighRes);
+      case 'fullres':
+        // For 'print' intent we try to get assets other than natively supported in PDF format
+        if (
+          intent === 'print' &&
+          !this.isImage(format) &&
+          !this.isPdf(format)
+        ) {
+          return getRendition(AemRendition.Pdf);
+          // For other intent types we always expect images only
+        } else if (intent !== 'print' && !this.isImage(format)) {
+          return getRendition(AemRendition.FullResFallback);
+        }
+        break;
     }
-    if (previewType === 'mediumres') {
-      return getRendition(AemRendition.MediumRes);
-    } else if (['highres'].includes(previewType)) {
-      return getRendition(AemRendition.HighRes);
-    } else if (['fullres'].includes(previewType)) {
-      return getRendition(AemRendition.FullResFallback);
-    }
+
+    // Original asset
     return null;
   }
 
   private async aemQueryCall(
+    matchExactly: boolean,
     queryParams: Record<string, string | boolean | number | any[]>,
     groups: Record<string, string | number | boolean | any[]>[],
     {
@@ -579,6 +597,9 @@ export default class MyConnector implements Media.MediaConnector {
       sortName,
       sortDir,
     };
+    if (matchExactly) {
+      allQuery['nodename'] = queryParams.fulltext;
+    }
     if (neededProperties) {
       allQuery['p.hits'] = 'selective';
       allQuery['p.properties'] = neededProperties.join(' ');
@@ -649,5 +670,13 @@ export default class MyConnector implements Media.MediaConnector {
     if (this.runtime.options['logEnabled']) {
       this.runtime.logError(message);
     }
+  }
+
+  private isImage(format?: string) {
+    return format && ['image/png', 'image/jpeg'].includes(format);
+  }
+
+  private isPdf(format?: string) {
+    return format && format === 'application/pdf';
   }
 }
