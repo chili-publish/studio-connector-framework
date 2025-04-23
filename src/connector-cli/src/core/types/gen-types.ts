@@ -95,7 +95,7 @@ export interface ConnectorConfig {
     connectorName?:        string;
     iconUrl?:              string;
     mappings?:             { [key: string]: any };
-    options:               { [key: string]: any };
+    options:               { [key: string]: null | string };
     supportedAuth:         SupportedAuth[];
     type:                  ConnectorType;
 }
@@ -228,6 +228,9 @@ function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
 }
 
 function prettyTypeName(typ: any): string {
+    if (typ === null) {
+        return "null";
+    }
     if (Array.isArray(typ)) {
         if (typ.length === 2 && typ[0] === undefined) {
             return `an optional ${prettyTypeName(typ[1])}`;
@@ -433,7 +436,7 @@ const typeMap: any = {
         { json: "connectorName", js: "connectorName", typ: u(undefined, "") },
         { json: "iconUrl", js: "iconUrl", typ: u(undefined, "") },
         { json: "mappings", js: "mappings", typ: u(undefined, m("any")) },
-        { json: "options", js: "options", typ: m("any") },
+        { json: "options", js: "options", typ: m(u(null, "")) },
         { json: "supportedAuth", js: "supportedAuth", typ: a(r("SupportedAuth")) },
         { json: "type", js: "type", typ: r("ConnectorType") },
     ], false),

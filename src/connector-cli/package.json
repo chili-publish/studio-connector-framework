@@ -46,6 +46,6 @@
     "debugger": "yarn run ts-node src/index.ts login && yarn run ts-node src/index.ts publish ../connectors/acquia/connector.ts",
     "update": "yarn build && npm version patch && yarn pack",
     "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'",
-    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json -o src/core/types/gen-types.ts"
+    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json -o src/core/types/gen-types.ts && node scripts/fix-gen-types.js"
   }
 }
