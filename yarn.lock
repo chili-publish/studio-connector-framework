@@ -341,7 +341,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.9.7-rc.2"
+  version "1.9.7-rc.3"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -1037,7 +1037,7 @@ acorn@^8.4.1:
     prettier "^3.0.3"
 
 "adobe-experience-manager@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/adobe-experience-manager":
-  version "1.0.0-beta.5"
+  version "1.0.0-beta.7"
   resolved "file:src/connectors/adobe-experience-manager"
   dependencies:
     "@chili-publish/studio-connectors" "^1.15.0"
