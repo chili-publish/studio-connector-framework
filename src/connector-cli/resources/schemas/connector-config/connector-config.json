@@ -15,7 +15,10 @@
       "type": "string"
     },
     "options": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      }
     },
     "supportedAuth": {
       "type": "array",
