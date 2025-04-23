@@ -10,7 +10,7 @@ connector-cli publish \
     -b https://{ENVIRONMENT}.chili-publish.online/grafx \
     -n "Adobe Experience Manager" \
     --proxyOption.allowedDomains "*.adobeaemcloud.com" \
-    --runtimeOption="BASE_URL=https://{AUTHOR_ENVIRONMENT}.adobeaemcloud.com/" \
+    -ro BASE_URL="https://{AUTHOR_ENVIRONMENT}.adobeaemcloud.com/" \
     --connectorId={CONNECTOR_ID}
 ```
 
@@ -28,17 +28,32 @@ For Aem we use the Renditions specified in the AEM platform, These renditions ar
 }
 ```
 
-You can override them by adding them to the runtime options by example you can replace them thumbnail with "eam.customthumb.png" by publishing with this runtime command
+You can override them by adding the `renditionOverrides` runtime option. For example, you can replace them thumbnail with "eam.customthumb.png" by publishing with this runtime command
 
 ```
 connector-cli publish \
-    -e {ENVIRONMENT} \
-    -b https://{ENVIRONMENT}.chili-publish.online/grafx \
-    -n "Adobe Experience Manager" \
-    --proxyOption.allowedDomains "*.adobeaemcloud.com" \
-    --runtimeOption="BASE_URL=https://{AUTHOR_ENVIRONMENT}.adobeaemcloud.com/" \
-    --runtimeOption="renditionOverrides={\"thumbnail\": \"eam.customthumb.png\"}" \
-    --connectorId={CONNECTOR_ID}
+    ...
+    -ro renditionOverrides="{\"thumbnail\": \"eam.customthumb.png\"}"
+```
+
+## Root path
+
+By default connector uses `/content/dam` as root path of requested assets. If you want to be more specific or don't need the all available assets from your AEM instance, you can change the defaults using runtime option `rootPath`
+
+```
+connector-cli publish \
+    ...
+    -ro rootPath="/content/dam/sub-folder/sub-sub-folder"
+```
+
+## Logs
+
+If you encounter any problems during the connector's operation, you can enable debugging by specifying the `logEnabled` runtime option.
+
+```
+connector-cli publish \
+    ...
+    -ro logEnabled="true"
 ```
 
 ## Docs Querybuilder

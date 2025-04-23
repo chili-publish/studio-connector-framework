@@ -1,22 +1,21 @@
 # workflow to run both yarn && yarn build in the repo when pr is created
 name: Build PR
 on: [pull_request]
+env:
+  NODE_VERSION: 20
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       cli_changed: ${{ steps.git_diff.outputs.cli_changed }}
-    strategy:
-      matrix:
-        node-version: [20]
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # Fetches all history for all branches and tags
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v1
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
         run: yarn
       - name: Build CLI

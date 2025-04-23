@@ -34,12 +34,11 @@ export type AemRenditions = {
 
 export interface InternalAemId {
   availableRenditions: string[];
-  isImage?: boolean;
+  format?: string;
   path: string;
 }
 
 class AEMTransformer {
-  static imageFormats = ['image/jpeg', 'image/png'];
   static neededProperties = [
     'jcr:path',
     'jcr:primaryType',
@@ -71,7 +70,7 @@ class AEMTransformer {
     var format = item['jcr:content']['metadata']['dc:format'];
 
     return JSON.stringify({
-      isImage: format && this.imageFormats.includes(format),
+      format,
       availableRenditions: this.getAvailableRenditions(item, neededRenditions),
       path: path,
     } as InternalAemId);
@@ -100,6 +99,7 @@ class AEMTransformer {
   static assetToMedia(
     item: AemEntry,
     neededRenditions: string[],
+    rootPath: string,
     path: string = item['jcr:path']
   ): Media.Media {
     if (
@@ -107,7 +107,7 @@ class AEMTransformer {
     ) {
       const pathSplit = item['jcr:path'].split('/');
       const folderName = pathSplit.pop();
-      const relativePath = item['jcr:path'].replace('/content/dam', '');
+      const relativePath = item['jcr:path'].replace(rootPath, '');
       return {
         id: path,
         name: folderName,
@@ -139,11 +139,12 @@ class AEMTransformer {
   static assetToMediaDetail(
     data: AemEntry,
     neededRenditions: string[],
-    path: string
+    path: string,
+    rootPath: string
   ): Media.MediaDetail {
     const metadata = data['jcr:content']['metadata'];
     return {
-      ...this.assetToMedia(data, neededRenditions, path),
+      ...this.assetToMedia(data, neededRenditions, rootPath, path),
       height: metadata['tiff:ImageLength'],
       width: metadata['tiff:ImageWidth'],
       metaData: this.getMetaDataObject(metadata),
@@ -182,6 +183,9 @@ export default class MyConnector implements Media.MediaConnector {
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
+    this.log(
+      `[Runtime options]:\n ${JSON.stringify(this.runtime.options, null, 2)}`
+    );
   }
 
   private get baseUrl() {
@@ -202,7 +206,6 @@ export default class MyConnector implements Media.MediaConnector {
         overrides = JSON.parse(renditionOverrides);
 
         const supportedRenditions = Object.values(AemRendition) as string[];
-        // TODO ADD here check for KEYS
         const renditionKeysThatAreNotCorrect = Object.keys(overrides).filter(
           (key) => {
             return !supportedRenditions.includes(key);
@@ -221,15 +224,18 @@ export default class MyConnector implements Media.MediaConnector {
         );
       }
     }
-    return {
+    const renditions = {
       [AemRendition.Thumbnail]: 'cq5dam.thumbnail.140.100.png',
       [AemRendition.MediumRes]: 'cq5dam.thumbnail.319.319.png',
       [AemRendition.HighRes]: 'cq5dam.web.1280.1280.jpeg',
       [AemRendition.FullResFallback]: 'cq5dam.zoom.2048.2048.jpeg',
       [AemRendition.Pdf]: 'cq5dam.preview.pdf',
       ...overrides,
-      // todo add renditions config
     } as AemRenditions;
+
+    this.log(`Configured renditions \n ${JSON.stringify(renditions, null, 2)}`);
+
+    return renditions;
   }
 
   private get neededProperties() {
@@ -241,10 +247,21 @@ export default class MyConnector implements Media.MediaConnector {
     ];
   }
 
+  private get rootPath() {
+    const rootPath = this.runtime.options['rootPath'] as string | undefined;
+    if (rootPath) {
+      return rootPath.endsWith('/') ? rootPath.slice(0, -1) : rootPath;
+    }
+    return '/content/dam';
+  }
+
   query(
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
+    this.log(
+      `[Query params]:\n${JSON.stringify({ options, context }, null, 2)}`
+    );
     const offset = Number(options.pageToken) || 0;
     const pageSize = options.pageSize || 20;
     // When collection we fetch the collection resources and create media objects from paths
@@ -293,7 +310,8 @@ export default class MyConnector implements Media.MediaConnector {
     }
 
     // If id fetch the detail object and place it in the response
-    if (detailId) {
+    if (detailId && !options.collection) {
+      this.log(`Query before download case for: ${detailId}`);
       return this.detail(detailId, context).then((data) => {
         return {
           pageSize: 1,
@@ -309,23 +327,23 @@ export default class MyConnector implements Media.MediaConnector {
 
     // Only flat when not searching
     let isFlat = !fulltext.length && showFolders;
-    let path = (context.path as string) || '/content/dam';
 
-    // The Home is added to path when you copy it in the studio so remove here
-    if (path.startsWith('Home/content/dam')) {
-      path = path.replace('Home/content/dam', '/content/dam');
+    const contextPath = context.path as string;
+    if (contextPath && contextPath.length < this.rootPath.length) {
+      throw new Error(
+        `The provided "path" (${contextPath}) is invalid. It cannot exceed the directory level of the specified root path (${this.rootPath}).`
+      );
     }
-    // when the collection starts with /content/dam we know that the user clicked on folder
-    if (
-      options.collection &&
-      options.collection.length &&
-      options.collection !== '/'
-    ) {
-      path = `/content/dam${options.collection}`;
+    let path = (context.path as string) || this.rootPath;
+
+    // when there is a collection other than root, we know that user clicks on folder item
+    if (options.collection?.length && options.collection !== '/') {
+      path = `${this.rootPath}${options.collection}`;
     }
     // Otherwise we do a query call
 
     return this.aemQueryCall(
+      context['matchExactly'] === true,
       {
         fulltext: fulltext,
         path: path,
@@ -344,7 +362,7 @@ export default class MyConnector implements Media.MediaConnector {
             ? {
                 '1_group.1_group.type': 'sling:Folder',
                 '1_group.2_group.property': 'jcr:path',
-                '1_group.2_group.property.value': '/content/dam/appdata',
+                '1_group.2_group.property.value': `${this.rootPath}/appdata`,
                 '1_group.2_group.property.operation': 'unequals',
               }
             : {}),
@@ -371,32 +389,41 @@ export default class MyConnector implements Media.MediaConnector {
       const formattedData = data.hits.map((item) => {
         const data = AEMTransformer.assetToMedia(
           item,
-          Object.values(this.aemRenditions)
+          Object.values(this.aemRenditions),
+          this.rootPath
         );
         return data;
       });
-      return {
+      const queryResult = {
         pageSize: pageSize,
         data: formattedData,
         links: {
           nextPage: data.more ? `${offset + options.pageSize}` : '',
         },
       };
+      this.log(`[Query results]:\n ${JSON.stringify(queryResult, null, 2)}`);
+      return queryResult;
     });
   }
-  detail(
+  async detail(
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
+    this.log(`[Detail params]:\n ${id}`);
     const { path } = JSON.parse(id);
-    return this.aemResourceCall<AemEntry>(`${path}.-1.json`).then((data) => {
+    const detailResult = await this.aemResourceCall<AemEntry>(
+      `${path}.-1.json`
+    ).then((data) => {
       const detail = AEMTransformer.assetToMediaDetail(
         data,
         Object.values(this.aemRenditions),
-        path
+        path,
+        this.rootPath
       );
       return detail;
     });
+    this.log(`[Detail result]:\n ${JSON.stringify(detailResult, null, 2)}`);
+    return detailResult;
   }
 
   download(
@@ -405,7 +432,18 @@ export default class MyConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    const { availableRenditions, path, isImage } = JSON.parse(
+    this.log(
+      `[Download params]:\n${JSON.stringify(
+        {
+          id,
+          previewType,
+          intent,
+        },
+        null,
+        2
+      )}`
+    );
+    const { availableRenditions, path, format } = JSON.parse(
       id
     ) as InternalAemId;
     let downloadPath = path;
@@ -416,15 +454,18 @@ export default class MyConnector implements Media.MediaConnector {
       availableRenditions,
       previewType,
       intent,
-      isImage
+      format
     );
 
     if (rendition) {
       downloadPath += `/_jcr_content/renditions/${rendition}`;
     }
 
+    this.log(`Download path ${downloadPath}`);
+    const requestUrl = `${this.baseUrl}${downloadPath}`;
+    this.log(`Request url ${requestUrl}`);
     return this.runtime
-      .fetch(`${this.baseUrl}${downloadPath}`, {
+      .fetch(requestUrl, {
         method: 'GET',
         headers: {
           'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
@@ -454,6 +495,12 @@ export default class MyConnector implements Media.MediaConnector {
         type: 'text',
       },
       {
+        name: 'matchExactly',
+        displayName:
+          'Match Exactly - when searching, the search name must be an exact match',
+        type: 'boolean',
+      },
+      {
         name: 'includeSubfolders',
         displayName: 'Include subfolders',
         type: 'boolean',
@@ -473,47 +520,57 @@ export default class MyConnector implements Media.MediaConnector {
     availableRenditions: string[],
     previewType: Media.DownloadType,
     intent: Media.DownloadIntent,
-    isImage?: boolean
-  ) {
-    const getRendition = (renditionType: AemRendition) => {
-      let rendition = this.aemRenditions[renditionType];
-      if (isImage && previewType == 'fullres' && intent !== 'print') {
-        // Original
-        return null;
-      }
-      if (previewType === 'fullres' && intent == 'print') {
-        rendition = this.aemRenditions[AemRendition.Pdf];
-      }
+    format?: string
+  ): string | null {
+    const getRendition = (renditionType: AemRendition): string | null => {
+      const rendition = this.aemRenditions[renditionType];
 
       if (availableRenditions.includes(rendition)) {
         return rendition;
-      } else if (renditionType === AemRendition.Thumbnail) {
-        return getRendition(AemRendition.MediumRes);
-      } else if (renditionType === AemRendition.MediumRes) {
-        return getRendition(AemRendition.HighRes);
-      } else if (renditionType === AemRendition.HighRes) {
-        return getRendition(AemRendition.FullResFallback);
       }
-      // We know this one exist beceause of the query
-      if (!isImage) {
-        return AemRendition.FullResFallback;
+
+      switch (renditionType) {
+        case AemRendition.Thumbnail:
+          return getRendition(AemRendition.MediumRes);
+        case AemRendition.MediumRes:
+          return getRendition(AemRendition.HighRes);
+        case AemRendition.HighRes:
+        case AemRendition.Pdf:
+          return getRendition(AemRendition.FullResFallback);
+        default:
+          // Original asset
+          return null;
       }
-      return null;
     };
-    if (previewType === 'thumbnail') {
-      return getRendition(AemRendition.Thumbnail);
+
+    switch (previewType) {
+      case 'thumbnail':
+        return getRendition(AemRendition.Thumbnail);
+      case 'mediumres':
+        return getRendition(AemRendition.MediumRes);
+      case 'highres':
+        return getRendition(AemRendition.HighRes);
+      case 'fullres':
+        // For 'print' intent we try to get assets other than natively supported in PDF format
+        if (
+          intent === 'print' &&
+          !this.isImage(format) &&
+          !this.isPdf(format)
+        ) {
+          return getRendition(AemRendition.Pdf);
+          // For other intent types we always expect images only
+        } else if (intent !== 'print' && !this.isImage(format)) {
+          return getRendition(AemRendition.FullResFallback);
+        }
+        break;
     }
-    if (previewType === 'mediumres') {
-      return getRendition(AemRendition.MediumRes);
-    } else if (['highres'].includes(previewType)) {
-      return getRendition(AemRendition.HighRes);
-    } else if (['fullres'].includes(previewType)) {
-      return getRendition(AemRendition.FullResFallback);
-    }
+
+    // Original asset
     return null;
   }
 
   private async aemQueryCall(
+    matchExactly: boolean,
     queryParams: Record<string, string | boolean | number | any[]>,
     groups: Record<string, string | number | boolean | any[]>[],
     {
@@ -540,6 +597,9 @@ export default class MyConnector implements Media.MediaConnector {
       sortName,
       sortDir,
     };
+    if (matchExactly) {
+      allQuery['nodename'] = queryParams.fulltext;
+    }
     if (neededProperties) {
       allQuery['p.hits'] = 'selective';
       allQuery['p.properties'] = neededProperties.join(' ');
@@ -565,7 +625,9 @@ export default class MyConnector implements Media.MediaConnector {
     }
     const queryingRoute = `bin/querybuilder.json?${query}`;
 
-    const res = await this.runtime.fetch(`${this.baseUrl}${queryingRoute}`, {
+    const requestUrl = `${this.baseUrl}${queryingRoute}`;
+    this.log(`Request url: ${requestUrl}`);
+    const res = await this.runtime.fetch(requestUrl, {
       method: 'GET',
       headers: {
         'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
@@ -586,7 +648,9 @@ export default class MyConnector implements Media.MediaConnector {
     if (path.startsWith('/')) {
       detailPath = path.substring(1);
     }
-    const res = await this.runtime.fetch(`${this.baseUrl}${detailPath}`, {
+    const requestUrl = `${this.baseUrl}${detailPath}`;
+    this.log(requestUrl);
+    const res = await this.runtime.fetch(requestUrl, {
       method: 'GET',
       headers: {
         'X-GraFx-Proxy-User-Agent': 'AEM Connector/1.0.0',
@@ -600,5 +664,19 @@ export default class MyConnector implements Media.MediaConnector {
       );
     }
     return JSON.parse(res.text) as Return;
+  }
+
+  private log(message: string) {
+    if (this.runtime.options['logEnabled']) {
+      this.runtime.logError(message);
+    }
+  }
+
+  private isImage(format?: string) {
+    return format && ['image/png', 'image/jpeg'].includes(format);
+  }
+
+  private isPdf(format?: string) {
+    return format && format === 'application/pdf';
   }
 }
