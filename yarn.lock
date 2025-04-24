@@ -341,7 +341,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.9.7-rc.3"
+  version "1.9.7-rc.4"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -2535,7 +2535,7 @@ json5@^2.2.3:
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
 
 "keepeek@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/keepeek":
-  version "1.0.0-beta.2"
+  version "1.0.0"
   resolved "file:src/connectors/keepeek"
   dependencies:
     "@chili-publish/studio-connectors" "^1.17.1"
