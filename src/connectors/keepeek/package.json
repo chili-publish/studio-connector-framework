@@ -1,7 +1,7 @@
 {
   "name": "keepeek",
   "description": "GraFx Media Connector for Keepeek DAM",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0",
   "author": {
     "name": "Graphique Alliance",
     "email": "support@graphique-alliance.com",
