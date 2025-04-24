@@ -1,7 +1,13 @@
 import * as fs from 'fs';
 import path from 'path';
 import { compile } from '../compiler/connectorCompiler';
-import { info, startCommand, success, verbose } from '../core';
+import {
+  info,
+  readConnectorConfig,
+  startCommand,
+  success,
+  verbose,
+} from '../core';
 import { ExecutionError } from '../core/types';
 import {
   getConnectorProjectFileInfo,
@@ -22,8 +28,13 @@ export async function runBuild(
   // store all options as vars
   const { watch } = options;
 
-  const { projectDir, connectorFile } =
+  const { projectDir, connectorFile, packageJson } =
     getConnectorProjectFileInfo(projectPath);
+
+  if (!watch) {
+    // Doing validation for config
+    const config = readConnectorConfig(packageJson);
+  }
 
   // if no outfolder, user the directory of the connector file and create subfolder 'out'
   const out = path.resolve(path.join(projectDir, outputDirectory));
