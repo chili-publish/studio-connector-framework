@@ -341,7 +341,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.9.7-rc.3"
+  version "1.9.7-rc.5"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -2535,7 +2535,7 @@ json5@^2.2.3:
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
 
 "keepeek@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/keepeek":
-  version "1.0.0-beta.2"
+  version "1.0.0"
   resolved "file:src/connectors/keepeek"
   dependencies:
     "@chili-publish/studio-connectors" "^1.17.1"
@@ -3994,10 +3994,10 @@ vary@~1.1.2:
     react "^18.2.0"
     react-dom "^18.2.0"
 
-"vite@^4.2.0 || ^5.0.0", vite@^5.4.12:
-  version "5.4.12"
-  resolved "https://registry.npmjs.org/vite/-/vite-5.4.12.tgz"
-  integrity sha512-KwUaKB27TvWwDJr1GjjWthLMATbGEbeWYZIbGZ5qFIsgPP3vWzLu4cVooqhm5/Z2SPDUMjyPVjTztm5tYKwQxA==
+"vite@^4.2.0 || ^5.0.0", vite@^5.4.18:
+  version "5.4.18"
+  resolved "https://registry.npmjs.org/vite/-/vite-5.4.18.tgz"
+  integrity sha512-1oDcnEp3lVyHCuQ2YFelM4Alm2o91xNoMncRm1U7S+JdYfYOvbiGZ3/CxGttrOu2M/KcGz7cRC2DoNUA6urmMA==
   dependencies:
     esbuild "^0.21.3"
     postcss "^8.4.43"
