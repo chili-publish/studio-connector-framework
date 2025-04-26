@@ -261,9 +261,9 @@
     "@babel/helper-validator-identifier" "^7.25.9"
 
 "@chili-publish/connector-cli@^1.0.50":
-  version "1.9.6"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.9.6.tgz"
-  integrity sha512-hw1tMciObe1Dxfk1LctQluPpoHhQY4uA5naCj0rF4eu1busW9xfzkNEakFmAZkUJUPP67glK59r1dnKqrJ089Q==
+  version "1.10.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
+  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -281,9 +281,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6.2":
-  version "1.9.6"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.9.6.tgz"
-  integrity sha512-hw1tMciObe1Dxfk1LctQluPpoHhQY4uA5naCj0rF4eu1busW9xfzkNEakFmAZkUJUPP67glK59r1dnKqrJ089Q==
+  version "1.10.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
+  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -301,9 +301,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.0":
-  version "1.9.6"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.9.6.tgz"
-  integrity sha512-hw1tMciObe1Dxfk1LctQluPpoHhQY4uA5naCj0rF4eu1busW9xfzkNEakFmAZkUJUPP67glK59r1dnKqrJ089Q==
+  version "1.10.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
+  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -321,9 +321,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.6":
-  version "1.9.6"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.9.6.tgz"
-  integrity sha512-hw1tMciObe1Dxfk1LctQluPpoHhQY4uA5naCj0rF4eu1busW9xfzkNEakFmAZkUJUPP67glK59r1dnKqrJ089Q==
+  version "1.10.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
+  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -341,7 +341,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.9.7-rc.5"
+  version "1.10.1-rc.0"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -359,7 +359,12 @@
     reload "^3.2.1"
     typescript "^5.2.2"
 
-"@chili-publish/studio-connectors@^1", "@chili-publish/studio-connectors@^1.10.1":
+"@chili-publish/studio-connectors@^1", "@chili-publish/studio-connectors@^1.17.1":
+  version "1.17.1"
+  resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.17.1.tgz"
+  integrity sha512-c6oLifVjKR/n1XNlB/u4slK5iN5hijo6TspwP8XyEy0pCwdTNTkF3tyoG38TxBUapVDjLQxVuUno3a8dLFDYiw==
+
+"@chili-publish/studio-connectors@^1.10.1":
   version "1.10.1"
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.10.1.tgz"
   integrity sha512-onu6Z26wmLxQgUMLGutMytYhMKbZngkjM/oXefqGNH4qWmWuzgeg6HN3L9FhWoNZMRPLLSPARNjwoPArUPacSA==
@@ -373,11 +378,6 @@
   version "1.18.0"
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.18.0.tgz"
   integrity sha512-q1z717quG/JzIBrk7hhN1xQw8+JuDPAqv3W2mCo/hbVeNOkxKYj6i+r0GT1eM6kAWmen01/lkjJ1RtxfAOg9og==
-
-"@chili-publish/studio-connectors@^1.17.1":
-  version "1.17.1"
-  resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.17.1.tgz"
-  integrity sha512-c6oLifVjKR/n1XNlB/u4slK5iN5hijo6TspwP8XyEy0pCwdTNTkF3tyoG38TxBUapVDjLQxVuUno3a8dLFDYiw==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -1298,7 +1298,23 @@ chalk@^2.4.2:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chalk@^4, chalk@^4.0.0, chalk@^4.1.2:
+chalk@^4:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
+  integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
+chalk@^4.0.0:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
+  integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
+chalk@^4.1.2:
   version "4.1.2"
   resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
   integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
