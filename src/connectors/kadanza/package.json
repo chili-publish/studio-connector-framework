@@ -1,0 +1,32 @@
+{
+  "name": "kadanza",
+  "description": "Kadanza DAM",
+  "version": "0.0.1",
+  "author": {
+    "name": "Kadanza",
+    "email": "hello@kadanza.com",
+    "url": "https://www.kadanza.com/"
+  },
+  "config": {
+    "connectorName": "Kadanza DAM",
+    "iconUrl": "https://s3.eu-central-1.amazonaws.com/static.kadanza.io/logo/Logo_Kadanza_GraFx_Connector_Icon.svg",
+    "type": "media",
+    "options": {"BASE_URL": null, "DEBUG": ""},
+    "mappings": {},
+    "supportedAuth": ["oAuth2ResourceOwnerPassword", "oAuth2AuthorizationCode"]
+  },
+  "private": true,
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "typescript": "^5.2.2",
+    "@chili-publish/studio-connectors": "^1.15"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.6"
+  }
+}
