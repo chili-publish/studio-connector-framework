@@ -11,7 +11,7 @@
     "connectorName": "Kadanza DAM",
     "iconUrl": "https://s3.eu-central-1.amazonaws.com/static.kadanza.io/logo/Logo_Kadanza_GraFx_Connector_Icon.svg",
     "type": "media",
-    "options": {"BASE_URL": null, "DEBUG": false},
+    "options": {"BASE_URL": null, "DEBUG": ""},
     "mappings": {},
     "supportedAuth": ["oAuth2ResourceOwnerPassword", "oAuth2AuthorizationCode"]
   },

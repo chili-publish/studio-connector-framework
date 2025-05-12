@@ -17,7 +17,7 @@ connector-cli publish \
     -n "Kadanza DAM Media Connector v0.0.1" \
     --proxyOption.allowedDomains "*.kadanza.io" \
     -ro BASE_URL="https://dam2.kadanza.io" \
-    -ro DEBUG=true \
+    -ro DEBUG="1" \
     --connectorId={CONNECTOR_ID}
 ```
 
