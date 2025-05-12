@@ -260,7 +260,7 @@
     "@babel/helper-string-parser" "^7.25.9"
     "@babel/helper-validator-identifier" "^7.25.9"
 
-"@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@^1.6.2", "@chili-publish/connector-cli@^1.9.0", "@chili-publish/connector-cli@^1.9.6":
+"@chili-publish/connector-cli@^1.0.50", "@chili-publish/connector-cli@^1.6", "@chili-publish/connector-cli@^1.6.2", "@chili-publish/connector-cli@^1.9.0", "@chili-publish/connector-cli@^1.9.6":
   version "1.10.0"
   resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
   integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
@@ -294,6 +294,11 @@
   version "1.11.0"
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.11.0.tgz"
   integrity sha512-m/ekoUCBsfjIMytYkM6ozMtzRq3in4Dt+cET40dfc529ub4SdQZRuJ/5ictBdeebX2olBKmLNMCj8MvhmC3r7w==
+
+"@chili-publish/studio-connectors@^1.15":
+  version "1.23.0"
+  resolved "https://registry.yarnpkg.com/@chili-publish/studio-connectors/-/studio-connectors-1.23.0.tgz#ec269745c5dd6190b7543cf64bb5dc3e5fc99a4d"
+  integrity sha512-bQCmdS2Qmp/mv0WrZ5YQ0c+7pQ3khvDOnRRwT1QTgiUFxL2Pkta7JBg1WhFsf9v1lxhrRW4MjZf9hcGyM55QNw==
 
 "@chili-publish/studio-connectors@^1.15.0":
   version "1.18.0"
@@ -4027,10 +4032,10 @@ vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-vite@^5.4.18:
-  version "5.4.18"
-  resolved "https://registry.npmjs.org/vite/-/vite-5.4.18.tgz"
-  integrity sha512-1oDcnEp3lVyHCuQ2YFelM4Alm2o91xNoMncRm1U7S+JdYfYOvbiGZ3/CxGttrOu2M/KcGz7cRC2DoNUA6urmMA==
+vite@^5.4.19:
+  version "5.4.19"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-5.4.19.tgz#20efd060410044b3ed555049418a5e7d1998f959"
+  integrity sha512-qO3aKv3HoQC8QKiNSTuUM1l9o/XX3+c+VTgLHbJWHZGeTPVAg2XwazI9UWzoxjIJCGCV2zU60uqMzjeLZuULqA==
   dependencies:
     esbuild "^0.21.3"
     postcss "^8.4.43"
