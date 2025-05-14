@@ -1,6 +1,6 @@
 {
   "name": "kadanza",
-  "description": "Kadanza DAM",
+  "description": "Kadanza",
   "version": "0.0.1",
   "author": {
     "name": "Kadanza",
@@ -8,7 +8,7 @@
     "url": "https://www.kadanza.com/"
   },
   "config": {
-    "connectorName": "Kadanza DAM",
+    "connectorName": "Kadanza",
     "iconUrl": "https://s3.eu-central-1.amazonaws.com/static.kadanza.io/logo/Logo_Kadanza_GraFx_Connector_Icon.svg",
     "type": "media",
     "options": {"BASE_URL": null, "DEBUG": ""},
