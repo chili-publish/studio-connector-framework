@@ -1,14 +1,14 @@
 {
   "name": "kadanza",
-  "description": "Kadanza DAM",
-  "version": "0.0.1",
+  "description": "Kadanza",
+  "version": "1.0.0",
   "author": {
     "name": "Kadanza",
     "email": "hello@kadanza.com",
     "url": "https://www.kadanza.com/"
   },
   "config": {
-    "connectorName": "Kadanza DAM",
+    "connectorName": "Kadanza",
     "iconUrl": "https://s3.eu-central-1.amazonaws.com/static.kadanza.io/logo/Logo_Kadanza_GraFx_Connector_Icon.svg",
     "type": "media",
     "options": {"BASE_URL": null, "DEBUG": ""},

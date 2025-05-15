@@ -3,7 +3,7 @@
 connector-cli publish \
     -e {ENVIRONMENT} \
     -b https://{ENVIRONMENT}.chili-publish.online/grafx \
-    -n "Kadanza DAM Media Connector v0.0.1" \
+    -n "Kadanza Media Connector v1.0.0" \
     --proxyOption.allowedDomains "*.kadanza.io" \
     -ro BASE_URL="https://dam2.kadanza.io" \
     --connectorId={CONNECTOR_ID}
@@ -14,7 +14,7 @@ Enable debug messages
 connector-cli publish \
     -e {ENVIRONMENT} \
     -b https://{ENVIRONMENT}.chili-publish.online/grafx \
-    -n "Kadanza DAM Media Connector v0.0.1" \
+    -n "Kadanza Media Connector v1.0.0" \
     --proxyOption.allowedDomains "*.kadanza.io" \
     -ro BASE_URL="https://dam2.kadanza.io" \
     -ro DEBUG="1" \
