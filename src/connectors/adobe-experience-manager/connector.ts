@@ -279,9 +279,8 @@ export default class MyConnector implements Media.MediaConnector {
     const filter = options.filter[0];
     // Query before download
     if (!options.collection) {
-
-      let contextPath = "";
-      if (context.path && typeof context.path == "string") {
+      let contextPath = '';
+      if (context.path && typeof context.path == 'string') {
         contextPath = context.path;
         if (!contextPath.startsWith('/')) {
           contextPath = '/' + contextPath;
@@ -467,7 +466,8 @@ export default class MyConnector implements Media.MediaConnector {
       })
       .then((result) => {
         if (!result.ok) {
-          throw new Error(
+          throw new ConnectorHttpError(
+            result.status,
             `AEM: Download failed ${result.status} - ${result.statusText}`
           );
         }
@@ -628,7 +628,10 @@ export default class MyConnector implements Media.MediaConnector {
     });
 
     if (!res.ok) {
-      throw new Error(`AEM: Query failed ${res.status} - ${res.statusText}`);
+      throw new ConnectorHttpError(
+        res.status,
+        `AEM: Query failed ${res.status} - ${res.statusText}`
+      );
     }
     return JSON.parse(res.text) as any;
   }
@@ -648,7 +651,10 @@ export default class MyConnector implements Media.MediaConnector {
     });
 
     if (!res.ok) {
-      throw new Error(`AEM: Query failed ${res.status} - ${res.statusText}`);
+      throw new ConnectorHttpError(
+        res.status,
+        `AEM: Query failed ${res.status} - ${res.statusText}`
+      );
     }
     return JSON.parse(res.text) as Return;
   }
