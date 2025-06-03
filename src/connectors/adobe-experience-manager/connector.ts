@@ -289,12 +289,14 @@ export default class MyConnector implements Media.MediaConnector {
           contextPath = contextPath + '/';
         }
       }
-
-      const path = contextPath + filter;
-      this.log(`Query before download case for: ${path}`);
+      // Create the full path string, but check if it's still an old ID format
+      const fullPath = filter.startsWith('{"')
+        ? JSON.parse(filter).path
+        : contextPath + filter;
+      this.log(`Query before download case for: ${fullPath}`);
       return {
         pageSize: 1,
-        data: [AEMTransformer.resourcePathToMedia(path)],
+        data: [AEMTransformer.resourcePathToMedia(fullPath)],
         links: {
           nextPage: '',
         },
@@ -407,7 +409,7 @@ export default class MyConnector implements Media.MediaConnector {
   }
 
   async download(
-    id: string,
+    path: string,
     previewType: Media.DownloadType,
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
@@ -415,7 +417,7 @@ export default class MyConnector implements Media.MediaConnector {
     this.log(
       `[Download params]:\n${JSON.stringify(
         {
-          id,
+          path,
           previewType,
           intent,
         },
@@ -423,9 +425,6 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-
-    // Use ID directly as the path string, but check if it's still an old ID format
-    const path = id.includes('{"f') ? JSON.parse(id).path : id;
 
     // Fetch asset metadata using the pattern {baseUrl}{id}-1.json
     const metadataResult = await this.aemResourceCall<AemEntry>(
