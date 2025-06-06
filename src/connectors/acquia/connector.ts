@@ -289,8 +289,19 @@ export default class AcquiaConnector implements Media.MediaConnector {
     max: 125 | 400 | 1024
   ) {
     const { width, height } = original;
-    return `?w=${width && width < max ? width : max}&h=${
-      height && height < max ? height : max
-    }`;
+
+    // For landscape images, to keep aspect ratio, only specify width
+    if (width > height) {
+      const targetWidth = width < max ? width : max;
+      return `?w=${targetWidth}`;
+    }
+
+    // For portrait images, to keep aspect ratio, only specify height
+    if (height > width) {
+      const targetHeight = height < max ? height : max;
+      return `?h=${targetHeight}`;
+    }
+
+    return `?w=${max}&h=${max}`;
   }
 }
