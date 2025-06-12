@@ -290,6 +290,7 @@ export default class MyConnector implements Media.MediaConnector {
         }
       }
       // Create the full path string, but check if it's still an old ID format
+      // AEM does not support folders with " as a character in the name, so impossible for the path {" to exist
       const fullPath = filter.startsWith('{"')
         ? JSON.parse(filter).path
         : contextPath + filter;
@@ -409,7 +410,7 @@ export default class MyConnector implements Media.MediaConnector {
   }
 
   async download(
-    path: string,
+    id: string,
     previewType: Media.DownloadType,
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
@@ -417,7 +418,7 @@ export default class MyConnector implements Media.MediaConnector {
     this.log(
       `[Download params]:\n${JSON.stringify(
         {
-          path,
+          id,
           previewType,
           intent,
         },
@@ -425,6 +426,8 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
+
+    const path = id;
 
     // Fetch asset metadata using the pattern {baseUrl}{id}-1.json
     const metadataResult = await this.aemResourceCall<AemEntry>(
