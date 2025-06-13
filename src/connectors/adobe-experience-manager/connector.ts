@@ -32,12 +32,6 @@ export type AemRenditions = {
   [key in AemRendition]: string | null;
 };
 
-export interface InternalAemId {
-  availableRenditions: string[];
-  format?: string;
-  path: string;
-}
-
 class AEMTransformer {
   static neededProperties = [
     'jcr:path',
@@ -61,31 +55,21 @@ class AEMTransformer {
     });
   };
 
-  // Add path + renditions to the id
+  // Return simple path string as ID
   static getIdFromItem = (
     item: AemEntry,
-    neededRenditions: string[],
+    _neededRenditions: string[],
     path: string = item['jcr:path']
   ) => {
-    var format = item['jcr:content']['metadata']['dc:format'];
-
-    return JSON.stringify({
-      format,
-      availableRenditions: this.getAvailableRenditions(item, neededRenditions),
-      path: path,
-    } as InternalAemId);
+    return path;
   };
   // When fetching a collection we only have path strings so create from path media object
   static resourcePathToMedia(path: string): Media.Media {
-    const id = JSON.stringify({
-      path: path,
-    });
-
     const name = path.split('/').pop();
     const extension = name.split('.').pop();
 
     return {
-      id,
+      id: path,
       name: name,
       type: 0,
       // TODO: to be defined
@@ -255,7 +239,7 @@ export default class MyConnector implements Media.MediaConnector {
     return '/content/dam';
   }
 
-  query(
+  async query(
     options: Connector.QueryOptions,
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
@@ -266,6 +250,8 @@ export default class MyConnector implements Media.MediaConnector {
     const pageSize = options.pageSize || 20;
     // When collection we fetch the collection resources and create media objects from paths
     const collection = context.collection as string | undefined;
+    // This is never called because when is there a situation where collection is ""
+    // Collection is either undefined or a path with "/"
     if (collection && collection.length) {
       return this.aemResourceCall(`${collection}.1.json`).then((data) => {
         if (data['sling:members'] && data['sling:members']['sling:resources']) {
@@ -290,38 +276,35 @@ export default class MyConnector implements Media.MediaConnector {
       });
     }
 
-    // check if filters is not id
-    let fulltext = '';
-    let detailId: string;
-    const filters = options.filter;
-    if (filters && filters.length && filters[0].length) {
-      // Check if id is in filterss
-      try {
-        // If it can be parsed we know that its an id
-        var parsed = JSON.parse(filters[0]) as InternalAemId;
-        if (parsed.path) {
-          detailId = filters[0];
-        } else {
-          fulltext = filters[0];
+    const filter = options.filter[0];
+    // Query before download
+    if (!options.collection) {
+      let contextPath = '';
+      if (context.path && typeof context.path == 'string') {
+        contextPath = context.path;
+        if (!contextPath.startsWith('/')) {
+          contextPath = '/' + contextPath;
         }
-      } catch (error) {
-        fulltext = filters[0];
+        if (!contextPath.endsWith('/')) {
+          contextPath = contextPath + '/';
+        }
       }
+      // Create the full path string, but check if it's still an old ID format
+      // AEM does not support folders with " as a character in the name, so impossible for the path {" to exist
+      const fullPath = filter.startsWith('{"')
+        ? JSON.parse(filter).path
+        : contextPath + filter;
+      this.log(`Query before download case for: ${fullPath}`);
+      return {
+        pageSize: 1,
+        data: [AEMTransformer.resourcePathToMedia(fullPath)],
+        links: {
+          nextPage: '',
+        },
+      };
     }
 
-    // If id fetch the detail object and place it in the response
-    if (detailId && !options.collection) {
-      this.log(`Query before download case for: ${detailId}`);
-      return this.detail(detailId, context).then((data) => {
-        return {
-          pageSize: 1,
-          data: [data],
-          links: {
-            nextPage: '',
-          },
-        };
-      });
-    }
+    const fulltext = filter;
     // Don't show the folders when its set via configuration
     let showFolders = context.includeSubfolders ?? true;
 
@@ -410,7 +393,7 @@ export default class MyConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     this.log(`[Detail params]:\n ${id}`);
-    const { path } = JSON.parse(id);
+    const path = id; // ID is now directly the path string
     const detailResult = await this.aemResourceCall<AemEntry>(
       `${path}.-1.json`
     ).then((data) => {
@@ -426,7 +409,7 @@ export default class MyConnector implements Media.MediaConnector {
     return detailResult;
   }
 
-  download(
+  async download(
     id: string,
     previewType: Media.DownloadType,
     intent: Media.DownloadIntent,
@@ -443,9 +426,21 @@ export default class MyConnector implements Media.MediaConnector {
         2
       )}`
     );
-    const { availableRenditions, path, format } = JSON.parse(
-      id
-    ) as InternalAemId;
+
+    const path = id;
+
+    // Fetch asset metadata using the pattern {baseUrl}{id}-1.json
+    const metadataResult = await this.aemResourceCall<AemEntry>(
+      `${path}.-1.json`
+    );
+
+    // Extract available renditions and format from the metadata
+    const availableRenditions = AEMTransformer.getAvailableRenditions(
+      metadataResult,
+      Object.values(this.aemRenditions)
+    );
+    const format = metadataResult['jcr:content']['metadata']['dc:format'];
+
     let downloadPath = path;
     if (downloadPath.startsWith('/')) {
       downloadPath = path.substring(1);
