@@ -117,7 +117,7 @@ export default class DamConnector implements Media.MediaConnector {
       ? options?.filter
       : undefined;
 
-    let searchQuery = '&search=format:(png OR jpeg OR pdf OR mp4 OR gif)';
+    let searchQuery = '&search=format:(eps OR jpeg OR jpg OR pdf OR png OR psd OR tif OR tiff OR ai)';
     if (filter && filter.length > 0) {
       const stringifiedFilter = filter.toString().trim();
 
