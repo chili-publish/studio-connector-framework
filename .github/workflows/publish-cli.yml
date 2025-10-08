@@ -9,32 +9,42 @@ on:
       - '.github/workflows/publish-cli.yml'
 env:
   NODE_VERSION: 20
+permissions:
+  contents: read
+  packages: write
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Get GitHub App Access Token
+        id: github-app-access-token
+        uses: actions/create-github-app-token@v2
         with:
-          token: ${{ secrets.PACKAGE_SECRET }}
+          app-id: ${{ vars.GH_APP_ID_CHILI_FRONTEND_VERSION_MANAGER }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_CHILI_FRONTEND_VERSION_MANAGER }}
+          owner: ${{ github.repository_owner }}
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.github-app-access-token.outputs.token }}
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
       - name: Build
         run: yarn run build-cli
       - name: Bump version
         uses: phips28/gh-action-bump-version@v11.0.7
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+          GITHUB_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
           PACKAGEJSON_DIR: 'src/connector-cli'
         with:
           version-type: 'prerelease'
           commit-message: 'CI: bumps version to {{version}} [skip ci]'
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
@@ -42,4 +52,4 @@ jobs:
       - name: Publish
         run: yarn publish src/connector-cli
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_SECRET }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
