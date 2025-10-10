@@ -293,7 +293,9 @@ export default class MyConnector implements Media.MediaConnector {
       // AEM does not support folders with " as a character in the name, so impossible for the path {" to exist
       const fullPath = filter.startsWith('{"')
         ? JSON.parse(filter).path
-        : contextPath + filter;
+        : filter.startsWith('/')
+          ? filter
+          : contextPath + filter;
       this.log(`Query before download case for: ${fullPath}`);
       return {
         pageSize: 1,
