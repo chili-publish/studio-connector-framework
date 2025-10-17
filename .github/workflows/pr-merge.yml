@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - 'feat/WRS-2697-Publish-dev-version-of-connectors-to-MAIN-blob-storage-instead-of-the-current-DEV' # Current branch for testing
     paths:
       - 'src/connectors/**' # Only trigger when files under the cli package have changed
       - 'scripts/publish.js'
