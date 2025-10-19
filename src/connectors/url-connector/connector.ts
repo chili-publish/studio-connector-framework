@@ -80,6 +80,14 @@ export default class MyConnector implements Media.MediaConnector {
         method: "GET",
       },
     );
+
+    if (!picture.ok) {
+      throw new ConnectorHttpError(
+        picture.status,
+        `URL fetch failed ${picture.status} - ${picture.statusText}`
+      );
+    }
+
     return picture.arrayBuffer;
   }
 
