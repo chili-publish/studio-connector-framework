@@ -11,43 +11,17 @@ on:
 env:
   NODE_VERSION: 20
 jobs:
-  build-and-publish:
-    # checkout the repo
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      changed_connector: ${{ steps.changed-connectors.outputs.changed_connector }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install dependencies
-        run: yarn
-
-      - name: Download index.json
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            container_name="connector-marketplace"
-            blob_name="connector-repo/index.json"
-            destination_file="existing/index.json"
-            connection_string="${{ secrets.AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}"
-
-            # ensure 'existing' folder exists
-            mkdir -p existing
-
-            # Check if the blob exists
-            blob_exists=$(az storage blob exists --name $blob_name --container-name $container_name --connection-string $connection_string --output tsv --query exists)
-
-            # If the blob exists, download it
-            if [ $blob_exists == "true" ]; then
-                az storage blob download --name $blob_name --file $destination_file --container-name $container_name --connection-string $connection_string --no-progress
-            else
-                echo "Blob does not exist."
-            fi
 
       - name: Determine changed connectors
+        id: changed-connectors
         run: |
           if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
             echo "Diffing HEAD^ HEAD"
@@ -58,30 +32,95 @@ jobs:
           fi
           echo "Changed directories: $CHANGED_CONNECTOR"
           echo "CHANGED_CONNECTOR=$CHANGED_CONNECTOR" >> $GITHUB_ENV
+          echo "changed_connector=$CHANGED_CONNECTOR" >> $GITHUB_OUTPUT
+
+  deploy-to-environments:
+    needs: prepare
+    if: needs.prepare.outputs.changed_connector != ''
+    strategy:
+      matrix:
+        environment: [dev, main, uat]
+    environment: ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_ID }}",
+              "clientSecret": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_PASS }}",
+              "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            }
+
+      - name: Download index.json from ${{ matrix.environment }}
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            container_name="connector-marketplace"
+            blob_name="connector-repo/index.json"
+            destination_file="existing/index.json"
+
+            # ensure 'existing' folder exists
+            mkdir -p existing
+
+            # Check if the blob exists and download it
+            blob_exists=$(az storage blob exists \
+              --name $blob_name \
+              --container-name $container_name \
+              --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+              --auth-mode login \
+              --output tsv \
+              --query exists)
+
+            if [ $blob_exists == "true" ]; then
+                az storage blob download \
+                  --name $blob_name \
+                  --file $destination_file \
+                  --container-name $container_name \
+                  --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                  --auth-mode login \
+                  --no-progress
+                echo "Downloaded index.json from ${{ matrix.environment }}"
+            else
+                echo "Blob does not exist in ${{ matrix.environment }}."
+            fi
 
       - name: Build CLI
         run: yarn run build-cli
 
       - name: Build and Publish connectors
-        if: env.CHANGED_CONNECTOR != ''
         run: |
-          echo "Building and publishing $CHANGED_CONNECTOR"
-          node scripts/publish.js $CHANGED_CONNECTOR
+          echo "Building and publishing ${{ needs.prepare.outputs.changed_connector }}"
+          node scripts/publish.js ${{ needs.prepare.outputs.changed_connector }}
 
       - name: Copy to upload folder
-        if: env.CHANGED_CONNECTOR != ''
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
 
-      - name: Upload artifacts
-        if: env.CHANGED_CONNECTOR != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: connectors
-          path: upload/connector-repo
-
-      - name: Upload to Azure
-        if: env.CHANGED_CONNECTOR != ''
-        uses: azure/CLI@v1
+      - name: Upload to ${{ matrix.environment }}
+        uses: azure/CLI@v2
         with:
           inlineScript: |
-            az storage blob upload-batch -d connector-marketplace -s upload/ --connection-string "${{ secrets.AZURE_ST_MARKETPLACE_DEV_CONNECTION_STRING }}" --overwrite true
+            container_name="connector-marketplace"
+
+            # Upload to ${{ matrix.environment }} storage account
+            az storage blob upload-batch \
+              --destination connector-marketplace \
+              --source upload/ \
+              --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+              --auth-mode login \
+              --overwrite true
+            echo "Uploaded connectors to ${{ matrix.environment }}"
