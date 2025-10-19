@@ -1,8 +1,11 @@
 {
   "name": "url-connector",
+  "version": "1.0.0",
+  "description": "A connector that fetches images from a specified URL.",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@chili-publish/connector-cli": "^1.27.0",
+    "typescript": "^5"
   },
   "config": {
     "type": "media",
@@ -19,9 +22,6 @@
   },
   "license": "MIT",
   "main": "out/connector.js",
-  "peerDependencies": {
-    "typescript": "^5"
-  },
   "dependencies": {
     "@chili-publish/studio-connectors": "^1.27.0"
   },
