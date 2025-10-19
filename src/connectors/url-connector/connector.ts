@@ -97,7 +97,7 @@ export default class MyConnector implements Media.MediaConnector {
     return {
       query: true,
       detail: true,
-      filtering: true,
+      filtering: false,
       metadata: false,
     };
   }
