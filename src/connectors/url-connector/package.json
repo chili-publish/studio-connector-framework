@@ -4,7 +4,7 @@
   "description": "A connector that fetches images from a specified URL.",
   "private": true,
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1.27.0",
+    "@chili-publish/connector-cli": "^1.10.0",
     "typescript": "^5"
   },
   "config": {
