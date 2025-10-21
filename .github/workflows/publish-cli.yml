@@ -8,7 +8,7 @@ on:
       - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
       - '.github/workflows/publish-cli.yml'
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22.x
 permissions:
   contents: read
   packages: write

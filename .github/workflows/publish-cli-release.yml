@@ -3,7 +3,7 @@ on:
   release:
     types: [published]
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22.x
 jobs:
   publish:
     runs-on: ubuntu-latest
