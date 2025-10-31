@@ -107,48 +107,6 @@ type TypedBooleanCell = {
 };
 
 class Converter {
-  static toTypedCell(
-    cell: CellData
-  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
-    if (
-      'effectiveFormat' in cell &&
-      'numberFormat' in cell.effectiveFormat &&
-      cell.effectiveFormat.numberFormat.type === 'NUMBER'
-    ) {
-      return {
-        type: 'number',
-        cell: cell as NumberCell,
-      };
-    }
-
-    if (
-      'effectiveFormat' in cell &&
-      'numberFormat' in cell.effectiveFormat &&
-      (cell.effectiveFormat.numberFormat.type === 'DATE' ||
-        cell.effectiveFormat.numberFormat.type === 'DATE_TIME')
-    ) {
-      return {
-        type: 'date',
-        cell: cell as DateCell,
-      };
-    }
-
-    if (
-      'effectiveValue' in cell &&
-      cell.effectiveValue &&
-      'boolValue' in cell.effectiveValue
-    ) {
-      return {
-        type: 'boolean',
-        cell: cell as BooleanCell,
-      };
-    }
-    return {
-      type: 'singleLine',
-      cell: cell,
-    };
-  }
-
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
     tableBody: Array<Row>
@@ -188,6 +146,82 @@ class Converter {
         // Filter out empty rows
         .filter((d) => d !== null)
     );
+  }
+
+  static toDataModelProperties(
+    headerRow: Row<Required<CellData>>,
+    bodyRows: Array<Row>
+  ): Array<Data.DataModelProperty> {
+    if (!bodyRows.length) {
+      throw new Error(
+        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      );
+    }
+    const normalizedBodyRow = Converter.normalizeRow(
+      bodyRows[0],
+      headerRow.values.length
+    );
+    if (!normalizedBodyRow) {
+      throw new Error(
+        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      );
+    }
+    const { values } = normalizedBodyRow;
+    return headerRow.values.map((column, idx) => {
+      return {
+        type: Converter.toTypedCell(values[idx]).type,
+        name: column.formattedValue,
+      };
+    });
+  }
+
+  /**
+   * Inspects a Google Sheets cell and determines its semantic type—number, date, boolean, or single line of text—
+   * based on the provided cell's formatting and effective value. This is used to map Google Sheets' flexible cell
+   * data model to strongly typed connector model data.
+   *
+   * @param cell The cell data object returned by the Google Sheets API, possibly containing formatting and value information.
+   */
+  private static toTypedCell(
+    cell: CellData
+  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      cell.effectiveFormat.numberFormat.type === 'NUMBER'
+    ) {
+      return {
+        type: 'number',
+        cell: cell as NumberCell,
+      };
+    }
+
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      (cell.effectiveFormat.numberFormat.type === 'DATE' ||
+        cell.effectiveFormat.numberFormat.type === 'DATE_TIME')
+    ) {
+      return {
+        type: 'date',
+        cell: cell as DateCell,
+      };
+    }
+
+    if (
+      'effectiveValue' in cell &&
+      cell.effectiveValue &&
+      'boolValue' in cell.effectiveValue
+    ) {
+      return {
+        type: 'boolean',
+        cell: cell as BooleanCell,
+      };
+    }
+    return {
+      type: 'singleLine',
+      cell: cell,
+    };
   }
 
   /**
@@ -324,20 +358,10 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
     const [headerRow, bodyRows] = this.parseResponse(res, 'GetModel');
 
-    if (!bodyRows.length) {
-      throw new Error(
-        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
-      );
-    }
-    const { values } = bodyRows[0];
+    const properties = Converter.toDataModelProperties(headerRow, bodyRows);
 
     return {
-      properties: headerRow.values.map((column, idx) => {
-        return {
-          type: Converter.toTypedCell(values[idx]).type,
-          name: column.formattedValue,
-        };
-      }),
+      properties,
     };
   }
 
