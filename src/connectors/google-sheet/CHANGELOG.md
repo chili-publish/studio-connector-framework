@@ -2,7 +2,7 @@
 
 ## 1.0.2
 
-- [Fix][WRS-2727](https://chilipublishintranet.atlassian.net/browse/WRS-2722) - Handle empty cells for 'getModel' execution properly
+- [Fix][WRS-2727](https://chilipublishintranet.atlassian.net/browse/WRS-2727) - Handle empty cells for 'getModel' execution properly
 
 ## 1.0.1
 
