@@ -16,7 +16,7 @@
       "logEnabled": ""
     },
     "mappings": {},
-    "supportedAtuh": [
+    "supportedAuth": [
       "staticKey"
     ]
   },
