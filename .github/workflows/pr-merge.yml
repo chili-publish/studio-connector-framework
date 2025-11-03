@@ -9,7 +9,7 @@ on:
       - 'src/connectors/**' # Only trigger when files under the cli package have changed
       - 'scripts/publish.js'
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22.x
 jobs:
   prepare:
     runs-on: ubuntu-latest
