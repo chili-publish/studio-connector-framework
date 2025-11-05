@@ -1,0 +1,32 @@
+{
+  "name": "url-connector",
+  "version": "1.0.0",
+  "description": "A connector that fetches images from a specified URL.",
+  "private": true,
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.10.0",
+    "typescript": "^5"
+  },
+  "config": {
+    "type": "media",
+    "connectorName": "URL Connector",
+    "iconUrl": "",
+    "options": {
+      "baseUrl": "",
+      "logEnabled": ""
+    },
+    "mappings": {},
+    "supportedAuth": [
+      "staticKey"
+    ]
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1.27.0"
+  },
+   "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  }
+}
