@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "A connector that fetches images from a specified URL.",
   "private": true,
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
   "devDependencies": {
     "@chili-publish/connector-cli": "^1.10.0",
     "typescript": "^5"
@@ -25,7 +30,7 @@
   "dependencies": {
     "@chili-publish/studio-connectors": "^1.27.0"
   },
-   "scripts": {
+  "scripts": {
     "build": "yarn connector-cli build",
     "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
   }
