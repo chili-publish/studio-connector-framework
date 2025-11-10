@@ -277,54 +277,6 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     this.runtime = runtime;
   }
 
-  /**
-   * Executes an async function and measures its execution time.
-   * Logging only occurs if the 'enableTiming' runtime option is set.
-   *
-   * @param fn The async function to execute and measure
-   * @param methodName The name of the method being timed (for logging purposes)
-   * @returns The result of the async function
-   */
-  private async withTiming<T>(
-    fn: () => Promise<T>,
-    methodName: string
-  ): Promise<T> {
-    const shouldLogTiming = !!this.runtime.options['logTiming'];
-
-    if (!shouldLogTiming) {
-      return fn();
-    }
-
-    // Use performance.now() if available for higher precision, otherwise fall back to Date.now()
-    const getTime =
-      typeof performance !== 'undefined' &&
-      typeof performance.now === 'function'
-        ? () => performance.now()
-        : () => Date.now();
-
-    const startTime = getTime();
-    try {
-      const result = await fn();
-      const endTime = getTime();
-      const executionTime = (endTime - startTime) / 1000;
-      this.runtime.logError(
-        `[Connector][Timing] "${methodName}" executed in ${executionTime.toFixed(
-          2
-        )}s`
-      );
-      return result;
-    } catch (error) {
-      const endTime = getTime();
-      const executionTime = (endTime - startTime) / 1000;
-      this.runtime.logError(
-        `[Connector][Timing] "${methodName}" failed after ${executionTime.toFixed(
-          2
-        )}s`
-      );
-      throw error;
-    }
-  }
-
   async getPage(
     config: Data.PageConfig,
     context: Connector.Dictionary
@@ -541,5 +493,53 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
   private isNextPageAvailable(requestedSize: number, resultItems: number) {
     return requestedSize === resultItems;
+  }
+
+  /**
+   * Executes an async function and measures its execution time.
+   * Logging only occurs if the 'enableTiming' runtime option is set.
+   *
+   * @param fn The async function to execute and measure
+   * @param methodName The name of the method being timed (for logging purposes)
+   * @returns The result of the async function
+   */
+  private async withTiming<T>(
+    fn: () => Promise<T>,
+    methodName: string
+  ): Promise<T> {
+    const shouldLogTiming = !!this.runtime.options['logTiming'];
+
+    if (!shouldLogTiming) {
+      return fn();
+    }
+
+    // Use performance.now() if available for higher precision, otherwise fall back to Date.now()
+    const getTime =
+      typeof performance !== 'undefined' &&
+      typeof performance.now === 'function'
+        ? () => performance.now()
+        : () => Date.now();
+
+    const startTime = getTime();
+    try {
+      const result = await fn();
+      const endTime = getTime();
+      const executionTime = (endTime - startTime) / 1000;
+      this.runtime.logError(
+        `[Connector][Timing] "${methodName}" executed in ${executionTime.toFixed(
+          2
+        )}s`
+      );
+      return result;
+    } catch (error) {
+      const endTime = getTime();
+      const executionTime = (endTime - startTime) / 1000;
+      this.runtime.logError(
+        `[Connector][Timing] "${methodName}" failed after ${executionTime.toFixed(
+          2
+        )}s`
+      );
+      throw error;
+    }
   }
 }
