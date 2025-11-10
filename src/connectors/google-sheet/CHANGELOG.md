@@ -1,5 +1,9 @@
 # Releases
 
+## 1.0.3
+
+- Support of logging the time execution of connector's methods via `logTiming` runtime option
+
 ## 1.0.2
 
 - [Fix][WRS-2727](https://chilipublishintranet.atlassian.net/browse/WRS-2727) - Handle empty cells for 'getModel' execution properly
