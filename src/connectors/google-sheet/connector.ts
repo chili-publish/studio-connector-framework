@@ -497,7 +497,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
   /**
    * Executes an async function and measures its execution time.
-   * Logging only occurs if the 'enableTiming' runtime option is set.
+   * Logging only occurs if the 'logTiming' runtime option is set.
    *
    * @param fn The async function to execute and measure
    * @param methodName The name of the method being timed (for logging purposes)
