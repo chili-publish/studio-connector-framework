@@ -107,48 +107,6 @@ type TypedBooleanCell = {
 };
 
 class Converter {
-  static toTypedCell(
-    cell: CellData
-  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
-    if (
-      'effectiveFormat' in cell &&
-      'numberFormat' in cell.effectiveFormat &&
-      cell.effectiveFormat.numberFormat.type === 'NUMBER'
-    ) {
-      return {
-        type: 'number',
-        cell: cell as NumberCell,
-      };
-    }
-
-    if (
-      'effectiveFormat' in cell &&
-      'numberFormat' in cell.effectiveFormat &&
-      (cell.effectiveFormat.numberFormat.type === 'DATE' ||
-        cell.effectiveFormat.numberFormat.type === 'DATE_TIME')
-    ) {
-      return {
-        type: 'date',
-        cell: cell as DateCell,
-      };
-    }
-
-    if (
-      'effectiveValue' in cell &&
-      cell.effectiveValue &&
-      'boolValue' in cell.effectiveValue
-    ) {
-      return {
-        type: 'boolean',
-        cell: cell as BooleanCell,
-      };
-    }
-    return {
-      type: 'singleLine',
-      cell: cell,
-    };
-  }
-
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
     tableBody: Array<Row>
@@ -188,6 +146,82 @@ class Converter {
         // Filter out empty rows
         .filter((d) => d !== null)
     );
+  }
+
+  static toDataModelProperties(
+    headerRow: Row<Required<CellData>>,
+    bodyRows: Array<Row>
+  ): Array<Data.DataModelProperty> {
+    if (!bodyRows.length) {
+      throw new Error(
+        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      );
+    }
+    const normalizedBodyRow = Converter.normalizeRow(
+      bodyRows[0],
+      headerRow.values.length
+    );
+    if (!normalizedBodyRow) {
+      throw new Error(
+        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      );
+    }
+    const { values } = normalizedBodyRow;
+    return headerRow.values.map((column, idx) => {
+      return {
+        type: Converter.toTypedCell(values[idx]).type,
+        name: column.formattedValue,
+      };
+    });
+  }
+
+  /**
+   * Inspects a Google Sheets cell and determines its semantic type—number, date, boolean, or single line of text—
+   * based on the provided cell's formatting and effective value. This is used to map Google Sheets' flexible cell
+   * data model to strongly typed connector model data.
+   *
+   * @param cell The cell data object returned by the Google Sheets API, possibly containing formatting and value information.
+   */
+  private static toTypedCell(
+    cell: CellData
+  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      cell.effectiveFormat.numberFormat.type === 'NUMBER'
+    ) {
+      return {
+        type: 'number',
+        cell: cell as NumberCell,
+      };
+    }
+
+    if (
+      'effectiveFormat' in cell &&
+      'numberFormat' in cell.effectiveFormat &&
+      (cell.effectiveFormat.numberFormat.type === 'DATE' ||
+        cell.effectiveFormat.numberFormat.type === 'DATE_TIME')
+    ) {
+      return {
+        type: 'date',
+        cell: cell as DateCell,
+      };
+    }
+
+    if (
+      'effectiveValue' in cell &&
+      cell.effectiveValue &&
+      'boolValue' in cell.effectiveValue
+    ) {
+      return {
+        type: 'boolean',
+        cell: cell as BooleanCell,
+      };
+    }
+    return {
+      type: 'singleLine',
+      cell: cell,
+    };
   }
 
   /**
@@ -247,98 +281,100 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     config: Data.PageConfig,
     context: Connector.Dictionary
   ): Promise<Data.DataPage> {
-    const { spreadsheetId, sheetId } =
-      this.extractSheetIdentityFromContext(context);
+    return this.withTiming(async () => {
+      const { spreadsheetId, sheetId } =
+        this.extractSheetIdentityFromContext(context);
 
-    if (config.limit < 1) {
-      return {
-        continuationToken: null,
-        data: [],
-      };
-    }
-    const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
-
-    let cellsRange =
-      config.continuationToken ||
-      RangeHelper.buildFirstPageRange(sheetName, config.limit);
-
-    // Request two ranges of the cells
-    // 1. Header range to properly map to DataItem
-    // 2. Next batch of values
-    const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
-        RangeHelper.buildHeaderRange(sheetName)
-      )}&ranges=${encodeURIComponent(cellsRange)}`,
-      {
-        method: 'GET',
-      }
-    );
-
-    // We handle 400 in a specific way since it might be related to the requesting the last "empty" batch of records
-    // during batch output generation. In this case we need to complete request as success with empty return data
-    if (!res.ok && res.status === 400) {
-      try {
-        const { error }: ApiError = JSON.parse(res.text);
-        this.runtime.logError(
-          `Google Sheet: GetPage failed ${res.status} - ${error.message}`
-        );
+      if (config.limit < 1) {
         return {
           continuationToken: null,
           data: [],
         };
-      } catch (err) {
-        throw new ConnectorHttpError(
-          res.status,
-          `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
-        );
       }
-    }
+      const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
-    const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
+      let cellsRange =
+        config.continuationToken ||
+        RangeHelper.buildFirstPageRange(sheetName, config.limit);
 
-    const data = Converter.toDataItems(headerRow, bodyRows);
+      // Request two ranges of the cells
+      // 1. Header range to properly map to DataItem
+      // 2. Next batch of values
+      const res = await this.withTiming(
+        () =>
+          this.runtime.fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
+              RangeHelper.buildHeaderRange(sheetName)
+            )}&ranges=${encodeURIComponent(cellsRange)}`,
+            {
+              method: 'GET',
+            }
+          ),
+        'fetch:getPage'
+      );
 
-    return {
-      continuationToken: this.isNextPageAvailable(config.limit, data.length)
-        ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
-        : null,
-      data,
-    };
+      // We handle 400 in a specific way since it might be related to the requesting the last "empty" batch of records
+      // during batch output generation. In this case we need to complete request as success with empty return data
+      if (!res.ok && res.status === 400) {
+        try {
+          const { error }: ApiError = JSON.parse(res.text);
+          this.runtime.logError(
+            `Google Sheet: GetPage failed ${res.status} - ${error.message}`
+          );
+          return {
+            continuationToken: null,
+            data: [],
+          };
+        } catch (err) {
+          throw new ConnectorHttpError(
+            res.status,
+            `Google Sheet: GetPage failed ${res.status} - ${res.statusText}`
+          );
+        }
+      }
+
+      const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
+
+      const data = Converter.toDataItems(headerRow, bodyRows);
+
+      return {
+        continuationToken: this.isNextPageAvailable(config.limit, data.length)
+          ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
+          : null,
+        data,
+      };
+    }, 'getPage');
   }
 
   async getModel(context: Connector.Dictionary): Promise<Data.DataModel> {
-    const { spreadsheetId, sheetId } =
-      this.extractSheetIdentityFromContext(context);
+    return this.withTiming(async () => {
+      const { spreadsheetId, sheetId } =
+        this.extractSheetIdentityFromContext(context);
 
-    const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
-    const res = await this.runtime.fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${encodeURIComponent(
-        RangeHelper.buildHeaderRange(sheetName)
-      )}&ranges=${encodeURIComponent(
-        RangeHelper.buildRange(sheetName, 2, 2)
-      )}&fields=${FIELDS_MASK}`,
-      {
-        method: 'GET',
-      }
-    );
-
-    const [headerRow, bodyRows] = this.parseResponse(res, 'GetModel');
-
-    if (!bodyRows.length) {
-      throw new Error(
-        'Model can not be generated. To execute the operation your sheet should have the row with data in addition to the header row'
+      const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
+      const res = await this.withTiming(
+        () =>
+          this.runtime.fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${encodeURIComponent(
+              RangeHelper.buildHeaderRange(sheetName)
+            )}&ranges=${encodeURIComponent(
+              RangeHelper.buildRange(sheetName, 2, 2)
+            )}&fields=${FIELDS_MASK}`,
+            {
+              method: 'GET',
+            }
+          ),
+        'fetch:getModel'
       );
-    }
-    const { values } = bodyRows[0];
 
-    return {
-      properties: headerRow.values.map((column, idx) => {
-        return {
-          type: Converter.toTypedCell(values[idx]).type,
-          name: column.formattedValue,
-        };
-      }),
-    };
+      const [headerRow, bodyRows] = this.parseResponse(res, 'GetModel');
+
+      const properties = Converter.toDataModelProperties(headerRow, bodyRows);
+
+      return {
+        properties,
+      };
+    }, 'getModel');
   }
 
   getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
@@ -424,33 +460,86 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     spreadsheetId: string,
     sheetId: string | null
   ): Promise<string | null> {
-    if (!sheetId) {
-      return null;
-    }
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+    return this.withTiming(async () => {
+      if (!sheetId) {
+        return null;
+      }
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
 
-    const res = await this.runtime.fetch(url, { method: 'GET' });
-    if (!res.ok)
-      throw new ConnectorHttpError(
-        res.status,
-        `Google Sheet: GetSheetName failed for "${spreadsheetId}" and "${sheetId}". Result is ${res.status} - ${res.statusText}`
+      const res = await this.withTiming(
+        () => this.runtime.fetch(url, { method: 'GET' }),
+        'fetch:fetchSheetName'
       );
+      if (!res.ok)
+        throw new ConnectorHttpError(
+          res.status,
+          `Google Sheet: GetSheetName failed for "${spreadsheetId}" and "${sheetId}". Result is ${res.status} - ${res.statusText}`
+        );
 
-    const data: Spreadsheet = JSON.parse(res.text);
+      const data: Spreadsheet = JSON.parse(res.text);
 
-    // Find the sheet that matches the sheetId
-    const sheet = data.sheets.find(
-      (sheet) => sheet.properties.sheetId.toString() === sheetId
-    );
-    if (!sheet) {
-      throw new Error(
-        `Google Sheet: The provided sheetId "${sheetId}" doesn't exist in the spreadsheet document`
+      // Find the sheet that matches the sheetId
+      const sheet = data.sheets.find(
+        (sheet) => sheet.properties.sheetId.toString() === sheetId
       );
-    }
-    return sheet.properties.title;
+      if (!sheet) {
+        throw new Error(
+          `Google Sheet: The provided sheetId "${sheetId}" doesn't exist in the spreadsheet document`
+        );
+      }
+      return sheet.properties.title;
+    }, 'fetchSheetName');
   }
 
   private isNextPageAvailable(requestedSize: number, resultItems: number) {
     return requestedSize === resultItems;
+  }
+
+  /**
+   * Executes an async function and measures its execution time.
+   * Logging only occurs if the 'logTiming' runtime option is set.
+   *
+   * @param fn The async function to execute and measure
+   * @param methodName The name of the method being timed (for logging purposes)
+   * @returns The result of the async function
+   */
+  private async withTiming<T>(
+    fn: () => Promise<T>,
+    methodName: string
+  ): Promise<T> {
+    const shouldLogTiming = !!this.runtime.options['logTiming'];
+
+    if (!shouldLogTiming) {
+      return fn();
+    }
+
+    // Use performance.now() if available for higher precision, otherwise fall back to Date.now()
+    const getTime =
+      typeof performance !== 'undefined' &&
+      typeof performance.now === 'function'
+        ? () => performance.now()
+        : () => Date.now();
+
+    const startTime = getTime();
+    try {
+      const result = await fn();
+      const endTime = getTime();
+      const executionTime = (endTime - startTime) / 1000;
+      this.runtime.logError(
+        `[Connector][Timing] "${methodName}" executed in ${executionTime.toFixed(
+          2
+        )}s`
+      );
+      return result;
+    } catch (error) {
+      const endTime = getTime();
+      const executionTime = (endTime - startTime) / 1000;
+      this.runtime.logError(
+        `[Connector][Timing] "${methodName}" failed after ${executionTime.toFixed(
+          2
+        )}s`
+      );
+      throw error;
+    }
   }
 }
