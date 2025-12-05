@@ -94,15 +94,18 @@ jobs:
           fi
 
       - name: Ensure connector version is bumped
+        env:
+          CONNECTOR_NAME: ${{ needs.check-connector.outputs.connector }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if [[ -z "${{ needs.check-connector.outputs.connector }}" ]]; then
+          if [[ -z "$CONNECTOR_NAME" ]]; then
             echo "Error: No connector name provided from check-connector job"
             exit 1
           fi
 
-          connector_name="${{ needs.check-connector.outputs.connector }}"
+          connector_name="$CONNECTOR_NAME"
           MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
-          PR_VERSION=$(git show ${{ github.event.pull_request.head.ref }}:src/connectors/$connector_name/package.json | jq -r .version)
+          PR_VERSION=$(git show $PR_HEAD_REF:src/connectors/$connector_name/package.json | jq -r .version)
 
           echo "Comparing versions for connector '$connector_name':"
           echo "Main version: '$MAIN_VERSION'"
@@ -110,5 +113,3 @@ jobs:
 
           if [ "$MAIN_VERSION" = "$PR_VERSION" ]; then
             echo "Error: The version in '$connector_name' is the same as in the main branch. Please bump the version"
-            exit 1
-          fi
