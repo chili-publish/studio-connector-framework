@@ -4,6 +4,9 @@ on:
     types: [published]
 env:
   NODE_VERSION: 22.x
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: read
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,6 +16,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - name: Update to latest npm version
+        run: npm i -g npm@latest
       - name: Check version correctness
         env:
           GITHUB_REF: ${{ github.ref }}
@@ -32,13 +37,9 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn run build-cli
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@chili-publish'
+      - name: Configure npm registry for scoped package
+        run: |
+          npm config set @chili-publish:registry https://registry.npmjs.org/
       - name: Publish
-        run: yarn publish src/connector-cli --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        working-directory: src/connector-cli
+        run: npm publish --access=public --tag=latest
