@@ -1,5 +1,9 @@
 # Releases
 
+## 1.1.0
+
+- [Fix][GRAFX-5515] Continuation token now properly adjusts the requested range when `config.limit` changes between requests
+
 ## 1.0.3
 
 - Support of logging the time execution of connector's methods via `logTiming` runtime option
