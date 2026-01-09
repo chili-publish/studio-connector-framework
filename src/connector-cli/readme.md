@@ -1,12 +1,11 @@
-# @chili-publish/connector-cli
+# Connector CLI
 
-`@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to initialize projects, build connectors, debug, test, deploy them to your environment.
+`@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to create new projects, build connectors, debug, test, and deploy them to your environment.
 
 ## Features
 
 ### Project setup
 
-- **Init**: Scaffold a new connector project with `init`.
 - **New**: Scaffold a new connector project with `new`.
 
 ### Development
@@ -20,12 +19,19 @@
 
 - **Publish**: Deploy your connector to the specified environment with `publish`.
 - **Set Auth**: Configure your connector authentication with `set-auth`.
+- **Delete**: Remove a published connector from an environment with `delete`.
 
 ### Informational
 
 - **Info**: Retrieve information about your connector with `info`.
+- **Demo**: Run a demo of your connector with `demo`.
 
 ## Installation
+
+### Prerequisites
+
+- Node.js 20 LTS or higher
+- [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/install/) or higher (for building from source)
 
 You can install `@chili-publish/connector-cli` globally via npm:
 
@@ -43,22 +49,32 @@ yarn global add @chili-publish/connector-cli
 
 After installation, the `connector-cli` command will be available globally. Below are some examples of how to use the CLI:
 
-### Initialize a new connector
+> **Note:** For commands that accept `pathToProject`, if omitted, it defaults to the current directory (`./`).
+
+### Create a new connector project
+
+For a media connector:
 
 ```sh
-connector-cli init --name YourConnectorName
+connector-cli new YourProjectName -t media -n YourConnectorName
 ```
 
-or
+For a data connector:
 
 ```sh
-connector-cli new --name YourConnectorName
+connector-cli new YourProjectName -t data -n YourConnectorName
 ```
 
 ### Build a connector
 
 ```sh
-connector-cli build --outFolder ./dist
+connector-cli build
+```
+
+With watch mode:
+
+```sh
+connector-cli build -w
 ```
 
 ### Login to the system
@@ -70,46 +86,64 @@ connector-cli login
 ### Deploy a connector to environment
 
 ```sh
-connector-cli publish pathToProject --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --name YourConnectorName
+connector-cli publish -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT -n YourConnectorName --proxyOption.allowedDomains "example.com" "*.example.com"
+```
+
+To update an existing connector:
+
+```sh
+connector-cli publish -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT -n YourConnectorName --connectorId EXISTING_CONNECTOR_ID --proxyOption.allowedDomains "example.com"
 ```
 
 ### Configure a connector authentication
 
 ```sh
-connector-cli set-auth pathToProject --baseUrl EnvironmentAPIBaseURL --environment YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv --usage browser --type staticKey --auth-data-file ./pathToAuthData
+connector-cli set-auth -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv -au browser -at staticKey --auth-data-file ./pathToAuthData
 ```
+
+Available authentication types: `staticKey`, `oAuth2ClientCredentials`, `oAuth2ResourceOwnerPassword`, `oAuth2AuthorizationCode`, `oAuth2JwtBearer`
+
+Available usage types: `browser`, `server`
 
 ### Debug a connector
 
 ```sh
-connector-cli debug --port 8080 --watch
+connector-cli debug -p 3300 -w
 ```
 
 ### Get connector information
 
 ```sh
-connector-cli info --out info.json
+connector-cli info -o info.json
 ```
 
 ### Test a connector
 
 ```sh
-connector-cli test --testFile ./test/your-test-file.ts
+connector-cli test -t ./test/your-test-file.ts
+```
+
+### Run a demo of a connector
+
+```sh
+connector-cli demo
 ```
 
 ### Stress test a connector
 
 ```sh
-connector-cli stress --iterations 100
+connector-cli stress -i 100
+```
+
+### Delete a connector from environment
+
+```sh
+connector-cli delete -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv
 ```
 
 ## Build Instructions
 
 To build `@chili-publish/connector-cli` from source, follow these steps:
-
-### Prerequisites
-
-Ensure that you have [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/install/) is installed
 
 > yarn -v # to check existing yarn version
 
@@ -117,7 +151,7 @@ Ensure that you have [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/in
 
    ```sh
    git clone https://github.com/chili-publish/studio-connector-framework.git
-   cd connector-cli
+   cd studio-connector-framework
    ```
 
 2. Install dependencies:
@@ -126,10 +160,17 @@ Ensure that you have [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/in
    yarn install
    ```
 
-3. Run the build script:
+3. Run the build script from the root:
 
    ```sh
    yarn run build-cli
+   ```
+
+   Or from the connector-cli directory:
+
+   ```sh
+   cd src/connector-cli
+   yarn run build
    ```
 
 This will compile TypeScript files to JavaScript and prepare the CLI for use.
