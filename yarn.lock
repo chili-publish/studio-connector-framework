@@ -280,6 +280,24 @@
     reload "^3.2.1"
     typescript "^5.2.2"
 
+"@chili-publish/connector-cli@^1.10.0":
+  version "1.10.0"
+  dependencies:
+    "@chili-publish/studio-connectors" "^1"
+    "@inquirer/prompts" "^7.2.0"
+    chalk "^4"
+    commander "^12.0.0"
+    deepmerge-json "^1.5.0"
+    dot-object "^2.1.4"
+    express "^4.21.0"
+    js-yaml "^4.1.0"
+    open "^9.1.0"
+    prettier "^3.0.3"
+    quickjs-emscripten "^0.23.0"
+    quicktype-core "23.0.0"
+    reload "^3.2.1"
+    typescript "^5.2.2"
+
 "@chili-publish/connector-cli@^1.6":
   version "1.10.0"
   dependencies:
@@ -359,7 +377,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.10.1-rc.2"
+  version "1.10.1-rc.3"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -383,12 +401,15 @@
   integrity sha512-c6oLifVjKR/n1XNlB/u4slK5iN5hijo6TspwP8XyEy0pCwdTNTkF3tyoG38TxBUapVDjLQxVuUno3a8dLFDYiw==
 
 "@chili-publish/studio-connectors@^1.15":
-  version "1.32.0"
+  version "1.35.0"
 
 "@chili-publish/studio-connectors@^1.15.0":
   version "1.18.0"
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.18.0.tgz"
   integrity sha512-q1z717quG/JzIBrk7hhN1xQw8+JuDPAqv3W2mCo/hbVeNOkxKYj6i+r0GT1eM6kAWmen01/lkjJ1RtxfAOg9og==
+
+"@chili-publish/studio-connectors@^1.27.0":
+  version "1.35.0"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -2244,7 +2265,7 @@ globby@^11.1.0:
     slash "^3.0.0"
 
 "google-sheet@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/google-sheet":
-  version "1.0.1"
+  version "1.0.3"
   resolved "file:src/connectors/google-sheet"
   dependencies:
     "@chili-publish/studio-connectors" "^1.17.1"
@@ -3904,6 +3925,9 @@ type@^2.7.2:
   resolved "https://registry.npmjs.org/type/-/type-2.7.3.tgz"
   integrity sha512-8j+1QmAbPvLZow5Qpi6NCaN8FB60p/6x8/vfNqOk/hC+HuvFZhL4+WfekuhQLiqFZXOgQdrs3B+XxEmCc6b3FQ==
 
+typescript@^5:
+  version "5.9.3"
+
 typescript@^5.2.2, typescript@>=2.7, typescript@>=4.2.0:
   version "5.3.2"
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.3.2.tgz"
@@ -3984,6 +4008,12 @@ urijs@^1.19.1:
   version "1.19.11"
   resolved "https://registry.npmjs.org/urijs/-/urijs-1.19.11.tgz"
   integrity sha512-HXgFDgDommxn5/bIv0cnQZsPhHDA90NPHD6+c/v21U5+Sx5hoP8+dP9IZXBU1gIfvdRfhG8cel9QNPeionfcCQ==
+
+"url-connector@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/url-connector":
+  version "1.0.0"
+  resolved "file:src/connectors/url-connector"
+  dependencies:
+    "@chili-publish/studio-connectors" "^1.27.0"
 
 util-deprecate@^1.0.1, util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"
