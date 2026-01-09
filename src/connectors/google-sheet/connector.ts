@@ -1,51 +1,18 @@
 import { Connector, Data } from '@chili-publish/studio-connectors';
-
-interface BaseSheetCells {
-  formattedValue?: string;
-}
-interface NumberCell extends BaseSheetCells {
-  effectiveValue?: { numberValue: number };
-  effectiveFormat: {
-    numberFormat: { type: 'NUMBER' };
-  };
-}
-
-interface DateCell extends BaseSheetCells {
-  effectiveValue?: {
-    numberValue: number;
-  };
-  effectiveFormat: {
-    numberFormat: { type: 'DATE' | 'DATE_TIME' };
-  };
-}
-
-interface BooleanCell extends BaseSheetCells {
-  effectiveValue: { boolValue: boolean };
-}
-
-type PlainTextCell = BaseSheetCells;
-
-type CellData = NumberCell | BooleanCell | DateCell | PlainTextCell;
-
-interface Row<C = CellData> {
-  values: Array<C>;
-}
-
-// Whe you insert empty row in spreadhsheet document and there is no formatting at any cell of this row it will have following type
-type EmptyRowWithoutFormatting = Omit<Row, 'values'> & { values: undefined };
-
-interface Spreadsheet {
-  sheets: Array<{
-    properties: { sheetId: string; title: string };
-    data: [{ rowData?: [Row<Required<CellData>>] }, { rowData?: Array<Row> }];
-  }>;
-}
-
-interface ApiError {
-  error: {
-    message: string;
-  };
-}
+import type {
+  NumberCell,
+  DateCell,
+  BooleanCell,
+  CellData,
+  Row,
+  EmptyRowWithoutFormatting,
+  Spreadsheet,
+  ApiError,
+  TypedNumberCell,
+  TypedDateCell,
+  TypedPlainTextCell,
+  TypedBooleanCell,
+} from './types';
 
 class RangeHelper {
   static buildHeaderRange(sheetName: string | null) {
@@ -65,7 +32,28 @@ class RangeHelper {
     return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
-  public static buildRange(
+  static buildRangeFromContinuationToken(
+    continuationToken: string,
+    limit: number
+  ) {
+    const [sheetName, startRow, endRow] =
+      RangeHelper.extractFromRange(continuationToken);
+    if (Number.isNaN(startRow) || Number.isNaN(endRow)) {
+      throw new Error(
+        `Incorrect format of the continuation token "${continuationToken}"`
+      );
+    }
+    // Calculate the limit from the continuation token
+    const tokenLimit = endRow - startRow + 1;
+    // If the limit hasn't changed, return the continuation token as-is
+    if (tokenLimit === limit) {
+      return continuationToken;
+    }
+    // Otherwise, rebuild the range with the new limit
+    return RangeHelper.buildRange(sheetName, startRow, startRow + limit - 1);
+  }
+
+  private static buildRange(
     sheetName: string | null,
     start: number,
     end: number
@@ -85,26 +73,6 @@ class RangeHelper {
     return [sheetName, Number(splittedCells[0]), Number(splittedCells[1])];
   }
 }
-
-type TypedNumberCell = {
-  type: 'number';
-  cell: NumberCell;
-};
-
-type TypedDateCell = {
-  type: 'date';
-  cell: DateCell;
-};
-
-type TypedPlainTextCell = {
-  type: 'singleLine';
-  cell: PlainTextCell;
-};
-
-type TypedBooleanCell = {
-  type: 'boolean';
-  cell: BooleanCell;
-};
 
 class Converter {
   static toDataItems(
@@ -293,9 +261,12 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       }
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
-      let cellsRange =
-        config.continuationToken ||
-        RangeHelper.buildFirstPageRange(sheetName, config.limit);
+      let cellsRange = config.continuationToken
+        ? RangeHelper.buildRangeFromContinuationToken(
+            config.continuationToken,
+            config.limit
+          )
+        : RangeHelper.buildFirstPageRange(sheetName, config.limit);
 
       // Request two ranges of the cells
       // 1. Header range to properly map to DataItem
@@ -358,7 +329,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
             `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?includeGridData=true&ranges=${encodeURIComponent(
               RangeHelper.buildHeaderRange(sheetName)
             )}&ranges=${encodeURIComponent(
-              RangeHelper.buildRange(sheetName, 2, 2)
+              RangeHelper.buildFirstPageRange(sheetName, 1)
             )}&fields=${FIELDS_MASK}`,
             {
               method: 'GET',
