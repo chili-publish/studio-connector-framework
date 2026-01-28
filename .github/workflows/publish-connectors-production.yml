@@ -272,21 +272,21 @@ jobs:
       # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
       # Create zip artifact for inspection in test mode instead of publishing
       - name: Create zip artifact for inspection (test mode)
-        if: needs.validate-input.outputs.is_test_mode == 'true'
+        if: needs.validate-input.outputs.is_test_mode == 'true' && env.SKIP_UPLOAD != 'true'
         run: |
           echo "⚠️ TEMPORARY TESTING MODE: Creating zip artifact instead of publishing to PRD"
-          echo "⚠️ This zip contains exactly what would be published to PRD (only new versions) - inspect before actual deployment"
+          echo "⚠️ This zip contains exactly what would be published to PRD (only new versions after filtering) - inspect before actual deployment"
 
           # Create a directory structure matching what would be uploaded to PRD
           mkdir -p publish-test/connector-repo
 
           # Copy only new connector files that would be published to PRD
-          # (Filtering already done in "Filter out existing versions" step)
+          # (These are already filtered - only new versions remain)
           if [ -d "uat_connectors" ] && [ "$(ls -A uat_connectors/*.json 2>/dev/null)" ]; then
             cp uat_connectors/*.json publish-test/connector-repo/ 2>/dev/null || true
           fi
 
-          # Copy the PRD index.json (updated if there are new versions, original if all versions already exist)
+          # Copy the updated PRD index.json (updated with new versions)
           if [ -f "prd_index.json" ]; then
             cp prd_index.json publish-test/connector-repo/index.json
           fi
@@ -295,9 +295,11 @@ jobs:
           echo "Contents that would be published:"
           if [ -d "publish-test/connector-repo" ] && [ "$(ls -A publish-test/connector-repo/*.json 2>/dev/null)" ]; then
             ls -la publish-test/connector-repo/
+            echo ""
+            echo "Connector files (new versions only):"
+            ls -1 publish-test/connector-repo/*.json 2>/dev/null | grep -v index.json || echo "  (none)"
           else
-            echo "No new versions to publish - all requested versions already exist in PRD"
-            echo "Creating empty zip to indicate no changes"
+            echo "No files to publish"
           fi
 
           # Create zip file
@@ -309,7 +311,7 @@ jobs:
 
       # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
       - name: Upload test zip artifact
-        if: needs.validate-input.outputs.is_test_mode == 'true'
+        if: needs.validate-input.outputs.is_test_mode == 'true' && env.SKIP_UPLOAD != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: prd-publish-test
