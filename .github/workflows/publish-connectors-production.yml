@@ -1,0 +1,318 @@
+# Manual workflow to publish connector versions from UAT to Production
+name: Publish Connectors to Production
+
+# ⚠️ TEMPORARY TESTING CODE - REMOVE BEFORE MERGE ⚠️
+# This push trigger is for testing only and should be removed before merging to main
+on:
+  workflow_dispatch:
+    inputs:
+      connectors:
+        description: |
+          JSON object where keys are connector keys and values are arrays of versions.
+          Format: {"connector-key": ["version1", "version2"], ...}
+          Example: {"acquia": ["1.0.0"]}
+          Example: {"acquia": ["1.0.0", "1.0.1"]}
+          Example: {"acquia": ["1.0.0"], "canto": ["2.0.0", "2.1.0"]}
+        required: true
+        type: string
+  # ⚠️ TEMPORARY: Push trigger for testing - REMOVE BEFORE MERGE ⚠️
+  push:
+    branches:
+      - feat/WRS-2864-production-publishing-workflow
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22.x
+
+jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    outputs:
+      connectors_json: ${{ steps.parse-input.outputs.connectors_json }}
+      validated_connectors: ${{ steps.parse-input.outputs.validated_connectors }}
+      is_test_mode: ${{ steps.parse-input.outputs.is_test_mode }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Validate and parse input
+        id: parse-input
+        run: |
+          # ⚠️ TEMPORARY: For push events, use a test input - REMOVE BEFORE MERGE ⚠️
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "⚠️ TEMPORARY TESTING MODE: Using test connector input"
+            CONNECTORS_JSON='{"acquia": ["1.0.0"]}'
+          else
+            CONNECTORS_JSON='${{ github.event.inputs.connectors }}'
+          fi
+
+          # Validate input and get connector metadata
+          VALIDATED=$(node scripts/validate-connectors-input.js "$CONNECTORS_JSON")
+
+          echo "Input validated successfully"
+          echo "connectors_json=$CONNECTORS_JSON" >> $GITHUB_OUTPUT
+          echo "validated_connectors<<EOF" >> $GITHUB_OUTPUT
+          echo "$VALIDATED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "is_test_mode=${{ github.event_name == 'push' }}" >> $GITHUB_OUTPUT
+
+  download-from-uat:
+    needs: validate-input
+    environment: uat
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_ID }}",
+              "clientSecret": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_PASS }}",
+              "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            }
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download connector files from UAT
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            container_name="connector-marketplace"
+            validated_connectors='${{ needs.validate-input.outputs.validated_connectors }}'
+
+            # Create download directory
+            mkdir -p uat_connectors
+
+            # Download each connector version from UAT using validated connector data
+            echo "$validated_connectors" | jq -r 'to_entries[] | "\(.key)|\(.value.connectorId)|\(.value.versions | join(","))"' | while IFS='|' read -r connector_key connector_id versions_csv; do
+              # Download each version
+              IFS=',' read -ra versions <<< "$versions_csv"
+              for version in "${versions[@]}"; do
+                blob_name="connector-repo/${connector_id}.${version}.json"
+                destination_file="uat_connectors/${connector_id}.${version}.json"
+                
+                echo "Downloading $blob_name from UAT..."
+                
+                blob_exists=$(az storage blob exists \
+                  --name $blob_name \
+                  --container-name $container_name \
+                  --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                  --auth-mode login \
+                  --output tsv \
+                  --query exists)
+                
+                if [ "$blob_exists" == "true" ]; then
+                  az storage blob download \
+                    --name $blob_name \
+                    --file $destination_file \
+                    --container-name $container_name \
+                    --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                    --auth-mode login \
+                    --no-progress
+                  echo "✓ Downloaded ${connector_id}.${version}.json"
+                else
+                  echo "✗ Error: ${blob_name} not found in UAT"
+                  exit 1
+                fi
+              done
+            done
+
+            echo "All connector files downloaded from UAT"
+            ls -la uat_connectors/
+
+      - name: Upload connector files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: uat-connectors
+          path: uat_connectors/
+          retention-days: 1
+
+  publish-to-prd:
+    needs: [validate-input, download-from-uat]
+    environment: prd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download connector files artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: uat-connectors
+          path: uat_connectors/
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_ID }}",
+              "clientSecret": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_PASS }}",
+              "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            }
+
+      - name: Download PRD index.json
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            container_name="connector-marketplace"
+            blob_name="connector-repo/index.json"
+            destination_file="prd_index.json"
+
+            az storage blob download \
+              --name $blob_name \
+              --file $destination_file \
+              --container-name $container_name \
+              --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+              --auth-mode login \
+              --no-progress
+            echo "Downloaded PRD index.json"
+
+      - name: Filter out existing versions
+        id: filter-versions
+        run: |
+          # Create temporary directory for filtered files
+          mkdir -p uat_connectors_filtered
+
+          # Filter out versions that already exist in PRD
+          if node scripts/filter-existing-versions.js uat_connectors prd_index.json uat_connectors_filtered; then
+            # Replace old directory with filtered one
+            rm -rf uat_connectors
+            mv uat_connectors_filtered uat_connectors
+            echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
+          else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 2 ]; then
+              # Exit code 2 means all versions already exist
+              echo "SKIP_UPLOAD=true" >> $GITHUB_ENV
+            else
+              # Other error
+              exit $EXIT_CODE
+            fi
+          fi
+
+      - name: Update PRD index.json
+        if: env.SKIP_UPLOAD != 'true'
+        run: |
+          node scripts/update-index.js uat_connectors prd_index.json
+
+          echo "Updated PRD index.json:"
+          cat prd_index.json | jq .
+
+      # ⚠️ TEMPORARY: Skip actual upload in test mode - REMOVE BEFORE MERGE ⚠️
+      - name: Upload connectors to PRD
+        if: needs.validate-input.outputs.is_test_mode != 'true' && env.SKIP_UPLOAD != 'true'
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            container_name="connector-marketplace"
+
+            # Upload connector version files
+            if [ -d "uat_connectors" ] && [ "$(ls -A uat_connectors)" ]; then
+              echo "Uploading new connector files to PRD..."
+              for file in uat_connectors/*.json; do
+                if [ -f "$file" ]; then
+                  blob_name="connector-repo/$(basename "$file")"
+                  echo "Uploading $blob_name to PRD..."
+                  az storage blob upload \
+                    --file "$file" \
+                    --name "$blob_name" \
+                    --container-name $container_name \
+                    --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                    --auth-mode login \
+                    --overwrite true
+                  echo "✓ Uploaded $blob_name"
+                fi
+              done
+            else
+              echo "Error: No connector files to upload"
+              exit 1
+            fi
+
+            # Upload updated index.json
+            if [ -f "prd_index.json" ]; then
+              echo "Uploading updated index.json to PRD..."
+              az storage blob upload \
+                --file prd_index.json \
+                --name connector-repo/index.json \
+                --container-name $container_name \
+                --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                --auth-mode login \
+                --overwrite true
+              echo "✓ Uploaded index.json"
+              echo "Successfully published connectors to PRD"
+            else
+              echo "Error: prd_index.json not found"
+              exit 1
+            fi
+
+      - name: Skip upload message
+        if: env.SKIP_UPLOAD == 'true'
+        run: |
+          echo "No new versions to publish - all requested versions already exist in PRD"
+          echo "Skipping upload and index update"
+
+      # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
+      # Create zip artifact for inspection in test mode instead of publishing
+      - name: Create zip artifact for inspection (test mode)
+        if: needs.validate-input.outputs.is_test_mode == 'true'
+        run: |
+          echo "⚠️ TEMPORARY TESTING MODE: Creating zip artifact instead of publishing to PRD"
+          echo "⚠️ This zip contains exactly what would be published to PRD (only new versions) - inspect before actual deployment"
+
+          # Create a directory structure matching what would be uploaded to PRD
+          mkdir -p publish-test/connector-repo
+
+          # Copy only new connector files that would be published to PRD
+          # (Filtering already done in "Filter out existing versions" step)
+          if [ -d "uat_connectors" ] && [ "$(ls -A uat_connectors/*.json 2>/dev/null)" ]; then
+            cp uat_connectors/*.json publish-test/connector-repo/ 2>/dev/null || true
+          fi
+
+          # Copy the PRD index.json (updated if there are new versions, original if all versions already exist)
+          if [ -f "prd_index.json" ]; then
+            cp prd_index.json publish-test/connector-repo/index.json
+          fi
+
+          # Show what's in the zip
+          echo "Contents that would be published:"
+          if [ -d "publish-test/connector-repo" ] && [ "$(ls -A publish-test/connector-repo/*.json 2>/dev/null)" ]; then
+            ls -la publish-test/connector-repo/
+          else
+            echo "No new versions to publish - all requested versions already exist in PRD"
+            echo "Creating empty zip to indicate no changes"
+          fi
+
+          # Create zip file
+          cd publish-test
+          zip -r ../prd-publish-test.zip .
+          cd ..
+
+          echo "Created prd-publish-test.zip"
+
+      # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
+      - name: Upload test zip artifact
+        if: needs.validate-input.outputs.is_test_mode == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: prd-publish-test
+          path: prd-publish-test.zip
+          retention-days: 1
+          if-no-files-found: error
