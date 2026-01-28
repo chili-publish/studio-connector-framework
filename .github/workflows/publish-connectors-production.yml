@@ -63,6 +63,7 @@ jobs:
           echo "is_test_mode=${{ github.event_name == 'push' }}" >> $GITHUB_OUTPUT
 
   download-from-uat:
+    name: Download connector files from UAT
     needs: validate-input
     environment: uat
     runs-on: ubuntu-latest
@@ -139,24 +140,12 @@ jobs:
           path: uat_connectors/
           retention-days: 1
 
-  publish-to-prd:
+  download-from-prd:
+    name: Download PRD index.json
     needs: [validate-input, download-from-uat]
     environment: prd
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Download connector files artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: uat-connectors
-          path: uat_connectors/
-
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -185,6 +174,39 @@ jobs:
               --no-progress
             echo "Downloaded PRD index.json"
 
+      - name: Upload PRD index as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prd-index
+          path: prd_index.json
+          retention-days: 1
+
+  filter-out:
+    name: Prepare connector files for publication
+    needs: [download-from-prd]
+    runs-on: ubuntu-latest
+    outputs:
+      skip_upload: ${{ steps.filter-versions.outputs.skip_upload }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download connector files artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: uat-connectors
+          path: uat_connectors/
+
+      - name: Download PRD index artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: prd-index
+          path: ./
+
       - name: Filter out existing versions
         id: filter-versions
         run: |
@@ -196,11 +218,13 @@ jobs:
             # Replace old directory with filtered one
             rm -rf uat_connectors
             mv uat_connectors_filtered uat_connectors
+            echo "skip_upload=false" >> $GITHUB_OUTPUT
             echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
           else
             EXIT_CODE=$?
             if [ $EXIT_CODE -eq 2 ]; then
               # Exit code 2 means all versions already exist
+              echo "skip_upload=true" >> $GITHUB_OUTPUT
               echo "SKIP_UPLOAD=true" >> $GITHUB_ENV
             else
               # Other error
@@ -216,9 +240,54 @@ jobs:
           echo "Updated PRD index.json:"
           cat prd_index.json | jq .
 
+      - name: Upload filtered connectors as artifact
+        if: env.SKIP_UPLOAD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: filtered-connectors
+          path: uat_connectors/
+          retention-days: 1
+
+      - name: Upload updated PRD index as artifact
+        if: env.SKIP_UPLOAD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: prd-index-updated
+          path: prd_index.json
+          retention-days: 1
+
+  publish-to-prd:
+    needs: [validate-input, filter-out]
+    if: needs.filter-out.outputs.skip_upload != 'true'
+    environment: prd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download filtered connector files artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: filtered-connectors
+          path: uat_connectors/
+
+      - name: Download updated PRD index artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: prd-index-updated
+          path: ./
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: |
+            {
+              "clientId": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_ID }}",
+              "clientSecret": "${{ secrets.PUBLIC_STUDIO_CONNECTOR_FRAMEWORK_SP_PASS }}",
+              "tenantId": "${{ secrets.AZURE_TENANT_ID }}",
+              "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            }
+
       # ⚠️ TEMPORARY: Skip actual upload in test mode - REMOVE BEFORE MERGE ⚠️
       - name: Upload connectors to PRD
-        if: needs.validate-input.outputs.is_test_mode != 'true' && env.SKIP_UPLOAD != 'true'
+        if: needs.validate-input.outputs.is_test_mode != 'true'
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -263,16 +332,10 @@ jobs:
               exit 1
             fi
 
-      - name: Skip upload message
-        if: env.SKIP_UPLOAD == 'true'
-        run: |
-          echo "No new versions to publish - all requested versions already exist in PRD"
-          echo "Skipping upload and index update"
-
       # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
       # Create zip artifact for inspection in test mode instead of publishing
       - name: Create zip artifact for inspection (test mode)
-        if: needs.validate-input.outputs.is_test_mode == 'true' && env.SKIP_UPLOAD != 'true'
+        if: needs.validate-input.outputs.is_test_mode == 'true'
         run: |
           echo "⚠️ TEMPORARY TESTING MODE: Creating zip artifact instead of publishing to PRD"
           echo "⚠️ This zip contains exactly what would be published to PRD (only new versions after filtering) - inspect before actual deployment"
@@ -311,7 +374,7 @@ jobs:
 
       # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
       - name: Upload test zip artifact
-        if: needs.validate-input.outputs.is_test_mode == 'true' && env.SKIP_UPLOAD != 'true'
+        if: needs.validate-input.outputs.is_test_mode == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: prd-publish-test
