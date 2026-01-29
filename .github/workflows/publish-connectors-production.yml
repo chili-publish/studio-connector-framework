@@ -277,6 +277,7 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
+            set -eo pipefail
             container_name="connector-marketplace"
 
             # Upload connector version files
