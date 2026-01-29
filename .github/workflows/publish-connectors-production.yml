@@ -1,8 +1,6 @@
 # Manual workflow to publish connector versions from UAT to Production
 name: Publish Connectors to Production
 
-# ⚠️ TEMPORARY TESTING CODE - REMOVE BEFORE MERGE ⚠️
-# This push trigger is for testing only and should be removed before merging to main
 on:
   workflow_dispatch:
     inputs:
@@ -15,10 +13,6 @@ on:
           Example: {"acquia": ["1.0.0"], "canto": ["2.0.0", "2.1.0"]}
         required: true
         type: string
-  # ⚠️ TEMPORARY: Push trigger for testing - REMOVE BEFORE MERGE ⚠️
-  push:
-    branches:
-      - feat/WRS-2864-production-publishing-workflow
 
 permissions:
   contents: read
@@ -32,7 +26,6 @@ jobs:
     outputs:
       connectors_json: ${{ steps.parse-input.outputs.connectors_json }}
       validated_connectors: ${{ steps.parse-input.outputs.validated_connectors }}
-      is_test_mode: ${{ steps.parse-input.outputs.is_test_mode }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,13 +37,7 @@ jobs:
       - name: Validate and parse input
         id: parse-input
         run: |
-          # ⚠️ TEMPORARY: For push events, use a test input - REMOVE BEFORE MERGE ⚠️
-          if [ "${{ github.event_name }}" == "push" ]; then
-            echo "⚠️ TEMPORARY TESTING MODE: Using test connector input"
-            CONNECTORS_JSON='["1.0.0"]'
-          else
-            CONNECTORS_JSON='${{ github.event.inputs.connectors }}'
-          fi
+          CONNECTORS_JSON='${{ github.event.inputs.connectors }}'
 
           # Validate input and get connector metadata
           VALIDATED=$(node scripts/validate-connectors-input.js "$CONNECTORS_JSON")
@@ -60,7 +47,6 @@ jobs:
           echo "validated_connectors<<EOF" >> $GITHUB_OUTPUT
           echo "$VALIDATED" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo "is_test_mode=${{ github.event_name == 'push' }}" >> $GITHUB_OUTPUT
 
   download-from-uat:
     name: Download connector files from UAT
@@ -285,9 +271,7 @@ jobs:
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
             }
 
-      # ⚠️ TEMPORARY: Skip actual upload in test mode - REMOVE BEFORE MERGE ⚠️
       - name: Upload connectors to PRD
-        if: needs.validate-input.outputs.is_test_mode != 'true'
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -331,53 +315,3 @@ jobs:
               echo "Error: prd_index.json not found"
               exit 1
             fi
-
-      # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
-      # Create zip artifact for inspection in test mode instead of publishing
-      - name: Create zip artifact for inspection (test mode)
-        if: needs.validate-input.outputs.is_test_mode == 'true'
-        run: |
-          echo "⚠️ TEMPORARY TESTING MODE: Creating zip artifact instead of publishing to PRD"
-          echo "⚠️ This zip contains exactly what would be published to PRD (only new versions after filtering) - inspect before actual deployment"
-
-          # Create a directory structure matching what would be uploaded to PRD
-          mkdir -p publish-test/connector-repo
-
-          # Copy only new connector files that would be published to PRD
-          # (These are already filtered - only new versions remain)
-          if [ -d "uat_connectors" ] && [ "$(ls -A uat_connectors/*.json 2>/dev/null)" ]; then
-            cp uat_connectors/*.json publish-test/connector-repo/ 2>/dev/null || true
-          fi
-
-          # Copy the updated PRD index.json (updated with new versions)
-          if [ -f "prd_index.json" ]; then
-            cp prd_index.json publish-test/connector-repo/index.json
-          fi
-
-          # Show what's in the zip
-          echo "Contents that would be published:"
-          if [ -d "publish-test/connector-repo" ] && [ "$(ls -A publish-test/connector-repo/*.json 2>/dev/null)" ]; then
-            ls -la publish-test/connector-repo/
-            echo ""
-            echo "Connector files (new versions only):"
-            ls -1 publish-test/connector-repo/*.json 2>/dev/null | grep -v index.json || echo "  (none)"
-          else
-            echo "No files to publish"
-          fi
-
-          # Create zip file
-          cd publish-test
-          zip -r ../prd-publish-test.zip .
-          cd ..
-
-          echo "Created prd-publish-test.zip"
-
-      # ⚠️ TEMPORARY TESTING STEP - REMOVE BEFORE MERGE ⚠️
-      - name: Upload test zip artifact
-        if: needs.validate-input.outputs.is_test_mode == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: prd-publish-test
-          path: prd-publish-test.zip
-          retention-days: 1
-          if-no-files-found: error
