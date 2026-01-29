@@ -47,7 +47,7 @@ jobs:
           # ⚠️ TEMPORARY: For push events, use a test input - REMOVE BEFORE MERGE ⚠️
           if [ "${{ github.event_name }}" == "push" ]; then
             echo "⚠️ TEMPORARY TESTING MODE: Using test connector input"
-            CONNECTORS_JSON='{"acquia": ["1.0.0"]}'
+            CONNECTORS_JSON='{"acquia": ["2.0.0"]}'
           else
             CONNECTORS_JSON='${{ github.event.inputs.connectors }}'
           fi
