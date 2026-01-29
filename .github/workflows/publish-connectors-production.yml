@@ -36,9 +36,9 @@ jobs:
 
       - name: Validate and parse input
         id: parse-input
+        env:
+          CONNECTORS_JSON: ${{ github.event.inputs.connectors }}
         run: |
-          CONNECTORS_JSON='${{ github.event.inputs.connectors }}'
-
           # Validate input and get connector metadata
           VALIDATED=$(node scripts/validate-connectors-input.js "$CONNECTORS_JSON")
 
@@ -76,6 +76,7 @@ jobs:
         uses: azure/CLI@v2
         with:
           inlineScript: |
+            set -eo pipefail
             container_name="connector-marketplace"
             validated_connectors='${{ needs.validate-input.outputs.validated_connectors }}'
 
@@ -200,22 +201,23 @@ jobs:
           mkdir -p uat_connectors_filtered
 
           # Filter out versions that already exist in PRD
-          if node scripts/filter-existing-versions.js uat_connectors prd_index.json uat_connectors_filtered; then
-            # Replace old directory with filtered one
+          # Capture exit code before if statement to get actual command exit code
+          node scripts/filter-existing-versions.js uat_connectors prd_index.json uat_connectors_filtered
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            # Success - new versions to publish
             rm -rf uat_connectors
             mv uat_connectors_filtered uat_connectors
             echo "skip_upload=false" >> $GITHUB_OUTPUT
             echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
+          elif [ $EXIT_CODE -eq 2 ]; then
+            # Exit code 2 means all versions already exist
+            echo "skip_upload=true" >> $GITHUB_OUTPUT
+            echo "SKIP_UPLOAD=true" >> $GITHUB_ENV
           else
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 2 ]; then
-              # Exit code 2 means all versions already exist
-              echo "skip_upload=true" >> $GITHUB_OUTPUT
-              echo "SKIP_UPLOAD=true" >> $GITHUB_ENV
-            else
-              # Other error
-              exit $EXIT_CODE
-            fi
+            # Other error
+            exit $EXIT_CODE
           fi
 
       - name: Update PRD index.json
