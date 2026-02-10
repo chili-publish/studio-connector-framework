@@ -3,6 +3,7 @@ import info from '../package.json';
 import { runBuild } from './commands/build';
 import { runDebugger } from './commands/debug';
 import { runDelete } from './commands/delete';
+import { runUpdate } from './commands/update';
 import { runGetInfo } from './commands/info';
 import { runLogin } from './commands/login';
 import { runNewProject } from './commands/new';
@@ -237,6 +238,49 @@ function main() {
       'Id of the connector to perform operation'
     )
     .action(withErrorHandlerAction(runDelete));
+
+  program
+    .command('update')
+    .description(
+      'Granular update of the Environment Connector (e.g. enabled and default fields).'
+    )
+    .addOption(
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
+    )
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environment API endpoint to use for operation, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment name to use for operation, i.e. "cp-qeb-191"'
+    )
+    .requiredOption(
+      '--connectorId <connectorId>',
+      'Id of the connector to update'
+    )
+    .addOption(
+      new Option('--enabled <enabled>', 'Set connector enabled state').choices([
+        'true',
+        'false',
+      ])
+    )
+    .addOption(
+      new Option('--default <default>', 'Set connector as default').choices([
+        'true',
+        'false',
+      ])
+    )
+    .option(
+      '-n, --name <name>',
+      'Connector display name to set (overrides current name)'
+    )
+    .action(withErrorHandlerAction(runUpdate));
 
   program.parse(process.argv);
 }
