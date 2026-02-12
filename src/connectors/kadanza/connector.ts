@@ -196,7 +196,7 @@ export default class DamConnector implements Media.MediaConnector {
     const baseUrl = this._getBaseMediaUrl();
     let downloadEndpoint = `${baseUrl}`;
     const thumbnail = detail.thumbnail;
-    const original = `/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(detail.name)}/original`;
+    const original = `/cdn/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(detail.name)}/original`;
     const format = detail.extension.toLowerCase();
 
     switch (previewType) {
