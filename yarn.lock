@@ -377,7 +377,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.10.1-rc.3"
+  version "1.10.1-rc.4"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -401,7 +401,7 @@
   integrity sha512-c6oLifVjKR/n1XNlB/u4slK5iN5hijo6TspwP8XyEy0pCwdTNTkF3tyoG38TxBUapVDjLQxVuUno3a8dLFDYiw==
 
 "@chili-publish/studio-connectors@^1.15":
-  version "1.35.0"
+  version "1.38.0"
 
 "@chili-publish/studio-connectors@^1.15.0":
   version "1.18.0"
@@ -409,7 +409,7 @@
   integrity sha512-q1z717quG/JzIBrk7hhN1xQw8+JuDPAqv3W2mCo/hbVeNOkxKYj6i+r0GT1eM6kAWmen01/lkjJ1RtxfAOg9og==
 
 "@chili-publish/studio-connectors@^1.27.0":
-  version "1.35.0"
+  version "1.38.0"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -2265,7 +2265,7 @@ globby@^11.1.0:
     slash "^3.0.0"
 
 "google-sheet@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/google-sheet":
-  version "1.0.3"
+  version "1.1.0"
   resolved "file:src/connectors/google-sheet"
   dependencies:
     "@chili-publish/studio-connectors" "^1.17.1"
@@ -2567,7 +2567,7 @@ json5@^2.2.3:
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
 
 "kadanza@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/kadanza":
-  version "1.0.2"
+  version "1.0.3"
   resolved "file:src/connectors/kadanza"
   dependencies:
     "@chili-publish/studio-connectors" "^1.15"
