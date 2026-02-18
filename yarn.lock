@@ -261,9 +261,9 @@
     "@babel/helper-validator-identifier" "^7.25.9"
 
 "@chili-publish/connector-cli@^1.0.50":
-  version "1.10.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
-  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -281,7 +281,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.10.0":
-  version "1.10.0"
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -299,7 +301,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6":
-  version "1.10.0"
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -317,9 +321,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6.2":
-  version "1.10.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
-  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -337,9 +341,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.0":
-  version "1.10.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
-  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -357,9 +361,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.6":
-  version "1.10.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.10.0.tgz"
-  integrity sha512-ZLpgu4AQet5RxM2Da4AFqt7TqUQVQdKMGfRXMRPPwD53z2yst7WCSoHg+wGMUJI2R2FfTqZBZ0MJLGu0uIiLBQ==
+  version "1.11.0"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.11.0.tgz"
+  integrity sha512-YlobkdHst0B5z81uKJGWpijSyTKr7/FZGKqD+JwqWYb/gd0X1Iwv7cq5Xi7IeF7/UlcLKqzYnrgUy2KfXwLxKA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -377,7 +381,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.10.1-rc.4"
+  version "1.11.1-rc.0"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -1330,7 +1334,23 @@ chalk@^2.4.2:
     escape-string-regexp "^1.0.5"
     supports-color "^5.3.0"
 
-chalk@^4, chalk@^4.0.0, chalk@^4.1.2:
+chalk@^4:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
+  integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
+chalk@^4.0.0:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
+  integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
+chalk@^4.1.2:
   version "4.1.2"
   resolved "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz"
   integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
