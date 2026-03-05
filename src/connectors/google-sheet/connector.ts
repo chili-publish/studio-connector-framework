@@ -72,6 +72,42 @@ class RangeHelper {
     return startRow;
   }
 
+  static getEndRow(range: string): number {
+    const [, , endRow] = RangeHelper.extractFromRange(range);
+    return endRow;
+  }
+
+  /**
+   * Builds a range for `limit` rows starting at startRow. Use when resolving
+   * continuationToken with a possibly changed limit.
+   */
+  static buildRangeFromStartRow(
+    sheetName: string | null,
+    startRow: number,
+    limit: number
+  ): string {
+    return RangeHelper.buildRange(
+      sheetName,
+      startRow,
+      startRow + Math.max(0, limit - 1)
+    );
+  }
+
+  /**
+   * Builds the previous page range when the token encodes the previous page's
+   * range and the request may use a different limit. Returns the last `limit`
+   * rows before the row after tokenEndRow.
+   */
+  static buildPreviousPageRangeFromToken(
+    sheetName: string | null,
+    tokenEndRow: number,
+    limit: number
+  ): string {
+    const prevEndRow = tokenEndRow;
+    const prevStartRow = Math.max(2, prevEndRow - limit + 1);
+    return RangeHelper.buildRange(sheetName, prevStartRow, prevEndRow);
+  }
+
   private static buildRange(
     sheetName: string | null,
     start: number,
@@ -288,14 +324,23 @@ export default class GoogleSheetConnector
       }
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
-      // Resolve the cell range to fetch. Tokens in the request are the actual
-      // ranges to fetch: continuationToken = next page range, previousPageToken =
-      // previous page range. So we use the token directly as cellsRange.
+      // Resolve the cell range to fetch using the current request's limit, so
+      // that a changed page size between requests is respected.
       let cellsRange: string;
       if (config.continuationToken) {
-        cellsRange = config.continuationToken;
+        const startRow = RangeHelper.getStartRow(config.continuationToken);
+        cellsRange = RangeHelper.buildRangeFromStartRow(
+          sheetName,
+          startRow,
+          config.limit
+        );
       } else if (config.previousPageToken) {
-        cellsRange = config.previousPageToken;
+        const tokenEndRow = RangeHelper.getEndRow(config.previousPageToken);
+        cellsRange = RangeHelper.buildPreviousPageRangeFromToken(
+          sheetName,
+          tokenEndRow,
+          config.limit
+        );
       } else {
         cellsRange = RangeHelper.buildFirstPageRange(sheetName, config.limit);
       }
