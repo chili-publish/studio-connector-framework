@@ -1,4 +1,8 @@
-import { Connector, Data } from '@chili-publish/studio-connectors';
+import {
+  Connector,
+  Data,
+  BidirectionalDataPageItem,
+} from '@chili-publish/studio-connectors';
 import type {
   NumberCell,
   DateCell,
@@ -32,25 +36,40 @@ class RangeHelper {
     return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
-  static buildRangeFromContinuationToken(
-    continuationToken: string,
+  static buildPreviousPageRange(currentRange: string, limit: number) {
+    const [sheetName, startRow] = RangeHelper.extractFromRange(currentRange);
+    if (Number.isNaN(startRow)) {
+      throw new Error(`Incorrect format of the cells range "${currentRange}"`);
+    }
+    const prevEndRow = startRow - 1;
+    const prevStartRow = Math.max(2, prevEndRow - limit + 1);
+    return RangeHelper.buildRange(sheetName, prevStartRow, prevEndRow);
+  }
+
+  static buildRowRange(sheetName: string | null, rowNumber: number) {
+    return RangeHelper.buildRange(sheetName, rowNumber, rowNumber);
+  }
+
+  /**
+   * Returns the range string for the page that contains the given sheet row number,
+   * given the page size (limit). Row numbers are 1-indexed in the sheet; row 1 is the
+   * header, so data rows start at row 2.
+   */
+  static buildPageRangeForRow(
+    sheetName: string | null,
+    rowNumber: number,
     limit: number
   ) {
-    const [sheetName, startRow, endRow] =
-      RangeHelper.extractFromRange(continuationToken);
-    if (Number.isNaN(startRow) || Number.isNaN(endRow)) {
-      throw new Error(
-        `Incorrect format of the continuation token "${continuationToken}"`
-      );
-    }
-    // Calculate the limit from the continuation token
-    const tokenLimit = endRow - startRow + 1;
-    // If the limit hasn't changed, return the continuation token as-is
-    if (tokenLimit === limit) {
-      return continuationToken;
-    }
-    // Otherwise, rebuild the range with the new limit
-    return RangeHelper.buildRange(sheetName, startRow, startRow + limit - 1);
+    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
+    const pageIndex = Math.floor(dataPos / limit);
+    const pageStartRow = 2 + pageIndex * limit;
+    const pageEndRow = 1 + (pageIndex + 1) * limit;
+    return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
+  }
+
+  static getStartRow(range: string): number {
+    const [, startRow] = RangeHelper.extractFromRange(range);
+    return startRow;
   }
 
   private static buildRange(
@@ -77,42 +96,47 @@ class RangeHelper {
 class Converter {
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
-    tableBody: Array<Row>
+    tableBody: Array<Row>,
+    startRowNumber: number
   ): Array<Data.DataItem> {
     const tableHeaderValues = tableHeader.values;
     return (
       tableBody
-        .map(
-          (row) =>
+        .map((row, rowIndex) => {
+          const item =
             this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
-              (item, tableCell, index) => {
+              (acc, tableCell, colIndex) => {
                 const { type, cell } = Converter.toTypedCell(tableCell);
 
                 switch (type) {
                   case 'number':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.effectiveValue?.numberValue ?? null;
                     break;
                   case 'date':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       this.convertToDate(cell.effectiveValue?.numberValue);
                     break;
                   case 'boolean':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.effectiveValue.boolValue;
                     break;
                   case 'singleLine':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.formattedValue ?? null;
                     break;
                 }
-                return item;
+                return acc;
               },
               {} as Data.DataItem
-            ) ?? null
-        )
+            ) ?? null;
+
+          if (item === null) return null;
+          item['__rowId'] = startRowNumber + rowIndex;
+          return item;
+        })
         // Filter out empty rows
-        .filter((d) => d !== null)
+        .filter((d): d is Data.DataItem => d !== null)
     );
   }
 
@@ -239,34 +263,42 @@ class Converter {
 }
 
 const FIELDS_MASK = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
-export default class GoogleSheetConnector implements Data.DataConnector {
+export default class GoogleSheetConnector
+  implements Data.DataConnector, Data.DataSourceVariableCapability
+{
   private runtime: Connector.ConnectorRuntimeContext;
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
   }
 
   async getPage(
-    config: Data.PageConfig,
+    config: Data.BidirectionalPageConfig,
     context: Connector.Dictionary
-  ): Promise<Data.DataPage> {
+  ): Promise<Data.BidirectionalDataPage> {
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
 
       if (config.limit < 1) {
         return {
+          previousPageToken: null,
           continuationToken: null,
           data: [],
         };
       }
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
-      let cellsRange = config.continuationToken
-        ? RangeHelper.buildRangeFromContinuationToken(
-            config.continuationToken,
-            config.limit
-          )
-        : RangeHelper.buildFirstPageRange(sheetName, config.limit);
+      // Resolve the cell range to fetch. Tokens in the request are the actual
+      // ranges to fetch: continuationToken = next page range, previousPageToken =
+      // previous page range. So we use the token directly as cellsRange.
+      let cellsRange: string;
+      if (config.continuationToken) {
+        cellsRange = config.continuationToken;
+      } else if (config.previousPageToken) {
+        cellsRange = config.previousPageToken;
+      } else {
+        cellsRange = RangeHelper.buildFirstPageRange(sheetName, config.limit);
+      }
 
       // Request two ranges of the cells
       // 1. Header range to properly map to DataItem
@@ -284,7 +316,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         'fetch:getPage'
       );
 
-      // We handle 400 in a specific way since it might be related to the requesting the last "empty" batch of records
+      // We handle 400 in a specific way since it might be related to requesting the last "empty" batch of records
       // during batch output generation. In this case we need to complete request as success with empty return data
       if (!res.ok && res.status === 400) {
         try {
@@ -293,6 +325,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
             `Google Sheet: GetPage failed ${res.status} - ${error.message}`
           );
           return {
+            previousPageToken: null,
             continuationToken: null,
             data: [],
           };
@@ -306,10 +339,18 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
 
-      const data = Converter.toDataItems(headerRow, bodyRows);
+      const startRowNumber = RangeHelper.getStartRow(cellsRange);
+      const data = Converter.toDataItems(headerRow, bodyRows, startRowNumber);
+
+      // Return the range to request for each direction (different tokens).
+      const isFirstPage = startRowNumber === 2;
+      const hasNextPage = this.isNextPageAvailable(config.limit, data.length);
 
       return {
-        continuationToken: this.isNextPageAvailable(config.limit, data.length)
+        previousPageToken: isFirstPage
+          ? null
+          : RangeHelper.buildPreviousPageRange(cellsRange, config.limit),
+        continuationToken: hasNextPage
           ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
           : null,
         data,
@@ -317,7 +358,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }, 'getPage');
   }
 
-  async getModel(context: Connector.Dictionary): Promise<Data.DataModel> {
+  async getModel(
+    context: Connector.Dictionary
+  ): Promise<Data.DataSourceVariableDataModel> {
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
@@ -343,7 +386,8 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       const properties = Converter.toDataModelProperties(headerRow, bodyRows);
 
       return {
-        properties,
+        properties: [...properties, { name: '__rowId', type: 'number' }],
+        itemIdPropertyName: '__rowId',
       };
     }, 'getModel');
   }
@@ -363,6 +407,99 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       filtering: false,
       sorting: false,
       model: true,
+      dataSourceVariable: true,
+    };
+  }
+
+  async getPageItemById(
+    id: string,
+    pageOptions: Data.PageItemOptions,
+    context: Connector.Dictionary
+  ): Promise<BidirectionalDataPageItem> {
+    return this.withTiming(async () => {
+      const rowNumber = parseInt(id, 10);
+      if (!Number.isInteger(rowNumber) || rowNumber < 2) {
+        throw new Error(
+          `Google Sheet: Invalid __rowId "${id}". Expected a sheet row number >= 2.`
+        );
+      }
+
+      const { spreadsheetId, sheetId } =
+        this.extractSheetIdentityFromContext(context);
+      const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
+      const limit = Math.max(1, pageOptions.limit);
+
+      return this.fetchRowByRowNumber(
+        spreadsheetId,
+        sheetName,
+        rowNumber,
+        limit,
+        context
+      );
+    }, 'getPageItemById');
+  }
+
+  /**
+   * Fetches a single row by sheet row number. Returns the item with __rowId set
+   * so it matches the model's itemIdPropertyName.
+   */
+  private async fetchRowByRowNumber(
+    spreadsheetId: string,
+    sheetName: string | null,
+    rowNumber: number,
+    limit: number,
+    context: Connector.Dictionary
+  ): Promise<BidirectionalDataPageItem> {
+    const rowRange = RangeHelper.buildRowRange(sheetName, rowNumber);
+    const res = await this.withTiming(
+      () =>
+        this.runtime.fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
+            RangeHelper.buildHeaderRange(sheetName)
+          )}&ranges=${encodeURIComponent(rowRange)}`,
+          { method: 'GET' }
+        ),
+      'fetch:getPageItemById'
+    );
+
+    if (!res.ok && (res.status === 400 || res.status === 404)) {
+      try {
+        const { error }: ApiError = JSON.parse(res.text);
+        this.runtime.logError(
+          `Google Sheet: getPageItemById failed ${res.status} - ${error.message}`
+        );
+      } catch {
+        // ignore parse failure
+      }
+      throw new Error(
+        `Google Sheet: Record not found for __rowId "${rowNumber}". The row may not exist or be outside the sheet.`
+      );
+    }
+
+    const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
+    const items = Converter.toDataItems(headerRow, bodyRows, rowNumber);
+
+    if (items.length === 0) {
+      throw new Error(
+        `Google Sheet: No data found for row ${rowNumber} (__rowId "${rowNumber}").`
+      );
+    }
+
+    const item = items[0];
+
+    const pageRange = RangeHelper.buildPageRangeForRow(
+      sheetName,
+      rowNumber,
+      limit
+    );
+    const isFirstPage = RangeHelper.getStartRow(pageRange) === 2;
+
+    return {
+      data: item,
+      previousPageToken: isFirstPage
+        ? null
+        : RangeHelper.buildPreviousPageRange(pageRange, limit),
+      continuationToken: RangeHelper.buildNextPageRange(pageRange, limit),
     };
   }
 
@@ -373,7 +510,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
    */
   private parseResponse(
     response: Connector.ChiliResponse,
-    method: 'GetPage' | 'GetModel'
+    method: 'GetPage' | 'GetModel' | 'GetPageItemById'
   ): [Row<Required<CellData>>, Array<Row>] {
     if (!response.ok) {
       throw new ConnectorHttpError(
