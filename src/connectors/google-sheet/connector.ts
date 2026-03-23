@@ -129,6 +129,8 @@ class RangeHelper {
   }
 }
 
+const ITEM_ROW_ID_PROPERTY = '__rowId__' as const;
+
 class Converter {
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
@@ -168,7 +170,7 @@ class Converter {
             ) ?? null;
 
           if (item === null) return null;
-          item['__rowId'] = startRowNumber + rowIndex;
+          item[ITEM_ROW_ID_PROPERTY] = startRowNumber + rowIndex;
           return item;
         })
         // Filter out empty rows
@@ -431,8 +433,8 @@ export default class GoogleSheetConnector
       const properties = Converter.toDataModelProperties(headerRow, bodyRows);
 
       return {
-        properties: [...properties, { name: '__rowId', type: 'number' }],
-        itemIdPropertyName: '__rowId',
+        properties: [...properties, { name: ITEM_ROW_ID_PROPERTY, type: 'number' }],
+        itemIdPropertyName: ITEM_ROW_ID_PROPERTY,
       };
     }, 'getModel');
   }
@@ -465,7 +467,7 @@ export default class GoogleSheetConnector
       const rowNumber = parseInt(id, 10);
       if (!Number.isInteger(rowNumber) || rowNumber < 2) {
         throw new Error(
-          `Google Sheet: Invalid __rowId "${id}". Expected a sheet row number >= 2.`
+          `Google Sheet: Invalid ${ITEM_ROW_ID_PROPERTY} "${id}". Expected a sheet row number >= 2.`
         );
       }
 
@@ -496,7 +498,7 @@ export default class GoogleSheetConnector
           // ignore parse failure
         }
         throw new Error(
-          `Google Sheet: Record not found for __rowId "${rowNumber}". The row may not exist or be outside the sheet.`
+          `Google Sheet: Record not found for ${ITEM_ROW_ID_PROPERTY} "${rowNumber}". The row may not exist or be outside the sheet.`
         );
       }
 
@@ -505,7 +507,7 @@ export default class GoogleSheetConnector
 
       if (items.length === 0) {
         throw new Error(
-          `Google Sheet: No data found for row ${rowNumber} (__rowId "${rowNumber}").`
+          `Google Sheet: No data found for row ${rowNumber} (${ITEM_ROW_ID_PROPERTY} "${rowNumber}").`
         );
       }
 
@@ -533,6 +535,18 @@ export default class GoogleSheetConnector
    * @param response
    * @returns [headerRow, bodyRows]
    */
+  private logReservedRowIdColumnIfPresent(
+    headerRow: Row<Required<CellData>>
+  ): void {
+    if (
+      headerRow.values.some((cell) => cell.formattedValue === ITEM_ROW_ID_PROPERTY)
+    ) {
+      this.runtime.logError(
+        `Google Sheet: The sheet defines a column header "${ITEM_ROW_ID_PROPERTY}", which is reserved. Cell values under that column are ignored; ${ITEM_ROW_ID_PROPERTY} is set from the sheet row number.`
+      );
+    }
+  }
+
   private parseResponse(
     response: Connector.ChiliResponse,
     method: 'GetPage' | 'GetModel' | 'GetPageItemById'
@@ -553,6 +567,7 @@ export default class GoogleSheetConnector
       );
     }
     const headerRow = headerData.rowData[0];
+    this.logReservedRowIdColumnIfPresent(headerRow);
 
     const bodyRows = regularData.rowData;
     // When we request for range that contains only empty rows (without any custom styling), "bodyRows" will be undefined => we return empty data
