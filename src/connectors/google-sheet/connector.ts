@@ -474,78 +474,58 @@ export default class GoogleSheetConnector
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
       const limit = Math.max(1, pageOptions.limit);
 
-      return this.fetchRowByRowNumber(
-        spreadsheetId,
+      const rowRange = RangeHelper.buildRowRange(sheetName, rowNumber);
+      const res = await this.withTiming(
+        () =>
+          this.runtime.fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
+              RangeHelper.buildHeaderRange(sheetName)
+            )}&ranges=${encodeURIComponent(rowRange)}`,
+            { method: 'GET' }
+          ),
+        'fetch:getPageItemById'
+      );
+
+      if (!res.ok && (res.status === 400 || res.status === 404)) {
+        try {
+          const { error }: ApiError = JSON.parse(res.text);
+          this.runtime.logError(
+            `Google Sheet: getPageItemById failed ${res.status} - ${error.message}`
+          );
+        } catch {
+          // ignore parse failure
+        }
+        throw new Error(
+          `Google Sheet: Record not found for __rowId "${rowNumber}". The row may not exist or be outside the sheet.`
+        );
+      }
+
+      const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
+      const items = Converter.toDataItems(headerRow, bodyRows, rowNumber);
+
+      if (items.length === 0) {
+        throw new Error(
+          `Google Sheet: No data found for row ${rowNumber} (__rowId "${rowNumber}").`
+        );
+      }
+
+      const item = items[0];
+
+      const pageRange = RangeHelper.buildPageRangeForRow(
         sheetName,
         rowNumber,
-        limit,
-        context
+        limit
       );
+      const isFirstPage = RangeHelper.getStartRow(pageRange) === 2;
+
+      return {
+        data: item,
+        previousPageToken: isFirstPage
+          ? null
+          : RangeHelper.buildPreviousPageRange(pageRange, limit),
+        continuationToken: RangeHelper.buildNextPageRange(pageRange, limit),
+      };
     }, 'getPageItemById');
-  }
-
-  /**
-   * Fetches a single row by sheet row number. Returns the item with __rowId set
-   * so it matches the model's itemIdPropertyName.
-   */
-  private async fetchRowByRowNumber(
-    spreadsheetId: string,
-    sheetName: string | null,
-    rowNumber: number,
-    limit: number,
-    context: Connector.Dictionary
-  ): Promise<BidirectionalDataPageItem> {
-    const rowRange = RangeHelper.buildRowRange(sheetName, rowNumber);
-    const res = await this.withTiming(
-      () =>
-        this.runtime.fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
-            RangeHelper.buildHeaderRange(sheetName)
-          )}&ranges=${encodeURIComponent(rowRange)}`,
-          { method: 'GET' }
-        ),
-      'fetch:getPageItemById'
-    );
-
-    if (!res.ok && (res.status === 400 || res.status === 404)) {
-      try {
-        const { error }: ApiError = JSON.parse(res.text);
-        this.runtime.logError(
-          `Google Sheet: getPageItemById failed ${res.status} - ${error.message}`
-        );
-      } catch {
-        // ignore parse failure
-      }
-      throw new Error(
-        `Google Sheet: Record not found for __rowId "${rowNumber}". The row may not exist or be outside the sheet.`
-      );
-    }
-
-    const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
-    const items = Converter.toDataItems(headerRow, bodyRows, rowNumber);
-
-    if (items.length === 0) {
-      throw new Error(
-        `Google Sheet: No data found for row ${rowNumber} (__rowId "${rowNumber}").`
-      );
-    }
-
-    const item = items[0];
-
-    const pageRange = RangeHelper.buildPageRangeForRow(
-      sheetName,
-      rowNumber,
-      limit
-    );
-    const isFirstPage = RangeHelper.getStartRow(pageRange) === 2;
-
-    return {
-      data: item,
-      previousPageToken: isFirstPage
-        ? null
-        : RangeHelper.buildPreviousPageRange(pageRange, limit),
-      continuationToken: RangeHelper.buildNextPageRange(pageRange, limit),
-    };
   }
 
   /**
