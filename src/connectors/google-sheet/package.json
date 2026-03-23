@@ -57,7 +57,7 @@
   "main": "out/connector.js",
   "dependencies": {
     "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "^1.17.1"
+    "@chili-publish/studio-connectors": "^1.39.0"
   },
   "scripts": {
     "build": "yarn connector-cli build",
