@@ -312,7 +312,16 @@ jobs:
                 --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
                 --auth-mode login \
                 --overwrite true
-              echo "✓ Uploaded index.json"
+              # Clear content settings so no Cache-Control (or related) is stored on the blob
+              az storage blob update \
+                --container-name $container_name \
+                --name connector-repo/index.json \
+                --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+                --auth-mode login \
+                --clear-content-settings true \
+                --content-type application/json \
+                --content-cache-control "no-store, no-cache, must-revalidate"
+              echo "✓ Uploaded index.json (no cache-control on blob)"
               echo "Successfully published connectors to PRD"
             else
               echo "Error: prd_index.json not found"
