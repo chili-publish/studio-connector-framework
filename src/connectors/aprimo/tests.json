@@ -1,0 +1,460 @@
+{
+  "setup": {
+    "runtime_options": {
+      "BASE_URL": "https://tenant.dam.aprimo.com/api/core"
+    }
+  },
+  "tests": [
+    {
+      "name": "Query - default listing",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 2,
+          "pageToken": null,
+          "filter": [],
+          "collection": "/",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/classifications?pageSize=2&page=1",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "page": 1,
+                "pageSize": 2,
+                "totalCount": 2,
+                "_embedded": {
+                  "item": [
+                    {
+                      "id": "class-001",
+                      "name": "Marketing Assets",
+                      "hasChildren": true
+                    },
+                    {
+                      "id": "class-002",
+                      "name": "Product Images",
+                      "hasChildren": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query - search with text filter",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 10,
+          "pageToken": null,
+          "filter": ["banner"],
+          "collection": "/",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/search/records?pageSize=10&page=1",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "page": 1,
+                "pageSize": 10,
+                "totalCount": 1,
+                "items": [
+                  {
+                    "id": "rec-100",
+                    "title": "Homepage Banner",
+                    "createdOn": "2025-01-15T10:00:00Z",
+                    "modifiedOn": "2025-06-01T14:30:00Z",
+                    "_embedded": {
+                      "masterFileLatestVersion": {
+                        "fileName": "banner.png",
+                        "fileExtension": ".png",
+                        "width": 1920,
+                        "height": 600
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query - classification browsing",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 10,
+          "pageToken": null,
+          "filter": [],
+          "collection": "/class-001",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/classification/class-001",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "id": "class-001",
+                "name": "Marketing Assets",
+                "hasChildren": true,
+                "_embedded": {
+                  "children": {
+                    "_embedded": {
+                      "item": [
+                        {
+                          "id": "class-001a",
+                          "name": "Banners",
+                          "hasChildren": false
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/search/records?pageSize=10&page=1",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "page": 1,
+                "pageSize": 10,
+                "totalCount": 1,
+                "items": [
+                  {
+                    "id": "rec-200",
+                    "title": "Marketing Logo",
+                    "_embedded": {
+                      "masterFileLatestVersion": {
+                        "fileName": "logo.svg",
+                        "fileExtension": ".svg",
+                        "width": 400,
+                        "height": 200
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query - before download (single filter ID)",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 1,
+          "pageToken": null,
+          "filter": ["rec-100"],
+          "collection": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/record/rec-100",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "id": "rec-100",
+                "title": "Homepage Banner",
+                "_embedded": {
+                  "masterFileLatestVersion": {
+                    "fileName": "banner.png",
+                    "fileExtension": ".png",
+                    "width": 1920,
+                    "height": 600
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Detail - get record with fields",
+      "method": "detail",
+      "arguments": {
+        "id": "rec-100",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/record/rec-100",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "id": "rec-100",
+                "title": "Homepage Banner",
+                "createdOn": "2025-01-15T10:00:00Z",
+                "modifiedOn": "2025-06-01T14:30:00Z",
+                "status": "Published",
+                "_embedded": {
+                  "masterFileLatestVersion": {
+                    "fileName": "banner.png",
+                    "fileExtension": ".png",
+                    "width": 1920,
+                    "height": 600
+                  },
+                  "fields": {
+                    "_embedded": {
+                      "field": [
+                        {
+                          "fieldName": "Description",
+                          "dataType": "SingleLineText",
+                          "localizedValues": [
+                            {
+                              "value": "Main homepage banner image",
+                              "languageId": "en"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download - thumbnail",
+      "method": "download",
+      "arguments": {
+        "id": "rec-100",
+        "download_type": "thumbnail",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/record/rec-100/image/thumbnail",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "uri": "https://cdn.aprimo.com/thumbnails/rec-100-thumb.png"
+              }
+            }
+          },
+          {
+            "url": "https://cdn.aprimo.com/thumbnails/rec-100-thumb.png",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "image/png"
+              },
+              "body": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download - fullres via master file",
+      "method": "download",
+      "arguments": {
+        "id": "rec-100",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/record/rec-100",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "id": "rec-100",
+                "title": "Homepage Banner",
+                "_embedded": {
+                  "masterFileLatestVersion": {
+                    "fileName": "banner.png",
+                    "fileExtension": ".png",
+                    "width": 1920,
+                    "height": 600,
+                    "_links": {
+                      "download-file": {
+                        "href": "https://cdn.aprimo.com/downloads/rec-100-master.png"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "url": "https://cdn.aprimo.com/downloads/rec-100-master.png",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "image/png"
+              },
+              "body": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query - empty results",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 10,
+          "pageToken": null,
+          "filter": ["nonexistent-search-term"],
+          "collection": "/",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/search/records?pageSize=10&page=1",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "page": 1,
+                "pageSize": 10,
+                "totalCount": 0,
+                "items": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query - pagination (page 2)",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageSize": 1,
+          "pageToken": "2",
+          "filter": ["assets"],
+          "collection": "/",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://tenant.dam.aprimo.com/api/core/search/records?pageSize=1&page=2",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "page": 2,
+                "pageSize": 1,
+                "totalCount": 3,
+                "items": [
+                  {
+                    "id": "rec-302",
+                    "title": "Asset 2",
+                    "_embedded": {
+                      "masterFileLatestVersion": {
+                        "fileName": "asset2.jpg",
+                        "fileExtension": ".jpg"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
