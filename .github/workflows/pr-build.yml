@@ -62,7 +62,6 @@ jobs:
         with:
           inlineScript: |
             az storage blob upload-batch -d sdk -s connector-cli/upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
-  test-cache-control:
     strategy:
       matrix:
         environment: [main]
