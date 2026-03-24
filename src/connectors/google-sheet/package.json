@@ -1,7 +1,7 @@
 {
   "name": "google-sheet",
   "description": "Connect to Google Sheets to use data from your spreadsheets.",
-  "version": "1.1.0",
+  "version": "1.2.0-beta.1",
   "author": {
     "name": "CHILI publish",
     "email": "info@chili-publish.com",
@@ -57,7 +57,7 @@
   "main": "out/connector.js",
   "dependencies": {
     "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "^1.17.1"
+    "@chili-publish/studio-connectors": "^1.39.0"
   },
   "scripts": {
     "build": "yarn connector-cli build",

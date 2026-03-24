@@ -2,13 +2,26 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import reload from 'reload';
-import {
-  compileToTempFile,
-  introspectTsFile,
-} from '../compiler/connectorCompiler';
-import { error, info, startCommand, verbose } from '../core';
+import { compileToTempFile } from '../compiler/connectorCompiler';
+import { error, info, readConnectorConfig, startCommand, verbose } from '../core';
 import { ExecutionError } from '../core/types';
+import { ConnectorType } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
+
+function getDebugConnectorType(configType: ConnectorType): string {
+  switch (configType) {
+    case ConnectorType.Data:
+      return 'dataconnector';
+    case ConnectorType.Media:
+      return 'mediaconnector';
+    default: {
+      const exhaustive: never = configType;
+      throw new ExecutionError(
+        `Unsupported connector type "${exhaustive}" in config. Expected "data" or "media".`
+      );
+    }
+  }
+}
 
 interface DebuggerCommandOptions {
   port: number;
@@ -21,9 +34,10 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { projectPath, options });
 
-  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
+  const { connectorFile, packageJson } = getConnectorProjectFileInfo(projectPath);
+  const config = readConnectorConfig(packageJson);
+  const connectorType = getDebugConnectorType(config.type);
 
-  const connectorType = await introspectTsFile(connectorFile);
   const compilation = await compileToTempFile(connectorFile);
   if (compilation.errors.length > 0) {
     if (options.watch) {

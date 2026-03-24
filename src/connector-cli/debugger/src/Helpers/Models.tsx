@@ -86,6 +86,10 @@ export const Models: {
               componentType: 'list',
             },
             {
+              name: 'previousPageToken',
+              componentType: 'text',
+            },
+            {
               name: 'continuationToken',
               componentType: 'text',
             },
@@ -93,7 +97,7 @@ export const Models: {
               name: 'limit',
               componentType: 'number',
               min: 0,
-              value: 0,
+              value: 10,
             },
           ],
         },
@@ -128,6 +132,50 @@ export const Models: {
       invoke: async (values: any[]) => {
         console.debug('Invoke "GetModel"', values);
         const result = await Models.ConnectorInstance.getModel(values[0] || {});
+
+        console.table({ request: values, result });
+
+        return result;
+      },
+      returnJson: true,
+      returnJsonArray: false,
+      returnsImage: false,
+    },
+    {
+      name: 'getPageItemById',
+      parameters: [
+        {
+          name: 'id',
+          componentType: 'text',
+        },
+        {
+          name: 'pageOptions',
+          componentType: 'complex',
+          complex: [
+            {
+              name: 'sorting',
+              componentType: 'list',
+            },
+            {
+              name: 'limit',
+              componentType: 'number',
+              min: 1,
+              value: 10,
+            },
+          ],
+        },
+        {
+          name: 'context',
+          componentType: 'dictionary',
+        },
+      ],
+      invoke: async (values: any[]) => {
+        console.debug('Invoke "getPageItemById"', values);
+        const result = await Models.ConnectorInstance.getPageItemById(
+          values[0] ?? '',
+          values[1] || {},
+          values[2] || {}
+        );
 
         console.table({ request: values, result });
 

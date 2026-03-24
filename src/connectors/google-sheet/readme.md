@@ -82,4 +82,11 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
    - Define boolean columns using checkboxes.
 
 4. **Row Structure**:
+
    - The spreadsheet must not contain empty rows between rows with data, as pagination logic relies on it.
+
+5. **\_\_rowId\_\_** (item id)
+
+   - The connector always adds a synthetic property `__rowId__` to the data model and to each row: its value is the **1-based Google Sheet row number** (row `1` is the header, so data rows start at `2`).
+   - `__rowId__` is the **item id** for data source variable (DSV) use (`itemIdPropertyName`).
+   - Do **not** create a spreadsheet column whose header is exactly `__rowId__`. That name is reserved; cell values under such a column are ignored and replaced by the row number.
