@@ -1,6 +1,6 @@
 # Releases
 
-## 1.2.0-beta.1
+## 1.2.0
 
 - [Feat][WRS-2945] Update connector to support `Data Source Variable` requirements
 

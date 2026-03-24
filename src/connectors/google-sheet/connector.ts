@@ -391,7 +391,11 @@ export default class GoogleSheetConnector
 
       // Return the range to request for each direction (different tokens).
       const isFirstPage = startRowNumber === 2;
-      const hasNextPage = this.isNextPageAvailable(config.limit, data.length);
+      const hasNextPage = this.shouldOfferContinuationToken(
+        config,
+        cellsRange,
+        data.length
+      );
 
       return {
         previousPageToken: isFirstPage
@@ -641,6 +645,23 @@ export default class GoogleSheetConnector
 
   private isNextPageAvailable(requestedSize: number, resultItems: number) {
     return requestedSize === resultItems;
+  }
+
+  private shouldOfferContinuationToken(
+    config: Data.BidirectionalPageConfig,
+    cellsRange: string,
+    dataLength: number
+  ): boolean {
+    if (this.isNextPageAvailable(config.limit, dataLength)) {
+      return true;
+    }
+    if (!config.previousPageToken) {
+      return false;
+    }
+    const startRow = RangeHelper.getStartRow(cellsRange);
+    const endRow = RangeHelper.getEndRow(cellsRange);
+    const rowsInRequestedRange = endRow - startRow + 1;
+    return startRow === 2 && rowsInRequestedRange < config.limit;
   }
 
   /**
