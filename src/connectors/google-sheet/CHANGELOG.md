@@ -1,5 +1,9 @@
 # Releases
 
+## 1.2.0-beta.1
+
+- [Feat][WRS-2945] Update connector to support `Data Source Variable` requirements
+
 ## 1.1.0
 
 - [Fix][GRAFX-5515] Continuation token now properly adjusts the requested range when `config.limit` changes between requests
