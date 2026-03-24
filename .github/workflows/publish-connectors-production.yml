@@ -106,7 +106,7 @@ jobs:
                     --name $blob_name \
                     --file $destination_file \
                     --container-name $container_name \
-                    --account-name "$storage_account" \
+                    --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
                     --auth-mode login \
                     --no-progress
                   echo "✓ Downloaded ${connector_id}.${version}.json"
@@ -279,7 +279,6 @@ jobs:
           inlineScript: |
             set -eo pipefail
             container_name="connector-marketplace"
-            storage_account="${{ secrets.STORAGE_ACCOUNT_NAME }}"
 
             # Upload connector version files
             if [ -d "uat_connectors" ] && [ "$(ls -A uat_connectors)" ]; then
@@ -292,7 +291,7 @@ jobs:
                     --file "$file" \
                     --name "$blob_name" \
                     --container-name $container_name \
-                    --account-name "$storage_account" \
+                    --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
                     --auth-mode login \
                     --overwrite true
                   echo "✓ Uploaded $blob_name"
