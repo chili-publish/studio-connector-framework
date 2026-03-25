@@ -124,3 +124,14 @@ jobs:
               --auth-mode login \
               --overwrite true
             echo "Uploaded connectors to ${{ matrix.environment }}"
+
+            # index.json: clear content settings so no Cache-Control (or related) is stored on the blob
+            az storage blob update \
+              --container-name $container_name \
+              --name connector-repo/index.json \
+              --account-name "${{ secrets.STORAGE_ACCOUNT_NAME }}" \
+              --auth-mode login \
+              --clear-content-settings true \
+              --content-type application/json \
+              --content-cache-control "no-store, no-cache, must-revalidate"
+            echo "Updated index.json blob properties (no cache-control) in ${{ matrix.environment }}"
