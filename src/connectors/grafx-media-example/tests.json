@@ -1,7 +1,7 @@
 {
   "setup": {
     "runtime_options": {
-      "BASE_URL": "https://localhost:3000"
+      "ENVIRONMENT_API": "https://localhost:3000"
     }
   },
   "tests": [
@@ -9,14 +9,15 @@
       "name": "test1",
       "method": "download",
       "arguments": {
-        "id": "id",
-        "url": "url",
-        "options": {}
+        "id": "asset-id",
+        "download_type": "mediumres",
+        "download_intent": "web",
+        "context": {}
       },
       "asserts": {
         "fetch": [
           {
-            "url": "url",
+            "url": "https://localhost:3000/media/asset-id/preview/medium",
             "method": "GET",
             "count": 1
           }

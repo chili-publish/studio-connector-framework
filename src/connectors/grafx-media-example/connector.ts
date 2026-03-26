@@ -223,7 +223,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
    * Returns the created Asset objects.
    */
   async upload(
-    files: unknown[],
+    files: Array<{ name: string }>,
     context: Connector.Dictionary
   ): Promise<GrafxAsset[]> {
     const folderPath = this._getUploadFolder(context);
@@ -291,9 +291,11 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
   // ─── Private helpers ──────────────────────────────────────────────────────
 
   private _getBaseMediaUrl(): string {
-    let baseUrl = this.runtime.options['ENVIRONMENT_API'] as string;
-    baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    return baseUrl + 'media';
+    const baseUrl = this.runtime.options['ENVIRONMENT_API'];
+    if (typeof baseUrl !== 'string' || baseUrl.trim().length === 0) {
+      throw new ConnectorHttpError(400, 'Missing runtime option ENVIRONMENT_API');
+    }
+    return `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}media`;
   }
 
   private _getUploadFolder(context: Connector.Dictionary): string {
