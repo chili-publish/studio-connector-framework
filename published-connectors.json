@@ -3,7 +3,6 @@
   "adobe-experience-manager": { "publish": true },
   "canto": { "publish": true },
   "dall-e": { "publish": false },
-  "fake-timeout-connector": { "publish": false },
   "google-sheet": { "publish": true },
   "grafx-media-example": { "publish": false },
   "kadanza": { "publish": true },

@@ -23,7 +23,7 @@ const connectorsConfig = JSON.parse(
 const connectorsToProcess = process.argv.slice(2);
 connectorsToProcess.forEach(file => {
   if (connectorsConfig[file] && connectorsConfig[file].publish === false) {
-    console.log(`Skipping ${file} (publish: false in connectors.json)`);
+    console.log(`Skipping ${file} (publish: false in published-connectors.json)`);
     return;
   }
 
