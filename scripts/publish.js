@@ -16,8 +16,17 @@ const repoRoot = findRepoRoot(__dirname);
 
 console.log(`Found repo root at ${repoRoot}`);
 
+const connectorsConfig = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'published-connectors.json'), 'utf-8'),
+);
+
 const connectorsToProcess = process.argv.slice(2);
 connectorsToProcess.forEach(file => {
+  if (connectorsConfig[file] && connectorsConfig[file].publish === false) {
+    console.log(`Skipping ${file} (publish: false in connectors.json)`);
+    return;
+  }
+
   const dirPath = path.join(repoRoot, 'src', 'connectors', file);
   console.log(`Checking ${dirPath}`);
 
