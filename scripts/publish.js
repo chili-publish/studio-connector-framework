@@ -16,10 +16,21 @@ const repoRoot = findRepoRoot(__dirname);
 
 console.log(`Found repo root at ${repoRoot}`);
 
+const excludedConnectors = [
+  'grafx-media-example',
+  'dall-e',
+  'url-connector',
+];
+
 const connectorsToProcess = process.argv.slice(2);
 connectorsToProcess.forEach(file => {
   const dirPath = path.join(repoRoot, 'src', 'connectors', file);
   console.log(`Checking ${dirPath}`);
+
+  if (excludedConnectors.includes(file)) {
+    console.log(`Skipping excluded connector ${file}`);
+    return;
+  }
 
   if (fs.statSync(dirPath).isDirectory()) {
     console.log(`Processing ${dirPath}`);
