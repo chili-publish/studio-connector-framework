@@ -10,7 +10,7 @@
   "config": {
     "connectorName": "Bynder",
     "type": "media",
-    "options": {"baseURL": ""},
+    "options": {"baseURL": null},
     "mappings": {},
     "supportedAuth": ["oAuth2ClientCredentials"]
   },
