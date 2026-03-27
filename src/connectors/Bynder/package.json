@@ -10,6 +10,7 @@
   "config": {
     "connectorName": "Bynder",
     "type": "media",
+    "iconUrl": "https://asset.brandfetch.io/idRKLWV20c/id953RdnbB.svg",
     "options": {"baseURL": null},
     "mappings": {},
     "supportedAuth": ["oAuth2ClientCredentials"]
