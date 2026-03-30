@@ -51,19 +51,48 @@ class RangeHelper {
   }
 
   /**
-   * Returns the range string for the page that contains the given sheet row number,
-   * given the page size (limit). Row numbers are 1-indexed in the sheet; row 1 is the
+   * Returns the range string for the next page page given the row number and the page size (limit).
+   * Row numbers are 1-indexed in the sheet; row 1 is the
    * header, so data rows start at row 2.
    */
-  static buildPageRangeForRow(
+  static buildRangeForNextPage(
     sheetName: string | null,
     rowNumber: number,
     limit: number
   ) {
     const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
     const pageIndex = Math.floor(dataPos / limit);
+
+    const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
+
+    if (isFirstPage) {
+      return RangeHelper.buildRange(sheetName, rowNumber + 1, rowNumber + limit);
+    }
+
     const pageStartRow = 2 + pageIndex * limit;
-    const pageEndRow = 1 + (pageIndex + 1) * limit;
+    const pageEndRow = (pageIndex + 1) * limit;
+
+    return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
+  }
+
+  static buildRangeForPreviousPage(
+    sheetName: string | null,
+    rowNumber: number,
+    limit: number
+  ) {
+    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
+    const pageIndex = Math.floor(dataPos / limit);
+
+    const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
+
+    if (isFirstPage) {
+      if (rowNumber - 1 < 2) return null; // (row 2 → pos 0)
+      return RangeHelper.buildRange(sheetName, 2, rowNumber -1);
+    }
+
+    const pageStartRow = Math.max(2, pageIndex * limit);
+    const pageEndRow = rowNumber - 1;
+
     return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
   }
 
@@ -114,6 +143,12 @@ class RangeHelper {
     end: number
   ) {
     return sheetName ? `${sheetName}!${start}:${end}` : `${start}:${end}`;
+  }
+
+  static isFirstPage(rowNumber: number, limit: number) {
+    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
+    const pageIndex = Math.floor(dataPos / limit);
+    return pageIndex === 0;
   }
 
   private static extractFromRange(
@@ -517,19 +552,22 @@ export default class GoogleSheetConnector
 
       const item = items[0];
 
-      const pageRange = RangeHelper.buildPageRangeForRow(
+      const nextPageRange = RangeHelper.buildRangeForNextPage(
         sheetName,
         rowNumber,
         limit
       );
-      const isFirstPage = RangeHelper.getStartRow(pageRange) === 2;
+
+      const previousPageRange = RangeHelper.buildRangeForPreviousPage(
+        sheetName,
+        rowNumber,
+        limit
+      );
 
       return {
         data: item,
-        previousPageToken: isFirstPage
-          ? null
-          : RangeHelper.buildPreviousPageRange(pageRange, limit),
-        continuationToken: RangeHelper.buildNextPageRange(pageRange, limit),
+        previousPageToken: RangeHelper.isFirstPage(rowNumber, limit) ? previousPageRange : RangeHelper.buildPreviousPageRange(previousPageRange, limit),
+        continuationToken: RangeHelper.isFirstPage(rowNumber, limit) ? nextPageRange : RangeHelper.buildNextPageRange(nextPageRange, limit)
       };
     }, 'getPageItemById');
   }
