@@ -60,17 +60,14 @@ class RangeHelper {
     rowNumber: number,
     limit: number
   ) {
-    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
-    const pageIndex = Math.floor(dataPos / limit);
-
     const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
 
     if (isFirstPage) {
       return RangeHelper.buildRange(sheetName, rowNumber + 1, rowNumber + limit);
     }
 
-    const pageStartRow = 2 + pageIndex * limit;
-    const pageEndRow = (pageIndex + 1) * limit;
+    const pageStartRow = rowNumber + 1;
+    const pageEndRow = pageStartRow + limit - 1;
 
     return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
   }
@@ -80,9 +77,6 @@ class RangeHelper {
     rowNumber: number,
     limit: number
   ) {
-    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
-    const pageIndex = Math.floor(dataPos / limit);
-
     const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
 
     if (isFirstPage) {
@@ -90,8 +84,8 @@ class RangeHelper {
       return RangeHelper.buildRange(sheetName, 2, rowNumber -1);
     }
 
-    const pageStartRow = Math.max(2, pageIndex * limit);
     const pageEndRow = rowNumber - 1;
+    const pageStartRow = Math.max(2, pageEndRow - limit + 1);
 
     return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
   }
@@ -566,8 +560,8 @@ export default class GoogleSheetConnector
 
       return {
         data: item,
-        previousPageToken: RangeHelper.isFirstPage(rowNumber, limit) ? previousPageRange : RangeHelper.buildPreviousPageRange(previousPageRange, limit),
-        continuationToken: RangeHelper.isFirstPage(rowNumber, limit) ? nextPageRange : RangeHelper.buildNextPageRange(nextPageRange, limit)
+        previousPageToken: previousPageRange,
+        continuationToken: nextPageRange,
       };
     }, 'getPageItemById');
   }
