@@ -19,7 +19,6 @@ console.log(`Found repo root at ${repoRoot}`);
 const excludedConnectors = [
   'grafx-media-example',
   'dall-e',
-  'url-connector',
 ];
 
 const connectorsToProcess = process.argv.slice(2);
@@ -73,7 +72,7 @@ fs.readdirSync(publishDir).forEach(file => {
     const connectorVersion = connectorDetails.version;
 
     if (!indexJson[id]) {
-      indexJson[id] = {versions: []};
+      indexJson[id] = { versions: [] };
     }
     indexJson[id].name = name ?? packageName;
     indexJson[id].author = connectorAuthor;
@@ -95,7 +94,7 @@ fs.writeFileSync(
 
 function processConnector(dir) {
   // Build the project
-  execSync('yarn build', {cwd: dir, stdio: 'inherit'});
+  execSync('yarn build', { cwd: dir, stdio: 'inherit' });
 
   // Validate the out folder contains a connector.js file
   const outDir = path.join(dir, 'out');
@@ -142,7 +141,7 @@ function extractConnectorInfo(outDir, inputDir) {
     path.join(inputDir, 'connector.ts');
   console.log(infoCommand);
 
-  execSync(infoCommand, {cwd: repoRoot});
+  execSync(infoCommand, { cwd: repoRoot });
 
   const infoOutput = fs.readFileSync(path.join(outDir, 'props.json'));
   const connectorInfo = JSON.parse(infoOutput);
