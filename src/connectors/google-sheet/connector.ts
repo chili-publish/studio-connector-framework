@@ -63,7 +63,11 @@ class RangeHelper {
     const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
 
     if (isFirstPage) {
-      return RangeHelper.buildRange(sheetName, rowNumber + 1, rowNumber + limit);
+      return RangeHelper.buildRange(
+        sheetName,
+        rowNumber + 1,
+        rowNumber + limit
+      );
     }
 
     const pageStartRow = rowNumber + 1;
@@ -81,7 +85,7 @@ class RangeHelper {
 
     if (isFirstPage) {
       if (rowNumber - 1 < 2) return null; // (row 2 → pos 0)
-      return RangeHelper.buildRange(sheetName, 2, rowNumber -1);
+      return RangeHelper.buildRange(sheetName, 2, rowNumber - 1);
     }
 
     const pageEndRow = rowNumber - 1;
@@ -160,16 +164,77 @@ class RangeHelper {
 
 const ITEM_ROW_ID_PROPERTY = '__rowId__' as const;
 
+const CONTEXT_SPREADSHEET_URL_PROPERTY = 'spreadsheetURL' as const;
+
+class RowIdHelper {
+  /**
+   * When the URL has no `gid`, the connector targets the first sheet; row ids use `0` for that case.
+   */
+  static canonicalSheetId(sheetId: string | null): string {
+    return sheetId ?? '0';
+  }
+
+  static build(
+    spreadsheetId: string,
+    sheetId: string | null,
+    rowNumber: number
+  ): string {
+    return `${spreadsheetId}_${RowIdHelper.canonicalSheetId(
+      sheetId
+    )}_${rowNumber}`;
+  }
+
+  /**
+   * Parses `{spreadsheetId}_{sheetId}_{rowNumber}`. The spreadsheet id may contain `_`;
+   * sheet id and row are the last two segments (sheet id is numeric).
+   */
+  static parse(id: string): {
+    spreadsheetId: string;
+    sheetId: string;
+    rowNumber: number;
+  } | null {
+    const parts = id.split('_');
+    if (parts.length < 3) {
+      return null;
+    }
+    const rowPart = parts[parts.length - 1]!;
+    const sheetIdPart = parts[parts.length - 2]!;
+    const spreadsheetId = parts.slice(0, -2).join('_');
+    const rowNumber = parseInt(rowPart, 10);
+    if (!Number.isInteger(rowNumber) || rowNumber < 2) {
+      return null;
+    }
+    if (!/^\d+$/.test(sheetIdPart)) {
+      return null;
+    }
+    return { spreadsheetId, sheetId: sheetIdPart, rowNumber };
+  }
+
+  static assignRowIdToItem(
+    item: Data.DataItem,
+    spreadsheetId: string,
+    sheetId: string | null,
+    rowNumber: number
+  ): Data.DataItem {
+    const rowId = RowIdHelper.build(spreadsheetId, sheetId, rowNumber);
+    const rest = { ...(item as Record<string, unknown>) };
+    delete rest[ITEM_ROW_ID_PROPERTY];
+    return {
+      [ITEM_ROW_ID_PROPERTY]: rowId,
+      ...rest,
+    } as Data.DataItem;
+  }
+}
+
 class Converter {
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
-    tableBody: Array<Row>,
-    startRowNumber: number
+    tableBody: Array<Row>
   ): Array<Data.DataItem> {
     const tableHeaderValues = tableHeader.values;
     return (
       tableBody
-        .map((row, rowIndex) => {
+        .map((row) => {
           const item =
             this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
               (acc, tableCell, colIndex) => {
@@ -199,7 +264,6 @@ class Converter {
             ) ?? null;
 
           if (item === null) return null;
-          item[ITEM_ROW_ID_PROPERTY] = startRowNumber + rowIndex;
           return item;
         })
         // Filter out empty rows
@@ -416,7 +480,14 @@ export default class GoogleSheetConnector
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
 
       const startRowNumber = RangeHelper.getStartRow(cellsRange);
-      const data = Converter.toDataItems(headerRow, bodyRows, startRowNumber);
+      const data = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+        RowIdHelper.assignRowIdToItem(
+          item,
+          spreadsheetId,
+          sheetId,
+          startRowNumber + i
+        )
+      );
 
       // Return the range to request for each direction (different tokens).
       const isFirstPage = startRowNumber === 2;
@@ -466,7 +537,10 @@ export default class GoogleSheetConnector
       const properties = Converter.toDataModelProperties(headerRow, bodyRows);
 
       return {
-        properties: [...properties, { name: ITEM_ROW_ID_PROPERTY, type: 'number' }],
+        properties: [
+          ...properties,
+          { name: ITEM_ROW_ID_PROPERTY, type: 'singleLine' },
+        ],
         itemIdPropertyName: ITEM_ROW_ID_PROPERTY,
       };
     }, 'getModel');
@@ -476,7 +550,7 @@ export default class GoogleSheetConnector
     return [
       {
         type: 'text',
-        name: 'spreadsheetURL',
+        name: CONTEXT_SPREADSHEET_URL_PROPERTY,
         displayName: 'Spreadsheet URL',
       },
     ];
@@ -497,25 +571,38 @@ export default class GoogleSheetConnector
     context: Connector.Dictionary
   ): Promise<BidirectionalDataPageItem> {
     return this.withTiming(async () => {
-      const rowNumber = parseInt(id, 10);
-      if (!Number.isInteger(rowNumber) || rowNumber < 2) {
+      const { spreadsheetId, sheetId } =
+        this.extractSheetIdentityFromContext(context);
+
+      const parsed = RowIdHelper.parse(id);
+      if (!parsed) {
         throw new Error(
-          `Google Sheet: Invalid ${ITEM_ROW_ID_PROPERTY} "${id}". Expected a sheet row number >= 2.`
+          `Google Sheet: Invalid ${ITEM_ROW_ID_PROPERTY} "${id}". Expected format "{spreadsheetId}_{sheetId}_{rowNumber}" with numeric sheet id and row number >= 2.`
         );
       }
 
-      const { spreadsheetId, sheetId } =
-        this.extractSheetIdentityFromContext(context);
+      const expectedSheetKey = RowIdHelper.canonicalSheetId(sheetId);
+      if (
+        parsed.spreadsheetId !== spreadsheetId ||
+        parsed.sheetId !== expectedSheetKey
+      ) {
+        throw new Error(
+          `Google Sheet: ${ITEM_ROW_ID_PROPERTY} "${id}" does not match the current "${CONTEXT_SPREADSHEET_URL_PROPERTY}" context (spreadsheetURL: "${context[CONTEXT_SPREADSHEET_URL_PROPERTY]}").`
+        );
+      }
+
+      const rowNumber = parsed.rowNumber;
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
       const limit = Math.max(1, pageOptions.limit);
 
-      const rowRange = RangeHelper.buildRowRange(sheetName, rowNumber);
       const res = await this.withTiming(
         () =>
           this.runtime.fetch(
             `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
               RangeHelper.buildHeaderRange(sheetName)
-            )}&ranges=${encodeURIComponent(rowRange)}`,
+            )}&ranges=${encodeURIComponent(
+              RangeHelper.buildRowRange(sheetName, rowNumber)
+            )}`,
             { method: 'GET' }
           ),
         'fetch:getPageItemById'
@@ -531,16 +618,23 @@ export default class GoogleSheetConnector
           // ignore parse failure
         }
         throw new Error(
-          `Google Sheet: Record not found for ${ITEM_ROW_ID_PROPERTY} "${rowNumber}". The row may not exist or be outside the sheet.`
+          `Google Sheet: Record not found for ${ITEM_ROW_ID_PROPERTY} "${id}". The row may not exist or be outside the sheet.`
         );
       }
 
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
-      const items = Converter.toDataItems(headerRow, bodyRows, rowNumber);
+      const items = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+        RowIdHelper.assignRowIdToItem(
+          item,
+          spreadsheetId,
+          sheetId,
+          rowNumber + i
+        )
+      );
 
       if (items.length === 0) {
         throw new Error(
-          `Google Sheet: No data found for row ${rowNumber} (${ITEM_ROW_ID_PROPERTY} "${rowNumber}").`
+          `Google Sheet: No data found for row ${rowNumber} (${ITEM_ROW_ID_PROPERTY} "${id}").`
         );
       }
 
@@ -575,10 +669,12 @@ export default class GoogleSheetConnector
     headerRow: Row<Required<CellData>>
   ): void {
     if (
-      headerRow.values.some((cell) => cell.formattedValue === ITEM_ROW_ID_PROPERTY)
+      headerRow.values.some(
+        (cell) => cell.formattedValue === ITEM_ROW_ID_PROPERTY
+      )
     ) {
       this.runtime.logError(
-        `Google Sheet: The sheet defines a column header "${ITEM_ROW_ID_PROPERTY}", which is reserved. Cell values under that column are ignored; ${ITEM_ROW_ID_PROPERTY} is set from the sheet row number.`
+        `Google Sheet: The sheet defines a column header "${ITEM_ROW_ID_PROPERTY}", which is reserved. Cell values under that column are ignored; ${ITEM_ROW_ID_PROPERTY} is set from spreadsheet id, sheet id, and row number.`
       );
     }
   }
@@ -614,7 +710,7 @@ export default class GoogleSheetConnector
     spreadsheetId: string;
     sheetId: string | null;
   } {
-    const spreadsheetURL = context['spreadsheetURL'];
+    const spreadsheetURL = context[CONTEXT_SPREADSHEET_URL_PROPERTY];
 
     if (!spreadsheetURL || typeof spreadsheetURL !== 'string') {
       throw new Error(
