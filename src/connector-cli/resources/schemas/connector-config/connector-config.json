@@ -52,6 +52,48 @@
       "type": "object"
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "supportedAuth": {
+            "contains": {
+              "const": "oAuth2AuthorizationCode"
+            }
+          }
+        },
+        "required": ["supportedAuth"]
+      },
+      "then": {
+        "required": ["authenticationConfig"],
+        "properties": {
+          "authenticationConfig": {
+            "required": ["oAuth2AuthorizationCode"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "supportedAuth": {
+            "contains": {
+              "const": "oAuth2JwtBearer"
+            }
+          }
+        },
+        "required": ["supportedAuth"]
+      },
+      "then": {
+        "required": ["authenticationConfig"],
+        "properties": {
+          "authenticationConfig": {
+            "required": ["oAuth2JwtBearer"]
+          }
+        }
+      }
+    }
+  ],
   "additionalProperties": false,
   "required": ["type", "options", "supportedAuth"]
 }
