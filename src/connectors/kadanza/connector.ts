@@ -307,7 +307,7 @@ export default class DamConnector implements Media.MediaConnector {
     return {
       // We save all information required for 'download` under id to avoid details call
       id: JSON.stringify(assetId),
-      name: damMedia.name,
+      name: damMedia.title,
       relativePath: 'Media',
       type: 0,
       metaData: this._getMetadataFromDamMedia(damMedia, customMetadata),
