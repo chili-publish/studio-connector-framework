@@ -34,7 +34,6 @@ interface GrafxAssetDetailResponse {
   links: Record<string, string> | null;
 }
 
-// `StudioFormData` and `ConnectorHttpError` are declared globally by @chili-publish/studio-connectors.
 declare function sleep(ms: number): Promise<void>;
 
 // ─── Connector implementation ─────────────────────────────────────────────────
