@@ -236,14 +236,13 @@ export default class CsvConnector
     const limit = Math.max(1, pageOptions.limit);
     const row = rows[filteredIndex];
 
+    const currentPageStart = Math.floor(filteredIndex / limit) * limit;
+
     return {
       data: this.toDataItem(row, headers),
       continuationToken:
         filteredIndex + 1 < rows.length ? String(filteredIndex + 1) : null,
-      previousPageToken:
-        filteredIndex > 0
-          ? String(Math.min(filteredIndex, Math.ceil(filteredIndex / limit) * limit))
-          : null,
+      previousPageToken: currentPageStart > 0 ? String(currentPageStart) : null,
     };
   }
 
