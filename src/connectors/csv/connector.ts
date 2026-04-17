@@ -51,10 +51,18 @@ class CsvParser {
 
     const dataRows = nonEmpty.slice(1);
 
-    // Infer column types from the first non-empty value in each column.
+    // Infer column types by sampling all non-empty values per column.
+    // If any cell contradicts the type inferred from the first sample, fall
+    // back to 'singleLine' so heterogeneous columns are never misclassified.
     const types: ConnectorCellType[] = headers.map((_, col) => {
-      const sample = dataRows.find((r) => (r[col] ?? '').trim().length > 0)?.[col] ?? '';
-      return this.inferType(sample.trim());
+      const samples = dataRows
+        .map((r) => (r[col] ?? '').trim())
+        .filter((v) => v.length > 0);
+      if (samples.length === 0) return 'singleLine';
+      const candidate = this.inferType(samples[0]);
+      if (candidate === 'singleLine') return 'singleLine';
+      const consistent = samples.every((s) => this.inferType(s) === candidate);
+      return consistent ? candidate : 'singleLine';
     });
 
     const rows: ParsedRow[] = dataRows
@@ -143,7 +151,11 @@ class CsvParser {
   private inferType(sample: string): ConnectorCellType {
     if (sample === '') return 'singleLine';
     if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false') return 'boolean';
-    if (sample.length > 0 && !isNaN(Number(sample))) return 'number';
+    if (
+      sample.length > 0 &&
+      !/^[+0]/.test(sample) &&
+      Number.isFinite(Number(sample))
+    ) return 'number';
     if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample) && !Number.isNaN(new Date(sample).getTime())) return 'date';
     return 'singleLine';
   }
@@ -151,7 +163,7 @@ class CsvParser {
   private coerce(value: string, type: ConnectorCellType): unknown {
     if (value === '') return null;
     switch (type) {
-      case 'number':  return Number(value);
+      case 'number':  return Number.isFinite(Number(value)) ? Number(value) : value;
       case 'boolean': return value.toLowerCase() === 'true';
       case 'date':    return value;
       default:        return value;
