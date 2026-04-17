@@ -283,9 +283,10 @@ export default class CsvConnector
       );
     }
 
-    // The GraFx Studio runtime populates response.text for responses served
-    // with Content-Type: application/json. Ensure your CSV file is hosted
-    // at a public URL and served with Content-Type: application/json.
+    // The GraFx Studio runtime only populates response.text when the response
+    // is served with Content-Type: application/json (or any type containing
+    // "json"). Ensure your CSV file is hosted at a public URL and served with
+    // Content-Type: application/json.
     const text = response.text as string | undefined;
     if (!text || text.trim().length === 0) {
       throw new Error(
