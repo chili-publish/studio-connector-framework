@@ -323,7 +323,7 @@ export default class CsvConnector
         const val = row.values[colIndex];
         if (val === null || val === undefined) return false;
         const cellStr = String(val).toLowerCase();
-        const needle  = filter.value.toLowerCase();
+        const needle  = String(filter.value).toLowerCase();
         return filter.type === 'exact' ? cellStr === needle : cellStr.includes(needle);
       })
     );
