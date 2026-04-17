@@ -1,6 +1,6 @@
 {
   "name": "csv",
-  "description": "Use any publicly accessible CSV (UTF-8) file as a data source. Host your file anywhere — S3, a CDN, or any public URL — serve it with Content-Type application/json, and paste the URL.",
+  "description": "Use any publicly accessible CSV (UTF-8) file as a data source.",
   "version": "1.0.0-beta.3",
   "private": true,
   "author": {

@@ -178,6 +178,7 @@ export default class CsvConnector
 {
   private runtime: Connector.ConnectorRuntimeContext;
   private parser = new CsvParser();
+  private cache: { url: string; sheet: ParsedSheet } | null = null;
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -198,9 +199,16 @@ export default class CsvConnector
 
     let startIndex = 0;
     if (config.continuationToken) {
-      startIndex = parseInt(config.continuationToken, 10);
+      const parsed = parseInt(config.continuationToken, 10);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error(`CSV connector: invalid continuation token "${config.continuationToken}".`);
+      }
+      startIndex = parsed;
     } else if (config.previousPageToken) {
       const tokenStart = parseInt(config.previousPageToken, 10);
+      if (!Number.isFinite(tokenStart) || tokenStart < 0) {
+        throw new Error(`CSV connector: invalid previous page token "${config.previousPageToken}".`);
+      }
       startIndex = Math.max(0, tokenStart - config.limit);
     }
 
@@ -287,7 +295,13 @@ export default class CsvConnector
       throw new Error('CSV connector: configuration option "csvUrl" is required.');
     }
 
-    const response = await this.runtime.fetch(url.trim(), { method: 'GET' });
+    const normalisedUrl = url.trim();
+
+    if (this.cache?.url === normalisedUrl) {
+      return this.cache.sheet;
+    }
+
+    const response = await this.runtime.fetch(normalisedUrl, { method: 'GET' });
     if (!response.ok) {
       throw new ConnectorHttpError(
         response.status,
@@ -307,7 +321,9 @@ export default class CsvConnector
       );
     }
 
-    return this.parser.parse(text);
+    const sheet = this.parser.parse(text);
+    this.cache = { url: normalisedUrl, sheet };
+    return sheet;
   }
 
   private applyFilters(
@@ -317,13 +333,7 @@ export default class CsvConnector
   ): ParsedRow[] {
     if (!filters || filters.length === 0) return rows;
 
-    const normalised: DataFilter[] = filters
-      .map((f) => {
-        if (typeof f === 'string') {
-          try { return JSON.parse(f) as DataFilter; } catch { return null; }
-        }
-        return f as DataFilter;
-      })
+    const normalised = filters
       .filter((f): f is DataFilter => f !== null && typeof f.property === 'string');
 
     if (normalised.length === 0) return rows;
