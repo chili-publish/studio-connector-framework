@@ -58,8 +58,11 @@ export async function initRuntime(
       const arrayBuffer = await response.arrayBuffer();
       const id = Math.random().toString(36).substring(7);
       cache.set(id, arrayBuffer);
-      // We couldn't make a ... copy of response object as it is not iterable
-      (response as any)['arrayBuffer'] = {
+      // Expose the actual ArrayBuffer so data connectors (e.g. XLSX) can read
+      // the bytes directly. Also attach a pointer so media connectors and the
+      // ImageFromBuffer component can still look up the cache by ID.
+      (response as any)['arrayBuffer'] = arrayBuffer;
+      (response as any)['_arrayBufferPointer'] = {
         id: id,
         bytes: arrayBuffer.byteLength,
       };

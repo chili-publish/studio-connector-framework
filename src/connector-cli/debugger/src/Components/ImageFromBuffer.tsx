@@ -12,12 +12,18 @@ const ArrayBufferImage: React.FC<Props> = ({ buffer, width, height }) => {
 
   useEffect(() => {
     if (buffer) {
-      getImageFromCache(buffer).then((image) => {
-        const blob = new Blob([image], { type: 'image/jpeg' }); // change the type if you're dealing with different image format
+      // buffer is now the actual ArrayBuffer; fall back to cache lookup for
+      // older pointer-style values ({ id, bytes }).
+      const resolveBuffer =
+        buffer instanceof ArrayBuffer
+          ? Promise.resolve(buffer)
+          : getImageFromCache((buffer as any).id ?? buffer);
+
+      resolveBuffer.then((image) => {
+        const blob = new Blob([image], { type: 'image/jpeg' });
         const url = URL.createObjectURL(blob);
         setImageSrc(url);
 
-        // Clean up function to revoke the object URL
         return () => {
           URL.revokeObjectURL(url);
         };
