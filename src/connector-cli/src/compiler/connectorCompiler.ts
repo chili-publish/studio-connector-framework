@@ -2,7 +2,6 @@ import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import * as esbuild from 'esbuild';
 import { verbose } from '../core';
 
 export async function compileToTempFile(
@@ -60,49 +59,41 @@ export async function compile(
     declaration: false,
   };
 
-  // Use TypeScript only for type-checking / diagnostics.
+  // build to in-memory
   const program = ts.createProgram([fileName], compilerOptions);
-  const diagnostics = ts.getPreEmitDiagnostics(program);
+  var output = '';
 
-  if (diagnostics.length > 0) {
+  const emitResult = program.emit(undefined, (fileName, txt) => {
+    output += txt;
+  });
+  if (emitResult.emitSkipped) {
     return {
       script: '',
-      errors: diagnostics.map((d) => ({
-        line:
-          d.file?.getLineAndCharacterOfPosition(d.start!).line.toString() ?? '',
-        error: d.messageText.toString(),
-      })),
-      formattedDiagnostics: ts.formatDiagnosticsWithColorAndContext(
-        diagnostics,
+      errors: [
         {
-          getCurrentDirectory: () => process.cwd(),
-          getCanonicalFileName: (f) => f,
-          getNewLine: () => ts.sys.newLine,
-        }
-      ),
+          line: '',
+          error: 'Compile failed',
+        },
+      ],
+      formattedDiagnostics: '',
     };
   }
 
-  // Use esbuild for bundling so that external npm packages (e.g. xlsx) are
-  // inlined into the output. Type-only imports (like @chili-publish/studio-connectors)
-  // are automatically tree-shaken away.
-  const result = await esbuild.build({
-    entryPoints: [fileName],
-    bundle: true,
-    format: 'esm',
-    platform: 'browser',
-    target: 'es2020',
-    write: false,
-    treeShaking: true,
-    logLevel: 'silent',
-  });
-
-  const script = result.outputFiles[0]?.text ?? '';
+  // output to console
+  const diagnostics = ts.getPreEmitDiagnostics(program);
 
   return {
-    script,
-    errors: [],
-    formattedDiagnostics: '',
+    script: output,
+    errors: diagnostics.map((d) => ({
+      line:
+        d.file?.getLineAndCharacterOfPosition(d.start!).line.toString() ?? '',
+      error: d.messageText.toString(),
+    })),
+    formattedDiagnostics: ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+      getCurrentDirectory: () => process.cwd(),
+      getCanonicalFileName: (fileName) => fileName,
+      getNewLine: () => ts.sys.newLine,
+    }),
   };
 }
 

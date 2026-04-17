@@ -1,7 +1,7 @@
 {
   "name": "csv",
-  "description": "Use a publicly accessible CSV file as a data source. Export from Excel as CSV UTF-8, upload to S3 with Content-Type application/json, and paste the URL.",
-  "version": "0.2.0-beta",
+  "description": "Use any publicly accessible CSV (UTF-8) file as a data source. Host your file anywhere — S3, a CDN, or any public URL — serve it with Content-Type application/json, and paste the URL.",
+  "version": "1.0.0-beta.3",
   "private": true,
   "author": {
     "name": "CHILI publish",
@@ -11,7 +11,7 @@
   "config": {
     "connectorName": "CSV",
     "type": "data",
-    "iconUrl": "",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/csv-connector.svg",
     "options": {},
     "mappings": {},
     "supportedAuth": []

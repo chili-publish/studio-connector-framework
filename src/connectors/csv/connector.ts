@@ -1,18 +1,12 @@
 import {
   Connector,
   Data,
+  DataFilter,
   BidirectionalDataPageItem,
 } from '@chili-publish/studio-connectors';
 
 // The property name injected on every row as the unique item identifier.
 const ITEM_ID_PROPERTY = '__id__' as const;
-
-// Native filter shape passed by Studio through getPage config.
-interface DataFilter {
-  property: string;
-  value: string;
-  type: 'contains' | 'exact';
-}
 
 type ConnectorCellType = 'singleLine' | 'number' | 'date' | 'boolean';
 
@@ -27,10 +21,151 @@ interface ParsedSheet {
   rows: ParsedRow[];
 }
 
-export default class CsvPublicUrlConnector
+// ─── CSV Parser ───────────────────────────────────────────────────────────────
+// Handles:
+//   • Comma-separated and semicolon-separated files
+//   • Quoted fields (fields containing commas, semicolons or line breaks)
+//   • UTF-8 BOM added by Excel's "CSV UTF-8" export
+//   • Windows (CRLF) and Unix (LF) line endings
+//   • Type inference: numbers, booleans, ISO dates → singleLine fallback
+
+class CsvParser {
+  parse(raw: string): ParsedSheet {
+    // Strip UTF-8 BOM that Excel prepends to CSV UTF-8 exports.
+    const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+
+    const allRows = this.tokenize(text);
+
+    // Drop fully empty rows (trailing newline, blank lines).
+    const nonEmpty = allRows.filter((row) => row.some((v) => v.trim().length > 0));
+
+    if (nonEmpty.length < 2) {
+      throw new Error(
+        'CSV connector: file must have at least a header row and one data row.'
+      );
+    }
+
+    const headers = nonEmpty[0].map((h, i) =>
+      h.trim().length > 0 ? h.trim() : `Column${i + 1}`
+    );
+
+    const dataRows = nonEmpty.slice(1);
+
+    // Infer column types from the first non-empty value in each column.
+    const types: ConnectorCellType[] = headers.map((_, col) => {
+      const sample = dataRows.find((r) => (r[col] ?? '').trim().length > 0)?.[col] ?? '';
+      return this.inferType(sample.trim());
+    });
+
+    const rows: ParsedRow[] = dataRows
+      .map((cells, i) => ({
+        originalIndex: i,
+        values: headers.map((_, col) =>
+          this.coerce((cells[col] ?? '').trim(), types[col])
+        ),
+      }))
+      .filter((row) => row.values.some((v) => v !== null && v !== ''));
+
+    return { headers, types, rows };
+  }
+
+  // RFC 4180-compliant tokeniser — returns a 2-D array of raw cell strings.
+  private tokenize(text: string): string[][] {
+    const rows: string[][] = [];
+    let row: string[] = [];
+    let cell = '';
+    let inQuotes = false;
+    let i = 0;
+
+    const delimiter = this.detectDelimiter(text);
+
+    while (i < text.length) {
+      const ch   = text[i];
+      const next = text[i + 1];
+
+      if (inQuotes) {
+        if (ch === '"' && next === '"') {
+          // Escaped double-quote inside a quoted field ("").
+          cell += '"';
+          i += 2;
+        } else if (ch === '"') {
+          inQuotes = false;
+          i++;
+        } else {
+          cell += ch;
+          i++;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+          i++;
+        } else if (ch === delimiter) {
+          row.push(cell);
+          cell = '';
+          i++;
+        } else if (ch === '\r' && next === '\n') {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = '';
+          i += 2;
+        } else if (ch === '\n' || ch === '\r') {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = '';
+          i++;
+        } else {
+          cell += ch;
+          i++;
+        }
+      }
+    }
+
+    // Flush the last cell / row (file may not end with a newline).
+    if (cell.length > 0 || row.length > 0) {
+      row.push(cell);
+      rows.push(row);
+    }
+
+    return rows;
+  }
+
+  // Detect delimiter by counting commas vs semicolons in the first line.
+  private detectDelimiter(text: string): string {
+    const eol       = text.indexOf('\n');
+    const firstLine = eol === -1 ? text : text.slice(0, eol);
+    const commas    = (firstLine.match(/,/g) ?? []).length;
+    const semis     = (firstLine.match(/;/g) ?? []).length;
+    return semis > commas ? ';' : ',';
+  }
+
+  private inferType(sample: string): ConnectorCellType {
+    if (sample === '') return 'singleLine';
+    if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false') return 'boolean';
+    if (sample.length > 0 && !isNaN(Number(sample))) return 'number';
+    if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample)) return 'date';
+    return 'singleLine';
+  }
+
+  private coerce(value: string, type: ConnectorCellType): unknown {
+    if (value === '') return null;
+    switch (type) {
+      case 'number':  return Number(value);
+      case 'boolean': return value.toLowerCase() === 'true';
+      case 'date':    return value;
+      default:        return value;
+    }
+  }
+}
+
+// ─── Connector ────────────────────────────────────────────────────────────────
+
+export default class CsvConnector
   implements Data.DataConnector, Data.DataSourceVariableCapability
 {
   private runtime: Connector.ConnectorRuntimeContext;
+  private parser = new CsvParser();
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -47,8 +182,7 @@ export default class CsvPublicUrlConnector
     }
 
     const { headers, rows } = await this.downloadAndParse(context);
-    const filters = (config as any).filters as DataFilter[] | null | undefined;
-    const filtered = this.applyFilters(rows, headers, filters);
+    const filtered = this.applyFilters(rows, headers, config.filters);
 
     let startIndex = 0;
     if (config.continuationToken) {
@@ -132,7 +266,7 @@ export default class CsvPublicUrlConnector
     ];
   }
 
-  // ─── Fetch & parse ────────────────────────────────────────────────────────
+  // ─── Private helpers ──────────────────────────────────────────────────────
 
   private async downloadAndParse(
     context: Connector.Dictionary
@@ -151,9 +285,8 @@ export default class CsvPublicUrlConnector
     }
 
     // The GraFx Studio runtime populates response.text for responses served
-    // with Content-Type: application/json. Upload your CSV to S3 and set the
-    // object's Content-Type metadata to application/json — the file content
-    // stays CSV, only the header changes.
+    // with Content-Type: application/json. Ensure your CSV file is hosted
+    // at a public URL and served with Content-Type: application/json.
     const text = response.text as string | undefined;
     if (!text || text.trim().length === 0) {
       throw new Error(
@@ -162,148 +295,8 @@ export default class CsvPublicUrlConnector
       );
     }
 
-    return this.parseCsv(text);
+    return this.parser.parse(text);
   }
-
-  // ─── CSV parser ───────────────────────────────────────────────────────────
-  // Handles:
-  //   • Comma-separated and semicolon-separated files
-  //   • Quoted fields (fields containing commas, semicolons or line breaks)
-  //   • UTF-8 BOM added by Excel's "CSV UTF-8" export
-  //   • Windows (CRLF) and Unix (LF) line endings
-  //   • Type inference: numbers, booleans, ISO dates → singleLine fallback
-
-  private parseCsv(raw: string): ParsedSheet {
-    // Strip UTF-8 BOM that Excel prepends to CSV UTF-8 exports.
-    const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
-
-    const allRows = this.tokenize(text);
-
-    // Drop fully empty rows (trailing newline, blank lines).
-    const nonEmpty = allRows.filter((row) => row.some((v) => v.trim().length > 0));
-
-    if (nonEmpty.length < 2) {
-      throw new Error(
-        'CSV connector: file must have at least a header row and one data row.'
-      );
-    }
-
-    const headers = nonEmpty[0].map((h, i) =>
-      h.trim().length > 0 ? h.trim() : `Column${i + 1}`
-    );
-
-    const dataRows = nonEmpty.slice(1);
-
-    // Infer column types from the first non-empty value in each column.
-    const types: ConnectorCellType[] = headers.map((_, col) => {
-      const sample = dataRows.find((r) => (r[col] ?? '').trim().length > 0)?.[col] ?? '';
-      return this.inferType(sample.trim());
-    });
-
-    const rows: ParsedRow[] = dataRows
-      .map((cells, i) => ({
-        originalIndex: i,
-        values: headers.map((_, col) =>
-          this.coerce((cells[col] ?? '').trim(), types[col])
-        ),
-      }))
-      .filter((row) => row.values.some((v) => v !== null && v !== ''));
-
-    return { headers, types, rows };
-  }
-
-  // RFC 4180-compliant CSV tokeniser — returns a 2-D array of raw cell strings.
-  private tokenize(text: string): string[][] {
-    const rows: string[][] = [];
-    let row: string[] = [];
-    let cell = '';
-    let inQuotes = false;
-    let i = 0;
-
-    const delimiter = this.detectDelimiter(text);
-
-    while (i < text.length) {
-      const ch   = text[i];
-      const next = text[i + 1];
-
-      if (inQuotes) {
-        if (ch === '"' && next === '"') {
-          // Escaped double-quote inside a quoted field ("").
-          cell += '"';
-          i += 2;
-        } else if (ch === '"') {
-          inQuotes = false;
-          i++;
-        } else {
-          cell += ch;
-          i++;
-        }
-      } else {
-        if (ch === '"') {
-          inQuotes = true;
-          i++;
-        } else if (ch === delimiter) {
-          row.push(cell);
-          cell = '';
-          i++;
-        } else if (ch === '\r' && next === '\n') {
-          row.push(cell);
-          rows.push(row);
-          row = [];
-          cell = '';
-          i += 2;
-        } else if (ch === '\n' || ch === '\r') {
-          row.push(cell);
-          rows.push(row);
-          row = [];
-          cell = '';
-          i++;
-        } else {
-          cell += ch;
-          i++;
-        }
-      }
-    }
-
-    // Flush the last cell / row (file may not end with a newline).
-    if (cell.length > 0 || row.length > 0) {
-      row.push(cell);
-      rows.push(row);
-    }
-
-    return rows;
-  }
-
-  // Detect delimiter by counting commas vs semicolons in the first line.
-  private detectDelimiter(text: string): string {
-    const eol       = text.indexOf('\n');
-    const firstLine = eol === -1 ? text : text.slice(0, eol);
-    const commas    = (firstLine.match(/,/g) ?? []).length;
-    const semis     = (firstLine.match(/;/g) ?? []).length;
-    return semis > commas ? ';' : ',';
-  }
-
-  // ─── Type inference & coercion ────────────────────────────────────────────
-
-  private inferType(sample: string): ConnectorCellType {
-    if (sample === '') return 'singleLine';
-    if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false') return 'boolean';
-    if (sample.length > 0 && !isNaN(Number(sample))) return 'number';
-    if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample)) return 'date';
-    return 'singleLine';
-  }
-
-  private coerce(value: string, type: ConnectorCellType): unknown {
-    if (value === '') return null;
-    switch (type) {
-      case 'number':  return Number(value);
-      case 'boolean': return value.toLowerCase() === 'true';
-      case 'date':    return value;
-      default:        return value;
-    }
-  }
-
-  // ─── Filter & serialisation ───────────────────────────────────────────────
 
   private applyFilters(
     rows: ParsedRow[],
