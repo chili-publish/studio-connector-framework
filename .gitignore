@@ -2,6 +2,7 @@ node_modules
 out
 yarn-error.log
 .npmrc
+package-lock.json
 
 #Mac OS
 .DS_Store
