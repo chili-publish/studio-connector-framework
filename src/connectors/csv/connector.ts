@@ -144,7 +144,7 @@ class CsvParser {
     if (sample === '') return 'singleLine';
     if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false') return 'boolean';
     if (sample.length > 0 && !isNaN(Number(sample))) return 'number';
-    if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample)) return 'date';
+    if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample) && !Number.isNaN(new Date(sample).getTime())) return 'date';
     return 'singleLine';
   }
 
