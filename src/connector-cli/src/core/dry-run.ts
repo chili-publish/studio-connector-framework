@@ -2,7 +2,7 @@ import { program } from 'commander';
 
 import { ExecutionError } from './types';
 
-export const supportedDryRunCommands = ['set-auth', 'publish'];
+export const supportedDryRunCommands = ['set-auth', 'delete-auth', 'publish'];
 
 export function isDryRun() {
   return !!readDryRunOption() || !!readDryRunOutOption();

@@ -19,6 +19,7 @@
 
 - **Publish**: Deploy your connector to the specified environment with `publish`.
 - **Set Auth**: Configure your connector authentication with `set-auth`.
+- **Delete Auth**: Remove configured connector authentication with `delete-auth`.
 - **Update**: Granular update of an environment connector (e.g. `enabled`, `default`, `name`). Not allowed for Hub-Based connectors.
 - **Delete**: Remove a published connector from an environment with `delete`.
 
@@ -105,6 +106,14 @@ connector-cli set-auth -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT --connectorI
 Available authentication types: `staticKey`, `oAuth2ClientCredentials`, `oAuth2ResourceOwnerPassword`, `oAuth2AuthorizationCode`, `oAuth2JwtBearer`
 
 Available usage types: `browser`, `server`
+
+### Remove connector authentication
+
+```sh
+connector-cli delete-auth -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv -au browser
+```
+
+`-au` / `--usage` is the same as for `set-auth`: `browser` or `server`.
 
 ### Update a connector (enabled / default / name)
 
