@@ -28,13 +28,13 @@ export const getPackageJson = (
   main: `${outputDirectory}/${outputFilename}`,
   dependencies: {
     typescript: '^5.2.2',
-    '@chili-publish/studio-connectors': '^1.17.1',
+    '@chili-publish/studio-connectors': '^1.41.0',
   },
   scripts: {
     build: 'yarn connector-cli build',
     test: 'yarn connector-cli test -t tests.json && yarn connector-cli stress',
   },
   devDependencies: {
-    '@chili-publish/connector-cli': '^1.9.0',
+    '@chili-publish/connector-cli': '^1.11.0',
   },
 });
