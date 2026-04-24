@@ -295,6 +295,11 @@
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.18.0.tgz"
   integrity sha512-q1z717quG/JzIBrk7hhN1xQw8+JuDPAqv3W2mCo/hbVeNOkxKYj6i+r0GT1eM6kAWmen01/lkjJ1RtxfAOg9og==
 
+"@chili-publish/studio-connectors@^1.41.0":
+  version "1.41.0"
+  resolved "https://registry.yarnpkg.com/@chili-publish/studio-connectors/-/studio-connectors-1.41.0.tgz#af9b5ba977a2258bf936c6ee728ffd0752b4b541"
+  integrity sha512-0jzk9in2xqWuXnxuyucDknQt/oEQB4aH2TINA6PrTxyhiRORpFvn5JGvz1trLbtG6CeiIoXlAE87pomAU52gBg==
+
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz"
