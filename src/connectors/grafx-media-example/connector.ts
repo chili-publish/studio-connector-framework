@@ -33,17 +33,6 @@ interface GrafxAssetDetailResponse {
   data: GrafxAsset | null;
   links: Record<string, string> | null;
 }
-// ─── Additional runtime globals (not part of ConnectorHttpError, which is
-//     already declared globally by @chili-publish/studio-connectors) ──────────
-
-interface StudioFormDataInterface {
-  append(key: string, value: unknown): void;
-  toJSON(): string;
-}
-
-declare const StudioFormData: {
-  new (): StudioFormDataInterface;
-};
 
 declare function sleep(ms: number): Promise<void>;
 
@@ -130,7 +119,9 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    const queryEndpoint = `${this._getBaseMediaUrl()}/${encodeURIComponent(id)}`;
+    const queryEndpoint = `${this._getBaseMediaUrl()}/${encodeURIComponent(
+      id
+    )}`;
 
     const result = await this.runtime.fetch(queryEndpoint, {
       method: 'GET',
@@ -144,11 +135,16 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
       );
     }
 
-    const payload = JSON.parse(result.text) as GrafxAsset | GrafxAssetDetailResponse;
+    const payload = JSON.parse(result.text) as
+      | GrafxAsset
+      | GrafxAssetDetailResponse;
     const asset = this._extractAssetFromDetailResponse(payload);
 
     if (!asset.id) {
-      throw new ConnectorHttpError(result.status, `Detail response does not contain a valid asset id`);
+      throw new ConnectorHttpError(
+        result.status,
+        `Detail response does not contain a valid asset id`
+      );
     }
 
     return this._assetToMediaDetail(asset);
@@ -223,7 +219,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
    * Returns the created Asset objects.
    */
   async upload(
-    files: Array<{ name: string }>,
+    files: Connector.FilePointer[],
     context: Connector.Dictionary
   ): Promise<GrafxAsset[]> {
     const folderPath = this._getUploadFolder(context);
@@ -231,12 +227,11 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     let queryEndpoint = this._getBaseMediaUrl();
     queryEndpoint += `?folderPath=${encodeURIComponent(folderPath)}`;
 
-    const uploadPromises = (files as Array<{ name: string }>).map((file) => {
+    const uploadPromises = files.map((file) => {
       const formData = new StudioFormData();
       formData.append('file', file);
 
-      const fullUrl =
-        queryEndpoint + `&name=${encodeURIComponent(file.name)}`;
+      const fullUrl = queryEndpoint + `&name=${encodeURIComponent(file.name)}`;
 
       return this.runtime
         .fetch(fullUrl, {
@@ -293,7 +288,10 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
   private _getBaseMediaUrl(): string {
     const baseUrl = this.runtime.options['ENVIRONMENT_API'];
     if (typeof baseUrl !== 'string' || baseUrl.trim().length === 0) {
-      throw new ConnectorHttpError(400, 'Missing runtime option ENVIRONMENT_API');
+      throw new ConnectorHttpError(
+        400,
+        'Missing runtime option ENVIRONMENT_API'
+      );
     }
     return `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}media`;
   }
@@ -387,7 +385,10 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     payload: GrafxAsset | GrafxAssetDetailResponse
   ): GrafxAsset {
     const maybeWrappedResponse = payload as GrafxAssetDetailResponse;
-    if (maybeWrappedResponse?.data && typeof maybeWrappedResponse.data === 'object') {
+    if (
+      maybeWrappedResponse?.data &&
+      typeof maybeWrappedResponse.data === 'object'
+    ) {
       return maybeWrappedResponse.data;
     }
 

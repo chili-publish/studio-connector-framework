@@ -14,13 +14,15 @@
       "ENVIRONMENT_API": null
     },
     "mappings": {},
-    "supportedAuth": ["staticKey"]
+    "supportedAuth": [
+      "staticKey"
+    ]
   },
   "license": "MIT",
   "main": "out/connector.js",
   "dependencies": {
     "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "^1.39.0"
+    "@chili-publish/studio-connectors": "^1.41.0"
   },
   "scripts": {
     "build": "yarn connector-cli build",
