@@ -37,7 +37,9 @@ class CsvParser {
     const allRows = this.tokenize(text);
 
     // Drop fully empty rows (trailing newline, blank lines).
-    const nonEmpty = allRows.filter((row) => row.some((v) => v.trim().length > 0));
+    const nonEmpty = allRows.filter((row) =>
+      row.some((v) => v.trim().length > 0)
+    );
 
     if (nonEmpty.length < 2) {
       throw new Error(
@@ -88,7 +90,7 @@ class CsvParser {
     const delimiter = this.detectDelimiter(text);
 
     while (i < text.length) {
-      const ch   = text[i];
+      const ch = text[i];
       const next = text[i + 1];
 
       if (inQuotes) {
@@ -141,32 +143,42 @@ class CsvParser {
 
   // Detect delimiter by counting commas vs semicolons in the first line.
   private detectDelimiter(text: string): string {
-    const eol       = text.indexOf('\n');
+    const eol = text.indexOf('\n');
     const firstLine = eol === -1 ? text : text.slice(0, eol);
-    const commas    = (firstLine.match(/,/g) ?? []).length;
-    const semis     = (firstLine.match(/;/g) ?? []).length;
+    const commas = (firstLine.match(/,/g) ?? []).length;
+    const semis = (firstLine.match(/;/g) ?? []).length;
     return semis > commas ? ';' : ',';
   }
 
   private inferType(sample: string): ConnectorCellType {
     if (sample === '') return 'singleLine';
-    if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false') return 'boolean';
+    if (sample.toLowerCase() === 'true' || sample.toLowerCase() === 'false')
+      return 'boolean';
     if (
       sample.length > 0 &&
       !/^[+0]/.test(sample) &&
       Number.isFinite(Number(sample))
-    ) return 'number';
-    if (/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample) && !Number.isNaN(new Date(sample).getTime())) return 'date';
+    )
+      return 'number';
+    if (
+      /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(sample) &&
+      !Number.isNaN(new Date(sample).getTime())
+    )
+      return 'date';
     return 'singleLine';
   }
 
   private coerce(value: string, type: ConnectorCellType): unknown {
     if (value === '') return null;
     switch (type) {
-      case 'number':  return Number.isFinite(Number(value)) ? Number(value) : value;
-      case 'boolean': return value.toLowerCase() === 'true';
-      case 'date':    return value;
-      default:        return value;
+      case 'number':
+        return Number.isFinite(Number(value)) ? Number(value) : value;
+      case 'boolean':
+        return value.toLowerCase() === 'true';
+      case 'date':
+        return value;
+      default:
+        return value;
     }
   }
 }
@@ -201,13 +213,17 @@ export default class CsvConnector
     if (config.continuationToken) {
       const parsed = parseInt(config.continuationToken, 10);
       if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error(`CSV connector: invalid continuation token "${config.continuationToken}".`);
+        throw new Error(
+          `CSV connector: invalid continuation token "${config.continuationToken}".`
+        );
       }
       startIndex = parsed;
     } else if (config.previousPageToken) {
       const tokenStart = parseInt(config.previousPageToken, 10);
       if (!Number.isFinite(tokenStart) || tokenStart < 0) {
-        throw new Error(`CSV connector: invalid previous page token "${config.previousPageToken}".`);
+        throw new Error(
+          `CSV connector: invalid previous page token "${config.previousPageToken}".`
+        );
       }
       startIndex = Math.max(0, tokenStart - config.limit);
     }
@@ -248,7 +264,9 @@ export default class CsvConnector
     }
 
     const { headers, rows } = await this.downloadAndParse(context);
-    const filteredIndex = rows.findIndex((r) => r.originalIndex === originalIndex);
+    const filteredIndex = rows.findIndex(
+      (r) => r.originalIndex === originalIndex
+    );
     if (filteredIndex === -1) {
       throw new Error(`CSV connector: row with id "${id}" not found.`);
     }
@@ -292,7 +310,9 @@ export default class CsvConnector
   ): Promise<ParsedSheet> {
     const url = context['csvUrl'] as string | undefined;
     if (!url || url.trim().length === 0) {
-      throw new Error('CSV connector: configuration option "csvUrl" is required.');
+      throw new Error(
+        'CSV connector: configuration option "csvUrl" is required.'
+      );
     }
 
     const normalisedUrl = url.trim();
@@ -309,15 +329,11 @@ export default class CsvConnector
       );
     }
 
-    // The GraFx Studio runtime only populates response.text when the response
-    // is served with Content-Type: application/json (or any type containing
-    // "json"). Ensure your CSV file is hosted at a public URL and served with
-    // Content-Type: application/json.
     const text = response.text as string | undefined;
     if (!text || text.trim().length === 0) {
       throw new Error(
         'CSV connector: no text content received. ' +
-        'Ensure the file is served with Content-Type: application/json.'
+          'Ensure the file is served not in the binary format.'
       );
     }
 
@@ -333,8 +349,9 @@ export default class CsvConnector
   ): ParsedRow[] {
     if (!filters || filters.length === 0) return rows;
 
-    const normalised = filters
-      .filter((f): f is DataFilter => f !== null && typeof f.property === 'string');
+    const normalised = filters.filter(
+      (f): f is DataFilter => f !== null && typeof f.property === 'string'
+    );
 
     if (normalised.length === 0) return rows;
 
@@ -345,8 +362,10 @@ export default class CsvConnector
         const val = row.values[colIndex];
         if (val === null || val === undefined) return false;
         const cellStr = String(val).toLowerCase();
-        const needle  = String(filter.value).toLowerCase();
-        return filter.type === 'exact' ? cellStr === needle : cellStr.includes(needle);
+        const needle = String(filter.value).toLowerCase();
+        return filter.type === 'exact'
+          ? cellStr === needle
+          : cellStr.includes(needle);
       })
     );
   }

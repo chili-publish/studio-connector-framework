@@ -183,11 +183,8 @@ async function generateChiliResponseQuickJsObject(
   const contentType = response.headers.get('content-type');
   console.log('contentType', contentType);
 
-  // if data is json, then parse it as text, otherwise return arrayBuffer
-  if (contentType?.includes('application/json')) {
-    var text = await response.text();
-    vm.setProp(chiliResponse, 'text', vm.newString(text));
-  } else {
+  // if data is binary, then return arrayBuffer, otherwise return text
+  if (isBinaryType(contentType)) {
     var buffer = await response.arrayBuffer();
     var ArrayBufferPointer = vm.newObject();
     const hashedContent = generateHash(new Int8Array(buffer));
@@ -205,6 +202,9 @@ async function generateChiliResponseQuickJsObject(
 
     vm.setProp(chiliResponse, 'arrayBuffer', ArrayBufferPointer);
     ArrayBufferPointer.dispose();
+  } else {
+    var text = await response.text();
+    vm.setProp(chiliResponse, 'text', vm.newString(text));
   }
 
   // add headers
@@ -230,4 +230,12 @@ function generateHash(buffer: Int8Array): string {
     hash |= 0; // Convert to 32bit integer
   }
   return hash.toString();
+}
+
+function isBinaryType(contentType?: string | null) {
+  return (
+    contentType?.includes('image/') ||
+    contentType?.includes('font/') ||
+    contentType?.includes('application/pdf')
+  );
 }

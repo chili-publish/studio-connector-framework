@@ -17,6 +17,14 @@ export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
   });
 }
 
+function isBinaryType(contentType?: string | null) {
+  return (
+    contentType?.includes('image/') ||
+    contentType?.includes('font/') ||
+    contentType?.includes('application/pdf')
+  );
+}
+
 export async function initRuntime(
   globalHeaders: Header[],
   runtimeOptions: Record<string, unknown>,
@@ -48,13 +56,8 @@ export async function initRuntime(
 
     const response = await window.fetch(urlInstance, { ...options, headers });
 
-    // if binary file, add arrayBufferPointer property
-    if (response.headers.get('content-type')?.includes('json')) {
-      const text = await response.text();
-      // We couldn't make a ... copy of response object as it is not iterable
-      (response as any)['text'] = text;
-      return response;
-    } else {
+    const contentType = response.headers.get('content-type');
+    if (isBinaryType(contentType)) {
       const arrayBuffer = await response.arrayBuffer();
       const id = Math.random().toString(36).substring(7);
       cache.set(id, arrayBuffer);
@@ -63,6 +66,11 @@ export async function initRuntime(
         id: id,
         bytes: arrayBuffer.byteLength,
       };
+      return response;
+    } else {
+      const text = await response.text();
+      // We couldn't make a ... copy of response object as it is not iterable
+      (response as any)['text'] = text;
       return response;
     }
   };
