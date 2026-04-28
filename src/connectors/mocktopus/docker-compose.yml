@@ -1,0 +1,14 @@
+services:
+  cli:
+    build: .
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/connector
+      - connector-node-modules:/connector/node_modules
+      - connector-auth:/root
+    working_dir: /connector
+
+volumes:
+  connector-auth:
+  connector-node-modules:
