@@ -79,10 +79,7 @@ connector-cli test -t tests.json
 connector-cli login
 
 # Deploy
-connector-cli publish \
-  -b https://<your-environment>.chili-publish.online/grafx \
-  -e <environment-name> \
-  -n Mocktopus
+connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mocktopus
 ```
 
 The `connector-auth` Docker volume persists the login token between sessions so you only need to run `login` once.
