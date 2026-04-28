@@ -6,13 +6,39 @@ Mocktopus generates fake data from a declarative schema DSL — useful for testi
 
 ## Schema DSL
 
-Configure the connector with a `schema` option such as:
+Define a schema using a comma-separated list of fields with their types and optional parameters. Each field is specified as `fieldName:type` or `fieldName:type(param1=value1,param2=value2)`.
 
+Example:
 ```
 firstName:shortText, age:number(min=0,max=100), active:boolean, joinDate:date
 ```
 
-Supported field types: `shortText`, `longText`, `number`, `boolean`, `date`, `group`
+### Available field types and parameters:
+
+- **shortText**: Generates short mock text (1-2 words)
+  - `numberOfWords`: Number of words to generate (default: 2)
+  - Example: `title:shortText(numberOfWords=3)`
+
+- **longText**: Generates longer mock text (multiple sentences and paragraphs)
+  - `numberOfParagraphs`: Number of paragraphs to generate (default: 2)
+  - Example: `description:longText(numberOfParagraphs=3)`
+
+- **number**: Generates numbers within a range
+  - `min`: Minimum value (default: 0)
+  - `max`: Maximum value (default: 1000)
+  - Example: `age:number(min=18,max=100)` or `score:number(min=0,max=100)`
+
+- **boolean**: Generates random true/false values
+  - No parameters
+  - Example: `active:boolean`
+
+- **date**: Generates random dates between 2020-01-01 and 2030-01-01
+  - No parameters
+  - Example: `joinDate:date`
+
+- **group**: Generates an array of mock words
+  - `entries`: Number of entries in the group (default: 3)
+  - Example: `tags:group(entries=5)`
 
 ## Local development
 
@@ -29,7 +55,7 @@ docker-compose build
 ### Start a shell in the container
 
 ```bash
-docker-compose run cli
+docker-compose run cli sh
 ```
 
 This drops you into a shell with `connector-cli` available and the connector source mounted at `/connector`. Dependencies are provided by the image — no local `npm install` needed.
