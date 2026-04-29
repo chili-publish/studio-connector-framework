@@ -70,9 +70,6 @@ const createMockSentences = (count: number): string =>
 const createMockParagraphs = (count: number): string =>
 	Array.from({ length: count }, () => createMockSentences(4)).join("\n\n");
 
-const createMockImageUrl = (seed: string, width: number, height: number): string =>
-	`https://picsum.photos/seed/${encodeURIComponent(seed)}/${width}/${height}`;
-
 /**************************************************************************/
 /* Utility functions                                                      */
 /**************************************************************************/
@@ -189,12 +186,8 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 			const entries = field.params.entries ?? 3;
 			return Array.from({ length: entries as number }, () => createMockWords(1));
 		}
-		case "image": {
-			const width = (field.params.width ?? 400) as number;
-			const height = (field.params.height ?? 300) as number;
-			const seed = createMockWords(2);
-			return createMockImageUrl(seed, width, height);
-		}
+		case "image": 
+			return String(Math.floor(Math.random() * 10) + 1);
 	}
 }
 
