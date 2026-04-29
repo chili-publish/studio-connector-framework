@@ -70,6 +70,9 @@ const createMockSentences = (count: number): string =>
 const createMockParagraphs = (count: number): string =>
 	Array.from({ length: count }, () => createMockSentences(4)).join("\n\n");
 
+const createMockImageUrl = (seed: string, width: number, height: number): string =>
+	`https://picsum.photos/seed/${encodeURIComponent(seed)}/${width}/${height}`;
+
 /**************************************************************************/
 /* Utility functions                                                      */
 /**************************************************************************/
@@ -80,7 +83,8 @@ const VALID_TYPES = [
 	"number",
 	"boolean",
 	"date",
-	"group",
+	"list",
+	"image",
 ] as const;
 
 type FieldType = typeof VALID_TYPES[number];
@@ -177,9 +181,15 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 			const d = new Date(base + (index % 100) * Math.floor(range / 100));
 			return d.toISOString().slice(0, 10);
 		}
-		case "group": {
+		case "list": {
 			const entries = field.params.entries ?? 3;
 			return Array.from({ length: entries as number }, () => createMockWords(1));
+		}
+		case "image": {
+			const width = (field.params.width ?? 400) as number;
+			const height = (field.params.height ?? 300) as number;
+			const seed = createMockWords(2);
+			return createMockImageUrl(seed, width, height);
 		}
 	}
 }
@@ -207,7 +217,7 @@ export default class MocktopusConnector implements Data.DataConnector {
 
 	getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
 		return [
-			{ name: "schema", displayName: "Schema (e.g. firstName:shortText, age:number)", type: "text" },
+			{ name: "schema", displayName: "Schema (e.g. firstName:shortText, age:number, photo:image)", type: "text" },
 			{ name: "recordCount", displayName: "Record count", type: "text" },
 			{ name: "simulateDelays", displayName: "Simulate delays", type: "boolean" },
 			{ name: "minDelay", displayName: "Min delay (ms)", type: "text" },

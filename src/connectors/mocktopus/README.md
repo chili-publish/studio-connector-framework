@@ -36,9 +36,14 @@ firstName:shortText, age:number(min=0,max=100), active:boolean, joinDate:date
   - No parameters
   - Example: `joinDate:date`
 
-- **group**: Generates an array of mock words
-  - `entries`: Number of entries in the group (default: 3)
-  - Example: `tags:group(entries=5)`
+- **list**: Generates an array of mock words
+  - `entries`: Number of entries in the list (default: 3)
+  - Example: `tags:list(entries=5)`
+
+- **image**: Generates seeded image URLs from Picsum Photos
+  - `width`: Image width in pixels (default: 400)
+  - `height`: Image height in pixels (default: 300)
+  - Example: `photo:image`, `banner:image(width=800,height=200)`
 
 ## Local development
 
