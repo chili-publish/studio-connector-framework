@@ -51,6 +51,25 @@ Any field type can use the `values` parameter to pick a random value from a pipe
   - `height`: Image height in pixels (default: 300)
   - Example: `photo:image`, `banner:image(width=800,height=200)`
 
+## Configuration options
+
+When using the connector, you provide these configuration parameters:
+
+- **schema** (required): Defines the fields and types to generate. Uses the DSL described above.
+  - Example: `firstName:shortText, age:number(min=18,max=100), active:boolean`
+
+- **recordCount**: Number of records to generate (default: 10)
+  - Example: `100`
+
+- **simulateDelays**: Whether to add random delays to simulate a real data source (default: false)
+  - Example: `true`
+
+- **minDelay**: Minimum delay in milliseconds when `simulateDelays` is enabled (default: 100)
+  - Example: `500`
+
+- **maxDelay**: Maximum delay in milliseconds when `simulateDelays` is enabled (default: 1000)
+  - Example: `3000`
+
 ## Local development
 
 Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
