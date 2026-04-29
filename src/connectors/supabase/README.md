@@ -86,6 +86,6 @@ yarn connector-cli debug -p 3300 -w   # local dev server
 ## Limitations & roadmap
 
 - `getPageItemById` is only supported in `view` mode (RPCs aren't addressable by primary key).
-- The connector does not currently introspect the function signature for RPC mode — supply `columnsOverride` for RPC-mode results.
+- For RPC mode, columns are discovered by calling the function once with `limit=1` and the user's `rpcParams`, then sampling the first row. If the RPC returns no rows for those params, supply `columnsOverride` instead.
 - Pagination uses `limit`/`offset`. For very large tables (>10k rows) consider a stable-ordered view backed by a keyset cursor and pass the cursor through `rpcParams`.
 - Auth is a single static key. If you need per-end-user JWTs (sign-in flows), this connector isn't the right starting point — use Supabase Auth + an Edge Function in front.

@@ -321,21 +321,40 @@ export default class SupabaseConnector
     const cacheKey = `${target.mode}:${target.name}`;
     const cached = this.modelCache.get(cacheKey);
     if (cached) return cached;
-    const discovered = await this.discoverColumns(target);
+    const discovered = await this.discoverColumns(target, context);
     this.modelCache.set(cacheKey, discovered);
     return discovered;
   }
 
-  private async discoverColumns(target: ResolvedTarget): Promise<ColumnSpec[]> {
+  private async discoverColumns(
+    target: ResolvedTarget,
+    context: Connector.Dictionary
+  ): Promise<ColumnSpec[]> {
+    // RPC: PostgREST OpenAPI doesn't reliably expose function return types,
+    // so go straight to row sampling — call the function with limit=1 plus
+    // the user's rpcParams, derive columns from the first row.
     if (target.mode === 'rpc') {
-      throw new Error(
-        'Supabase connector: rpc mode requires "columnsOverride" to declare the function\'s return columns.'
+      const rows = await this.fetchRows(
+        target,
+        { limit: '1', offset: '0' },
+        context
       );
+      if (!rows || rows.length === 0) {
+        throw new Error(
+          `Supabase connector: cannot infer columns for rpc "${target.name}" — ` +
+            'the function returned no rows for the given rpcParams. ' +
+            'Provide rpcParams that yield at least one row, or supply "columnsOverride".'
+        );
+      }
+      return Object.keys(rows[0]).map((name) => ({
+        name,
+        type: this.inferTypeFromValue(rows[0][name]),
+      }));
     }
 
-    // Try the PostgREST OpenAPI doc first — gives proper Postgres types.
-    // Supabase locks /rest/v1/ to service_role by default, so this often
-    // 401s for anon callers; fall back to row sampling in that case.
+    // View: try the PostgREST OpenAPI doc first — gives proper Postgres
+    // types. Supabase locks /rest/v1/ to service_role by default, so this
+    // often 401s for anon callers; fall back to row sampling in that case.
     try {
       if (!this.openApiCache) {
         const url = this.buildUrl('/rest/v1/', {});
