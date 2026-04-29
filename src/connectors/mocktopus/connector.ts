@@ -157,6 +157,10 @@ function parseDSL(schema: string, logError: (msg: string) => void): SchemaField[
 }
 
 function generateValue(field: SchemaField, index: number): string | number | boolean | object {
+	if (field.params.values) {
+		const values = (field.params.values as string).split("|");
+		return values[Math.floor(Math.random() * values.length)];
+	}
 	switch (field.type) {
 		case "shortText": {
 			const numberOfWords = field.params.numberOfWords ?? 2;

@@ -13,6 +13,12 @@ Example:
 firstName:shortText, age:number(min=0,max=100), active:boolean, joinDate:date
 ```
 
+### Common parameters
+
+Any field type can use the `values` parameter to pick a random value from a pipe-delimited list:
+- **values**: Pipe-delimited list of values to randomly select from
+  - Example: `status:shortText(values=active|inactive|pending)`, `priority:number(values=1|2|3|5)`
+
 ### Available field types and parameters:
 
 - **shortText**: Generates short mock text (1-2 words)
@@ -60,7 +66,7 @@ docker-compose build
 ### Start a shell in the container
 
 ```bash
-docker-compose run cli sh
+docker-compose run -p 3300:3300 cli sh
 ```
 
 This drops you into a shell with `connector-cli` available and the connector source mounted at `/connector`. Dependencies are provided by the image — no local `npm install` needed.
@@ -71,11 +77,18 @@ This drops you into a shell with `connector-cli` available and the connector sou
 connector-cli build
 ```
 
-### Run tests
+### Manual testing
 
 ```bash
-connector-cli test -t tests.json
+connector-cli debug -p 3300 -w
 ```
+
+Open the debug UI at http://localhost:3300/?type=DataConnector. Add a `schema` parameter with a value like: `status:shortText(values=active|inactive|pending), priority:number(values=1|3|5)
+`.
+
+Click **Add** to create the parameter, then **Invoke** to test the connector. This generates mock data according to your schema. You can also test other parameters (like `limit` and `offset` for paging or simulate delays):
+
+![Manual testing](./images/ManualTesting.png)
 
 ### Publish to a GraFx environment
 

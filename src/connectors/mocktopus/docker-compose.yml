@@ -3,6 +3,8 @@ services:
     build: .
     stdin_open: true
     tty: true
+    ports:
+      - "3300:3300"
     volumes:
       - .:/connector
       - connector-node-modules:/connector/node_modules
