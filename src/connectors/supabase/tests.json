@@ -1,0 +1,141 @@
+{
+  "setup": {
+    "runtime_options": {
+      "SUPABASE_URL": "https://test.supabase.co"
+    }
+  },
+  "tests": [
+    {
+      "name": "getModel discovers columns from PostgREST OpenAPI",
+      "method": "getModel",
+      "arguments": {
+        "context": {
+          "queryMode": "view",
+          "targetName": "products",
+          "idColumn": "id"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "swagger": "2.0",
+                "definitions": {
+                  "products": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer", "format": "bigint" },
+                      "name": { "type": "string", "format": "text" },
+                      "base_price": { "type": "number", "format": "numeric" },
+                      "is_active": { "type": "boolean", "format": "boolean" },
+                      "created_at": { "type": "string", "format": "timestamp with time zone" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPage view mode with filter and sort",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 10,
+          "filters": [{ "property": "brand_id", "value": "1", "type": "exact" }],
+          "sorting": [{ "property": "name", "direction": "asc" }]
+        },
+        "context": {
+          "queryMode": "view",
+          "targetName": "products",
+          "idColumn": "id",
+          "columnsOverride": "[{\"name\":\"id\",\"type\":\"number\"},{\"name\":\"name\",\"type\":\"singleLine\"},{\"name\":\"base_price\",\"type\":\"number\"}]"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/products?limit=10&offset=0&brand_id=eq.1&order=name.asc",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": [
+                { "id": 1, "name": "Bite Back Aged Cheddar 150g", "base_price": 2.49 },
+                { "id": 2, "name": "Bite Back Jalapeño 150g", "base_price": 2.49 }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPage rpc mode posts JSON params",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 5
+        },
+        "context": {
+          "queryMode": "rpc",
+          "targetName": "spring_campaign",
+          "rpcParams": "{\"campaign_slug\":\"spring-fresh\"}",
+          "columnsOverride": "[{\"name\":\"product\",\"type\":\"singleLine\"},{\"name\":\"effective_price\",\"type\":\"number\"}]"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/rpc/spring_campaign?limit=5&offset=0",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": [
+                { "product": "Chill Cola Original 6x33cl", "effective_price": 4.99 }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPageItemById fetches single row by id",
+      "method": "getPageItemById",
+      "arguments": {
+        "id": "5",
+        "pageOptions": { "limit": 10 },
+        "context": {
+          "queryMode": "view",
+          "targetName": "products",
+          "idColumn": "id",
+          "columnsOverride": "[{\"name\":\"id\",\"type\":\"number\"},{\"name\":\"name\",\"type\":\"singleLine\"}]"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/products?id=eq.5&limit=1",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": [{ "id": 5, "name": "Chiara Ravioli 250g" }]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
