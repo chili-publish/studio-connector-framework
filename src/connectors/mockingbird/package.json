@@ -10,8 +10,8 @@
     "main": "out/connector.js",
     "config": {
       "connectorName": "Mockingbird",
-      "type": "data",
-      "options": {},
+      "type": "media",
+      "options": {"Use remote images": null},
       "mappings": {},
       "supportedAuth": []
     },

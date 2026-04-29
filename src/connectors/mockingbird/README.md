@@ -10,7 +10,7 @@ A connector that sings back any media you ask for, but never leaves the cage. Un
 
 ## Configuration options
 
-- **useRemoteImages** (boolean, default: false): when `true`, downloads are fetched from `picsum.photos` instead of returning the local pixel placeholder. Can also be passed as a context variable.
+- **Use remote images** (text): set to `"true"` to fetch downloads from `picsum.photos` instead of returning the local pixel placeholder. Any other value (including empty) uses offline mode.
 
 ## Local development
 
@@ -44,7 +44,7 @@ connector-cli build
 connector-cli debug -p 3300 -w
 ```
 
-Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 10 assets. To test remote mode, add a `useRemoteImages` context variable set to `true` and invoke a download — the connector will fetch from picsum.photos instead of returning the local pixel placeholder.
+Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 10 assets. To test remote mode, set the `Use remote images` option to `"true"` — the connector will fetch from picsum.photos instead of returning the local pixel placeholder.
 
 ### Publish to a GraFx environment
 

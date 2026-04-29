@@ -50,7 +50,7 @@ export default class MockingbirdConnector implements Media.MediaConnector {
 	runtime: Connector.ConnectorRuntimeContext;
 
 	constructor(runtime: Connector.ConnectorRuntimeContext) {
-		this.runtime = runtime;
+        this.runtime = runtime;
 	}
 
 	getCapabilities(): Media.MediaConnectorCapabilities {
@@ -117,7 +117,7 @@ export default class MockingbirdConnector implements Media.MediaConnector {
 	): Promise<Connector.ArrayBufferPointer> {
 		const asset = MOCK_ASSETS.find((a) => a.id === id) ?? MOCK_ASSETS[Math.floor(Math.random() * MOCK_ASSETS.length)];
 
-		if (context["useRemoteImages"]) {
+		if (this.runtime.options['Use remote images'] === "true") {
 			let w = asset.width;
 			let h = asset.height;
 			if (previewType === "thumbnail") { w = 200; h = Math.round(200 * h / w); }
