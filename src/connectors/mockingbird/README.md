@@ -6,11 +6,11 @@ A connector that sings back any media you ask for, but never leaves the cage. Un
 
 **Offline mode (default)**: each asset returns a pre-encoded 1×1 colored PNG — no network required. Frames are sized correctly using the realistic per-asset dimensions from `detail()`.
 
-**Remote mode**: fetches a random photo from [picsum.photos](https://picsum.photos) at the appropriate resolution. Requires network access.
+**Remote mode**: fetches a deterministic photo from [picsum.photos](https://picsum.photos) using the asset ID as a seed — the same asset always returns the same image. Requires network access.
 
 ## Configuration options
 
-- **Use remote images** (text): set to `"true"` to fetch downloads from `picsum.photos` instead of returning the local pixel placeholder. Any other value (including empty) uses offline mode.
+- **Use remote images** (runtime option, text): set to `"true"` to enable remote mode. Pass it as a runtime option when registering the connector. Any other value (including empty) uses offline mode.
 
 ## Local development
 
@@ -44,7 +44,7 @@ connector-cli build
 connector-cli debug -p 3300 -w
 ```
 
-Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 10 assets. To test remote mode, set the `Use remote images` option to `"true"` — the connector will fetch from picsum.photos instead of returning the local pixel placeholder.
+Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 100 assets. To test remote mode, set the `Use remote images` runtime option to `"true"` — the connector will fetch from picsum.photos using the asset ID as a seed instead of returning the local pixel placeholder.
 
 ### Publish to a GraFx environment
 
