@@ -10,7 +10,7 @@ A connector that sings back any media you ask for, but never leaves the cage. Un
 
 ## Configuration options
 
-- **Use remote images** (runtime option, text): set to `"true"` to enable remote mode. Pass it as a runtime option when registering the connector. Any other value (including empty) uses offline mode.
+The only option is **Use remote images** (runtime option, text): set to `"true"` to enable remote mode. Any other value (including empty) uses offline mode.
 
 ## Local development
 
@@ -53,7 +53,7 @@ Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the cata
 connector-cli login
 
 # Deploy
-connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mockingbird --proxyOption.allowedDomains "picsum.photos"
+connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mockingbird --proxyOption.allowedDomains "picsum.photos" -ro "Use remote images"="true"
 ```
 
 The `connector-auth` Docker volume persists the login token between sessions so you only need to run `login` once.
