@@ -70,6 +70,41 @@ When using the connector, you provide these configuration parameters:
 - **maxDelay**: Maximum delay in milliseconds when `simulateDelays` is enabled (default: 1000)
   - Example: `3000`
 
+## Generating a schema from a GraFx template
+
+`ConvertTemplateToSchema.ps1` reads the `variables` array from a GraFx template JSON file and outputs a schema string ready to paste into the connector's **Schema** configuration field.
+
+### Requirements
+
+PowerShell 7+ (`pwsh`).
+
+### Usage
+
+```powershell
+.\ConvertTemplateToSchema.ps1 -TemplatePath .\template.json
+```
+
+**Parameters**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `-TemplatePath` | Yes | Path to the GraFx template JSON file |
+| `-OutputPath` | No | If supplied, also writes the schema string to this file |
+| `-IncludeReadonly` | No | Include variables marked `isReadonly: true` (skipped by default) |
+| `-ExcludeInvisible` | No | Skip variables whose visibility is not `visible` |
+
+**Examples**
+
+```powershell
+# Basic usage — prints the schema to the terminal
+.\ConvertTemplateToSchema.ps1 -TemplatePath .\template.json
+
+# Save the output to a file and include readonly variables
+.\ConvertTemplateToSchema.ps1 -TemplatePath .\template.json -OutputPath .\schema.txt -IncludeReadonly
+```
+
+The script maps GraFx variable types (`shortText`, `longText`, `number`, `boolean`, `date`, `list`, `image`) directly to connector DSL types. Variables with unrecognised types are skipped with a warning.
+
 ## Local development
 
 Prerequisites: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
