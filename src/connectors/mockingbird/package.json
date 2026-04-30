@@ -1,6 +1,6 @@
 {
     "name": "Mockingbird",
-    "description": "A connector that sings back any media you ask for, but never leaves the cage.",
+    "description": "A connector that sings back any media you ask for, but never leaves the cage. Unless you open it.",
     "version": "1.0.0",
     "author": {
       "name": "Bruno Vermeersch",

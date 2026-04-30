@@ -1,6 +1,6 @@
 # Mockingbird
 
-A connector that sings back any media you ask for, but never leaves the cage. Unless you open the cage.
+A connector that sings back any media you ask for, but never leaves the cage. Unless you open it.
 
 ## Modes
 
