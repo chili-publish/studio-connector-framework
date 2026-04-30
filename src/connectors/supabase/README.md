@@ -6,10 +6,12 @@ Read tables, views, or RPC functions from any Supabase project as a CHILI Studio
 
 Supabase exposes every table/view/function in your project's `public` schema as a REST endpoint via PostgREST:
 
-| Mode | What it reads | HTTP call |
-| --- | --- | --- |
-| `view` (default) | A table or view | `GET /rest/v1/<name>?col=eq.x&order=col.asc&limit=N&offset=M` |
-| `rpc` | A Postgres function | `POST /rest/v1/rpc/<name>` with JSON body of arguments |
+| Mode | What it reads | HTTP call | Default access |
+| --- | --- | --- | --- |
+| `rpc` (default) | A Postgres function | `POST /rest/v1/rpc/<name>` with JSON body of arguments | always available |
+| `view` | A table or view | `GET /rest/v1/<name>?col=eq.x&order=col.asc&limit=N&offset=M` | requires `ALLOW_TABLE_VIEW=true` |
+
+`rpc` is the default and only-always-on mode by design: it pushes the data shape into named, version-controlled Postgres functions. `view` widens the surface and is gated per-environment by an admin runtime option (see [Query mode access control](#query-mode-access-control)).
 
 For server-side filtering and sorting the connector translates the framework's `BidirectionalPageConfig` into PostgREST query params:
 
@@ -23,9 +25,18 @@ Pagination uses a numeric offset (`continuationToken` / `previousPageToken`).
 
 ### Publish-time runtime options
 
-| Option | Required | Description |
-| --- | --- | --- |
-| `SUPABASE_URL` | yes | Your project URL, e.g. `https://abcdefgh.supabase.co`. Set at publish time via `--runtimeOption`. |
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `SUPABASE_URL` | yes | — | Your project URL, e.g. `https://abcdefgh.supabase.co`. |
+| `ALLOW_TABLE_VIEW` | no | `"false"` | Set to `"true"` to allow `queryMode=view`. |
+
+Both runtime options are admin-editable in the platform's Configuration tab post-publish.
+
+## Query mode access control
+
+The connector ships with a fail-safe default: only `rpc` mode works out of the box. To enable `view`, an admin sets `ALLOW_TABLE_VIEW=true` in the connector's Configuration tab. This is per-environment policy — the same connector code runs in dev with the flag on and prod with it off.
+
+When a designer picks `queryMode=view` without the flag set, the connector throws `"view" query mode is disabled in this environment.` The error surfaces immediately in Studio's data binding panel, telling the designer which flag the admin needs to flip.
 
 ### Authentication
 
@@ -47,11 +58,11 @@ These show up in the Studio editor when the template is bound to the connector:
 
 | Option | Required | Description |
 | --- | --- | --- |
-| `queryMode` | no | `view` (default) or `rpc`. |
-| `targetName` | yes | Name of the table, view, or function. |
-| `idColumn` | no | Primary key column for `getPageItemById`. Defaults to `id`. |
+| `queryMode` | no | `rpc` (default) or `view`. The latter requires admin opt-in via `ALLOW_TABLE_VIEW`. |
+| `targetName` | yes | Function name (rpc) or table/view name (view). |
+| `idColumn` | no | Primary key column for `getPageItemById`. Defaults to `id`. Only used in `view` mode. |
 | `rpcParams` | no (rpc only) | JSON object passed as the function arguments, e.g. `{"campaign_slug":"spring-fresh"}`. |
-| `columnsOverride` | no | JSON array `[{"name":"foo","type":"singleLine"}]`. Bypasses OpenAPI auto-discovery — use for views/RPCs not exposed in the OpenAPI doc, or to trim the column list. |
+| `columnsOverride` | no | JSON array `[{"name":"foo","type":"singleLine"}]`. Bypasses auto-discovery — use when the function returns no rows for the given params, or to trim the column list. |
 
 ## Column type inference
 
@@ -72,8 +83,11 @@ JSONB / array values are stringified into `singleLine`. Use `columnsOverride` if
 connector-cli publish \
   -b ENV_API_URL -e ENV -n Supabase \
   --runtimeOption SUPABASE_URL=https://<ref>.supabase.co \
+  --runtimeOption ALLOW_TABLE_VIEW=false \
   --proxyOption.allowedDomains "*.supabase.co"
 ```
+
+Pass `ALLOW_TABLE_VIEW=true` for environments that should allow `view` mode. (Admins can also flip the value later in the Configuration tab without re-publishing — but the publish command requires every option to be supplied each time, so include it.)
 
 ## Development
 
@@ -86,6 +100,6 @@ yarn connector-cli debug -p 3300 -w   # local dev server
 ## Limitations & roadmap
 
 - `getPageItemById` is only supported in `view` mode (RPCs aren't addressable by primary key).
-- For RPC mode, columns are discovered by calling the function once with `limit=1` and the user's `rpcParams`, then sampling the first row. If the RPC returns no rows for those params, supply `columnsOverride` instead.
+- For `rpc` mode, columns are discovered by calling the function once with `limit=1` and the user's `rpcParams`, then sampling the first row. If the function returns no rows for those params, supply `columnsOverride` instead.
 - Pagination uses `limit`/`offset`. For very large tables (>10k rows) consider a stable-ordered view backed by a keyset cursor and pass the cursor through `rpcParams`.
 - Auth is a single static key. If you need per-end-user JWTs (sign-in flows), this connector isn't the right starting point — use Supabase Auth + an Edge Function in front.

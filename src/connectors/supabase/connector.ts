@@ -135,22 +135,24 @@ export default class SupabaseConnector
     return [
       {
         name: 'queryMode',
-        displayName: 'Query mode (view or rpc)',
+        displayName: 'Query mode (rpc or view)',
         type: 'text',
         helpText:
-          'Use "view" to read a table or view, or "rpc" to call a Postgres function. Defaults to "view".',
+          '"rpc" calls a Postgres function (always available). "view" reads a table or view (requires admin to enable ALLOW_TABLE_VIEW). Defaults to "rpc".',
       },
       {
         name: 'targetName',
         displayName: 'Table / view / function name',
         type: 'text',
+        helpText:
+          'For rpc: function name. For view: table or view name.',
       },
       {
         name: 'idColumn',
         displayName: 'Primary key column',
         type: 'text',
         helpText:
-          'Column used by getPageItemById to look up a single row. Defaults to "id". Ignored in rpc mode.',
+          'Column used by getPageItemById to look up a single row. Defaults to "id". Only used in view mode.',
       },
       {
         name: 'rpcParams',
@@ -172,8 +174,16 @@ export default class SupabaseConnector
   // ─── Private helpers ──────────────────────────────────────────────────
 
   private readTarget(context: Connector.Dictionary): ResolvedTarget {
-    const rawMode = String(context['queryMode'] ?? 'view').toLowerCase();
-    const mode: QueryMode = rawMode === 'rpc' ? 'rpc' : 'view';
+    const rawMode = String(context['queryMode'] ?? 'rpc').toLowerCase();
+    const mode: QueryMode = rawMode === 'view' ? 'view' : 'rpc';
+
+    if (mode === 'view' && !this.isFlagOn('ALLOW_TABLE_VIEW')) {
+      throw new Error(
+        'Supabase connector: "view" query mode is disabled in this environment. ' +
+          'An admin can enable it by setting ALLOW_TABLE_VIEW=true in the Configuration tab.'
+      );
+    }
+
     const name = String(context['targetName'] ?? '').trim();
     if (!name) {
       throw new Error(
@@ -181,6 +191,12 @@ export default class SupabaseConnector
       );
     }
     return { mode, name };
+  }
+
+  private isFlagOn(name: string): boolean {
+    const raw = this.runtime.options[name];
+    if (typeof raw === 'boolean') return raw;
+    return typeof raw === 'string' && raw.trim().toLowerCase() === 'true';
   }
 
   private readIdColumn(context: Connector.Dictionary): string {

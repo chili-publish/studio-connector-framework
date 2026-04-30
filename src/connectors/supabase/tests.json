@@ -1,7 +1,8 @@
 {
   "setup": {
     "runtime_options": {
-      "SUPABASE_URL": "https://test.supabase.co"
+      "SUPABASE_URL": "https://test.supabase.co",
+      "ALLOW_TABLE_VIEW": "true"
     }
   },
   "tests": [
