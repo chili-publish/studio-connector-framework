@@ -2,7 +2,7 @@
   <rect width="1254" height="1254" fill="#fff"/>
 
   <!-- Head / crest / beak -->
-  <path fill="#000" d="
+  <path fill="#00006c" d="
     M 523 474
     L 523 382
     C 523 282 602 207 704 207
@@ -19,10 +19,10 @@
     Z"/>
 
   <!-- Eye -->
-  <circle cx="720" cy="352" r="31" fill="#000"/>
+  <circle cx="720" cy="352" r="31" fill="#00006c"/>
 
   <!-- Wings / shoulders / central M -->
-  <path fill="#000" d="
+  <path fill="#00006c" d="
     M 493 500
     C 456 502 421 525 405 562
     C 393 591 398 625 398 681
@@ -52,7 +52,7 @@
     Z"/>
 
   <!-- Lower body / tail -->
-  <path fill="#000" d="
+  <path fill="#00006c" d="
     M 584 798
     C 562 907 528 991 498 1033
     C 492 1043 498 1052 512 1056
