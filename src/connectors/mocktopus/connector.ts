@@ -183,8 +183,10 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 			return d.toISOString().slice(0, 10);
 		}
 		case "list": {
-			const entries = field.params.entries ?? 3;
-			return Array.from({ length: entries as number }, () => createMockWords(1));
+			if (field.params.values) {
+				return pickRandom((field.params.values as string).split("|"));
+			}
+			return createMockWords(1);
 		}
 		case "image": 
 			return String(Math.floor(Math.random() * 10) + 1);

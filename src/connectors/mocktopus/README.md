@@ -42,9 +42,9 @@ Any field type can use the `values` parameter to pick a random value from a pipe
   - No parameters
   - Example: `joinDate:date`
 
-- **list**: Generates an array of mock words
-  - `entries`: Number of entries in the list (default: 3)
-  - Example: `tags:list(entries=5)`
+- **list**: Returns a single value picked from a pipe-delimited list, or a single random word if no list is provided
+  - `values`: Pipe-delimited list of values to randomly select from
+  - Example: `status:list(values=active|inactive|pending)`
 
 - **image**: Generates seeded image URLs from Picsum Photos
   - `width`: Image width in pixels (default: 400)
@@ -151,7 +151,7 @@ Click **Add** to create the parameter, then **Invoke** to test the connector. Th
 connector-cli login
 
 # Deploy
-connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mocktopus
+connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mocktopus --proxyOption.allowedDomains ""
 ```
 
 The `connector-auth` Docker volume persists the login token between sessions so you only need to run `login` once.
