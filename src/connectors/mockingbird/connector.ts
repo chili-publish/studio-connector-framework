@@ -29,18 +29,23 @@ interface MockAsset {
 	height: number;
 }
 
-const MOCK_ASSETS: MockAsset[] = [
-	{ id: "1",  name: "Sunset Beach",    placeholder: "sunset",   width: 800,  height: 600  },
-	{ id: "2",  name: "Mountain Peak",   placeholder: "mountain", width: 1200, height: 800  },
-	{ id: "3",  name: "City Lights",     placeholder: "city",     width: 1920, height: 1080 },
-	{ id: "4",  name: "Forest Trail",    placeholder: "forest",   width: 600,  height: 900  },
-	{ id: "5",  name: "Ocean Waves",     placeholder: "ocean",    width: 1000, height: 667  },
-	{ id: "6",  name: "Desert Dunes",    placeholder: "desert",   width: 1400, height: 700  },
-	{ id: "7",  name: "Snowy Cabin",     placeholder: "snow",     width: 800,  height: 800  },
-	{ id: "8",  name: "Tropical Garden", placeholder: "tropical", width: 750,  height: 500  },
-	{ id: "9",  name: "Abstract Shapes", placeholder: "abstract", width: 500,  height: 500  },
-	{ id: "10", name: "Vintage Film",    placeholder: "vintage",  width: 640,  height: 480  },
+const BASE_ASSETS = [
+	{ name: "Sunset Beach",    placeholder: "sunset",   width: 800,  height: 600  },
+	{ name: "Mountain Peak",   placeholder: "mountain", width: 1200, height: 800  },
+	{ name: "City Lights",     placeholder: "city",     width: 1920, height: 1080 },
+	{ name: "Forest Trail",    placeholder: "forest",   width: 600,  height: 900  },
+	{ name: "Ocean Waves",     placeholder: "ocean",    width: 1000, height: 667  },
+	{ name: "Desert Dunes",    placeholder: "desert",   width: 1400, height: 700  },
+	{ name: "Snowy Cabin",     placeholder: "snow",     width: 800,  height: 800  },
+	{ name: "Tropical Garden", placeholder: "tropical", width: 750,  height: 500  },
+	{ name: "Abstract Shapes", placeholder: "abstract", width: 500,  height: 500  },
+	{ name: "Vintage Film",    placeholder: "vintage",  width: 640,  height: 480  },
 ];
+
+const MOCK_ASSETS: MockAsset[] = Array.from({ length: 100 }, (_, i) => {
+	const base = BASE_ASSETS[i % BASE_ASSETS.length];
+	return { id: String(i + 1), name: `${base.name} ${i + 1}`, placeholder: base.placeholder, width: base.width, height: base.height };
+});
 
 /**************************************************************************/
 /* Connector                                                              */
@@ -58,13 +63,7 @@ export default class MockingbirdConnector implements Media.MediaConnector {
 	}
 
 	getConfigurationOptions(): Connector.ConnectorConfigValue[] | null {
-		return [
-			{
-				name: "useRemoteImages",
-				displayName: "Use remote images from picsum.photos (requires network)",
-				type: "boolean",
-			},
-		];
+		return [];
 	}
 
 	async query(
@@ -122,7 +121,7 @@ export default class MockingbirdConnector implements Media.MediaConnector {
 			let h = asset.height;
 			if (previewType === "thumbnail") { w = 200; h = Math.round(200 * h / w); }
 			else if (previewType === "mediumres") { w = 400; h = Math.round(400 * h / w); }
-			const resp = await this.runtime.fetch(`https://picsum.photos/${w}/${h}`, { method: "GET" });
+			const resp = await this.runtime.fetch(`https://picsum.photos/seed/${asset.id}/${w}/${h}`, { method: "GET" });
 			if (!resp.ok) throw new ConnectorHttpError(resp.status, `picsum returned ${resp.status}`);
 			return resp.arrayBuffer;
 		}
