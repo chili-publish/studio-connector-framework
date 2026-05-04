@@ -46,10 +46,8 @@ Any field type can use the `values` parameter to pick a random value from a pipe
   - `values`: Pipe-delimited list of values to randomly select from
   - Example: `status:list(values=active|inactive|pending)`
 
-- **image**: Generates seeded image URLs from Picsum Photos
-  - `width`: Image width in pixels (default: 400)
-  - `height`: Image height in pixels (default: 300)
-  - Example: `photo:image`, `banner:image(width=800,height=200)`
+- **image**: Generates identifiers which can be used by media connectors
+  - Example: `photo:image`, `banner:image(values=Identifier1,Identifier2)`
 
 ## Configuration options
 
