@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//c/Bruno/Git/studio-connector-framework/**)",
-      "Bash(xargs grep *)"
-    ]
-  }
-}
