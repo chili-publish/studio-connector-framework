@@ -242,8 +242,8 @@ export default class MocktopusConnector implements Data.DataConnector {
 		const schema = (context["schema"] as string) ?? "";
 		const recordCount = parseInt((context["recordCount"] as string) ?? "10", 10) || 10;
 		const simulateDelays = (context["simulateDelays"] as boolean) ?? false;
-		const minDelay = parseInt((context["minDelay"] as string) ?? "0", 10) || 0;
-		const maxDelay = parseInt((context["maxDelay"] as string) ?? "0", 10) || 0;
+		const minDelay = parseInt((context["minDelay"] as string) ?? "100", 10) || 100;
+		const maxDelay = parseInt((context["maxDelay"] as string) ?? "1000", 10) || 1000;
 
 		if (simulateDelays && (minDelay > 0 || maxDelay > 0)) {
 			const lo = Math.min(minDelay, maxDelay);
