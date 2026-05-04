@@ -1,5 +1,5 @@
 {
-  "name": "Mocktopus",
+  "name": "mocktopus",
   "description": "A many-tentacled connector that pretends to connect to everything but actually connects to nothing.",
   "version": "1.0.0",
   "author": {
