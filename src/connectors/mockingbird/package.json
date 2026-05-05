@@ -13,7 +13,7 @@
       "connectorName": "Mockingbird",
       "type": "media",
       "iconUrl": "https://stgrafxstudioprdpublic.blob.core.windows.net/shared/demo-connectors/Mockingbird.svg",
-      "options": {"Use remote images": null},
+      "options": {"useRemoteImages": null},
       "mappings": {},
       "supportedAuth": []
     },

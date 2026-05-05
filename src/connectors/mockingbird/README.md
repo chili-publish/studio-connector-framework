@@ -14,7 +14,7 @@ A connector that sings back any media you ask for, but never leaves the cage. Un
 
 ## Configuration options
 
-The only option is **Use remote images** (runtime option, text): set to `"true"` to enable remote mode. Any other value (including empty) uses offline mode.
+The only option is **useRemoteImages** (runtime option, text): set to `"true"` to enable remote mode. Any other value (including empty) uses offline mode.
 
 ## Local development
 
@@ -48,7 +48,7 @@ connector-cli build
 connector-cli debug -p 3300 -w
 ```
 
-Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 100 assets. To test remote mode, set the `Use remote images` runtime option to `"true"` — the connector will fetch from picsum.photos using the asset ID as a seed instead of returning the local pixel placeholder.
+Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the catalog to see the 100 assets. To test remote mode, set the `useRemoteImages` runtime option to `"true"` — the connector will fetch from picsum.photos using the asset ID as a seed instead of returning the local pixel placeholder.
 
 ### Publish to a GraFx environment
 
@@ -57,7 +57,7 @@ Open the debug UI at http://localhost:3300/?type=MediaConnector. Browse the cata
 connector-cli login
 
 # Deploy
-connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mockingbird --proxyOption.allowedDomains "picsum.photos" -ro "Use remote images"="true"
+connector-cli publish -b https://<your-environment>.chili-publish.online/grafx -e <environment-name> -n Mockingbird --proxyOption.allowedDomains "picsum.photos" -ro "useRemoteImages"="true"
 ```
 
 The `connector-auth` Docker volume persists the login token between sessions so you only need to run `login` once.
