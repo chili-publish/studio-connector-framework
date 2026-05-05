@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="Mockingbird.svg" alt="Mockingbird" width="96" />
+</div>
+
 # Mockingbird
 
 A connector that sings back any media you ask for, but never leaves the cage. Unless you open it.

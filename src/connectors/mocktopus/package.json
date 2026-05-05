@@ -11,6 +11,7 @@
   "main": "out/connector.js",
   "config": {
     "connectorName": "Mocktopus",
+    "iconUrl": "https://stgrafxstudioprdpublic.blob.core.windows.net/shared/demo-connectors/Mocktopus.svg",
     "type": "data",
     "options": {},
     "mappings": {},

@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="Mocktopus.svg" alt="Mockingbird" width="96" />
+</div>
+
 # Mocktopus
 
 A many-tentacled connector that pretends to connect to everything but actually connects to nothing.
