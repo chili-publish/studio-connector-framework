@@ -141,9 +141,23 @@ function parseDSL(schema: string, logError: (msg: string) => void): SchemaField[
 		}
 		const name = trimmed.slice(0, colonIndex).trim();
 		const rest = trimmed.slice(colonIndex + 1).trim();
+		if (!name) {
+			logError(`Mocktopus: invalid field "${trimmed}" — field name is required`);
+			continue;
+		}
 		const parenIndex = rest.indexOf("(");
-		const rawType = parenIndex === -1 ? rest : rest.slice(0, parenIndex).trim();
-		const paramsStr = parenIndex === -1 ? "" : rest.slice(parenIndex + 1, rest.lastIndexOf(")"));
+		// rest can be with or without values (shortText or shortText(values=active|inactive|pending))
+		const rawType = parenIndex === -1 ? rest : rest.slice(0, parenIndex).trim(); 
+		if (rawType === "") {
+			logError(`Mocktopus: invalid field "${trimmed}" — type is required`);
+			continue;
+		}
+		const closeParenIndex = rest.lastIndexOf(")");
+		if (parenIndex !== -1 && (closeParenIndex === -1 || closeParenIndex < parenIndex)) {
+			logError(`Mocktopus: invalid field "${trimmed}" — missing closing ")"`);
+			continue;
+		}
+		const paramsStr = parenIndex === -1 ? "" : rest.slice(parenIndex + 1, closeParenIndex);
 		if (!isFieldType(rawType)) {
 			logError(`Mocktopus: unknown type "${rawType}" for field "${name}" — valid types: ${VALID_TYPES.join(", ")}`);
 			continue;
@@ -153,23 +167,24 @@ function parseDSL(schema: string, logError: (msg: string) => void): SchemaField[
 	return fields;
 }
 
+function ParseNumberParameter(value: string | undefined, fallback: number): number {
+	const n = Number(value ?? fallback);
+	return isNaN(n) ? fallback : n;
+}
+
 function generateValue(field: SchemaField, index: number): string | number | boolean | object {
 	if (field.params.values) {
 		const values = (field.params.values as string).split("|");
 		return values[Math.floor(Math.random() * values.length)];
 	}
 	switch (field.type) {
-		case "shortText": {
-			const numberOfWords = Number(field.params.numberOfWords ?? 2);
-			return createMockWords(numberOfWords);
-		}
-		case "longText": {
-			const numberOfParagraphs = Number(field.params.numberOfParagraphs ?? 2);
-			return createMockParagraphs(numberOfParagraphs);
-		}
+		case "shortText":
+			return createMockWords(ParseNumberParameter(field.params.numberOfWords, 2));
+		case "longText":
+			return createMockParagraphs(ParseNumberParameter(field.params.numberOfParagraphs, 2));
 		case "number": {
-			const minVal = Math.floor(Number(field.params.min ?? 0));
-			const maxVal = Math.floor(Number(field.params.max ?? 1000));
+			const minVal = Math.floor(ParseNumberParameter(field.params.min, 0));
+			const maxVal = Math.floor(ParseNumberParameter(field.params.max, 1000));
 			return minVal + (index * 42) % (maxVal - minVal + 1);
 		}
 		case "boolean":
@@ -181,9 +196,6 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 			return d.toISOString().slice(0, 10);
 		}
 		case "list": {
-			if (field.params.values) {
-				return pickRandom((field.params.values as string).split("|"));
-			}
 			return createMockWords(1);
 		}
 		case "image": 
