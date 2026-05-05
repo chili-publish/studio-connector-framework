@@ -139,8 +139,7 @@ connector-cli build
 connector-cli debug -p 3300 -w
 ```
 
-Open the debug UI at http://localhost:3300/?type=DataConnector. Add a `schema` parameter with a value like: `status:shortText(values=active|inactive|pending), priority:number(values=1|3|5)
-`.
+Open the debug UI at http://localhost:3300/?type=DataConnector. Add a `schema` parameter with a value like: `status:shortText(values=active|inactive|pending), priority:number(values=1|3|5)`.
 
 Click **Add** to create the parameter, then **Invoke** to test the connector. This generates mock data according to your schema. You can also test other parameters (like `limit` and `offset` for paging or simulate delays):
 
