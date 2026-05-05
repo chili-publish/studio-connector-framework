@@ -116,7 +116,7 @@ export default class MockingbirdConnector implements Media.MediaConnector {
 	): Promise<Connector.ArrayBufferPointer> {
 		const asset = MOCK_ASSETS.find((a) => a.id === id) ?? MOCK_ASSETS[Math.floor(Math.random() * MOCK_ASSETS.length)];
 
-		if (this.runtime.options['Use remote images'] === "true") {
+		if (this.runtime.options['useRemoteImages'] === "true") {
 			let w = asset.width;
 			let h = asset.height;
 			if (previewType === "thumbnail") { w = 200; h = Math.round(200 * h / w); }
