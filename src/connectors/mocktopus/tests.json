@@ -3,7 +3,7 @@
     "runtime_options": {
       "schema": "firstName:shortText, age:number(min=0,max=100), active:boolean, joinDate:date",
       "recordCount": "5",
-      "simulateDelays": "false"
+      "simulateDelays": false
     }
   },
   "tests": [
