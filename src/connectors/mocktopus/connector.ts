@@ -89,20 +89,20 @@ type FieldType = typeof VALID_TYPES[number];
 interface SchemaField {
 	name: string;
 	type: FieldType;
-	params: Record<string, string | number>;
+	params: Record<string, string>;
 }
 
 function isFieldType(type: string): type is FieldType {
 	return (VALID_TYPES as readonly string[]).includes(type);
 }
 
-function parseParams(paramsStr: string): Record<string, string | number> {
-	const params: Record<string, string | number> = {};
+function parseParams(paramsStr: string): Record<string, string> {
+	const params: Record<string, string> = {};
 	if (!paramsStr) return params;
 	for (const pair of paramsStr.split(",")) {
 		const [key, value] = pair.split("=").map(s => s.trim());
 		if (key && value) {
-			params[key] = isNaN(Number(value)) ? value : Number(value);
+			params[key] = value;
 		}
 	}
 	return params;
@@ -160,18 +160,16 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 	}
 	switch (field.type) {
 		case "shortText": {
-			const numberOfWords = field.params.numberOfWords ?? 2;
-			return createMockWords(numberOfWords as number);
+			const numberOfWords = Number(field.params.numberOfWords ?? 2);
+			return createMockWords(numberOfWords);
 		}
 		case "longText": {
-			const numberOfParagraphs = field.params.numberOfParagraphs ?? 2;
-			return createMockParagraphs(numberOfParagraphs as number);
+			const numberOfParagraphs = Number(field.params.numberOfParagraphs ?? 2);
+			return createMockParagraphs(numberOfParagraphs);
 		}
 		case "number": {
-			const min = field.params.min ?? 0;
-			const max = field.params.max ?? 1000;
-			const minVal = Math.floor(min as number);
-			const maxVal = Math.floor(max as number);
+			const minVal = Math.floor(Number(field.params.min ?? 0));
+			const maxVal = Math.floor(Number(field.params.max ?? 1000));
 			return minVal + (index * 42) % (maxVal - minVal + 1);
 		}
 		case "boolean":
