@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Mocktopus.svg" alt="Mockingbird" width="96" />
+  <img src="Mocktopus.svg" alt="Mocktopus" width="96" />
 </div>
 
 # Mocktopus
