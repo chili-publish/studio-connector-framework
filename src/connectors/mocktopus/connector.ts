@@ -183,8 +183,10 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 		case "longText":
 			return createMockParagraphs(ParseNumberParameter(field.params.numberOfParagraphs, 2));
 		case "number": {
-			const minVal = Math.floor(ParseNumberParameter(field.params.min, 0));
-			const maxVal = Math.floor(ParseNumberParameter(field.params.max, 1000));
+			const rawMin = Math.floor(ParseNumberParameter(field.params.min, 0));
+			const rawMax = Math.floor(ParseNumberParameter(field.params.max, 1000));
+			const minVal = Math.min(rawMin, rawMax);
+			const maxVal = Math.max(rawMin, rawMax);
 			return minVal + (index * 42) % (maxVal - minVal + 1);
 		}
 		case "boolean":
