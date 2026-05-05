@@ -199,7 +199,7 @@ function generateValue(field: SchemaField, index: number): string | number | boo
 			return createMockWords(1);
 		}
 		case "image": 
-			return String(Math.floor(Math.random() * 10) + 1);
+			return String(Math.floor(Math.random() * 100) + 1);
 	}
 }
 
