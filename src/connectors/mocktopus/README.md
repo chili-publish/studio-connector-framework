@@ -51,7 +51,7 @@ Any field type can use the `values` parameter to pick a random value from a pipe
   - Example: `status:list(values=active|inactive|pending)`
 
 - **image**: Generates identifiers which can be used by media connectors
-  - Example: `photo:image`, `banner:image(values=Identifier1,Identifier2)`
+  - Example: `photo:image`, `banner:image(values=Identifier1|Identifier2)`
 
 ## Configuration options
 
