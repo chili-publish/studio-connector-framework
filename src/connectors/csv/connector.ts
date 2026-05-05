@@ -54,6 +54,10 @@ class CsvParser {
       .map((h, i) => ({ h, i }))
       .filter(({ h }) => h.length > 0);
 
+    if (validCols.length === 0) {
+      throw new Error('CSV connector: all header cells are empty.');
+    }
+
     const headers   = validCols.map(({ h }) => h);
     const colIndices = validCols.map(({ i }) => i);
 
