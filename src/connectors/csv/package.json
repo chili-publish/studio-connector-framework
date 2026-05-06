@@ -1,7 +1,7 @@
 {
   "name": "csv",
   "description": "Use any publicly accessible CSV (UTF-8) file as a data source.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "author": {
     "name": "CHILI publish",
