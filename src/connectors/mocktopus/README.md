@@ -105,7 +105,7 @@ PowerShell 7+ (`pwsh`).
 .\ConvertTemplateToSchema.ps1 -TemplatePath .\template.json -OutputPath .\schema.txt -IncludeReadonly
 ```
 
-The script maps GraFx variable types (`shortText`, `longText`, `number`, `boolean`, `date`, `list`, `image`) directly to connector DSL types. Variables with unrecognised types are skipped with a warning.
+The script maps GraFx variable types (`shortText`, `longText`, `number`, `boolean`, `date`, `list`, `image`) directly to Mocktopus DSL types. Variables with unrecognised types are skipped with a warning.
 
 ## Local development
 

@@ -84,6 +84,16 @@ const VALID_TYPES = [
 	"image",
 ] as const;
 
+const MODEL_TYPE_MAP: Record<FieldType, Data.DataModelProperty["type"]> = {
+	shortText: "singleLine",
+	longText: "multiLine",
+	number: "number",
+	boolean: "boolean",
+	date: "date",
+	list: "singleLine",
+	image: "singleLine",
+};
+
 type FieldType = typeof VALID_TYPES[number];
 
 interface SchemaField {
@@ -172,7 +182,7 @@ function ParseNumberParameter(value: string | undefined, fallback: number): numb
 	return isNaN(n) ? fallback : n;
 }
 
-function generateValue(field: SchemaField, index: number): string | number | boolean | object {
+function generateValue(field: SchemaField, index: number): string | number | boolean | Date {
 	if (field.params.values) {
 		const values = (field.params.values as string).split("|");
 		return values[Math.floor(Math.random() * values.length)];
@@ -242,7 +252,7 @@ export default class MocktopusConnector implements Data.DataConnector {
 		return {
 			properties: fields.map((f) => ({
 				name: f.name,
-				type: f.type as Data.DataModelProperty["type"],
+				type: MODEL_TYPE_MAP[f.type],
 			})),
 		};
 	}
@@ -267,12 +277,12 @@ export default class MocktopusConnector implements Data.DataConnector {
 		const limit = Math.min(config.limit || recordCount, recordCount);
 		const offset = config.continuationToken ? parseInt(config.continuationToken, 10) : 0;
 
-		const data: Connector.Dictionary[] = [];
+		const data: Data.DataItem[] = [];
 		for (let i = 0; i < limit && offset + i < recordCount; i++) {
 			const index = offset + i;
-			const record: Connector.Dictionary = {};
+			const record: Data.DataItem = {} as Data.DataItem;
 			for (const field of fields) {
-				record[field.name] = generateValue(field, index) as string;
+				record[field.name] = generateValue(field, index);
 			}
 			data.push(record);
 		}

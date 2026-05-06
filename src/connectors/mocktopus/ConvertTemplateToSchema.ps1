@@ -5,11 +5,11 @@
 
 .DESCRIPTION
     Reads the `variables` array from a GraFx template JSON file,
-    maps each variable's name and type to the connector DSL format:
+    maps each variable's name and type to the Mocktopus DSL format:
 
         fieldName:type, fieldName:type(param=value), ...
 
-    Valid connector types (shortText, longText, number, boolean, date, list, image)
+    Valid DSL schema types (shortText, longText, number, boolean, date, list, image)
     are passed through as-is. Any type not recognised by the connector is flagged
     with a warning and skipped, keeping the output safe to paste directly into
     the connector's "Schema" configuration field.
