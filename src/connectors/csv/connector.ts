@@ -47,9 +47,19 @@ class CsvParser {
       );
     }
 
-    const headers = nonEmpty[0].map((h, i) =>
-      h.trim().length > 0 ? h.trim() : `Column${i + 1}`
-    );
+    // Build an index of valid (non-empty) columns only — empty header cells
+    // are silently ignored so they never appear in the data model or variables.
+    const rawHeaders = nonEmpty[0].map((h) => h.trim());
+    const validCols = rawHeaders
+      .map((h, i) => ({ h, i }))
+      .filter(({ h }) => h.length > 0);
+
+    if (validCols.length === 0) {
+      throw new Error('CSV connector: all header cells are empty.');
+    }
+
+    const headers   = validCols.map(({ h }) => h);
+    const colIndices = validCols.map(({ i }) => i);
 
     const dataRows = nonEmpty.slice(1);
 
@@ -58,7 +68,7 @@ class CsvParser {
     // back to 'singleLine' so heterogeneous columns are never misclassified.
     const types: ConnectorCellType[] = headers.map((_, col) => {
       const samples = dataRows
-        .map((r) => (r[col] ?? '').trim())
+        .map((r) => (r[colIndices[col]] ?? '').trim())
         .filter((v) => v.length > 0);
       if (samples.length === 0) return 'singleLine';
       const candidate = this.inferType(samples[0]);
@@ -70,8 +80,8 @@ class CsvParser {
     const rows: ParsedRow[] = dataRows
       .map((cells, i) => ({
         originalIndex: i,
-        values: headers.map((_, col) =>
-          this.coerce((cells[col] ?? '').trim(), types[col])
+        values: colIndices.map((ci, col) =>
+          this.coerce((cells[ci] ?? '').trim(), types[col])
         ),
       }))
       .filter((row) => row.values.some((v) => v !== null && v !== ''));
@@ -329,11 +339,14 @@ export default class CsvConnector
       );
     }
 
+    // The GraFx Studio runtime populates response.text for all non-binary
+    // content types (text/plain, text/csv, application/json, etc.).
+    // Binary types (image/*, font/*, application/pdf) are not supported.
     const text = response.text as string | undefined;
     if (!text || text.trim().length === 0) {
       throw new Error(
         'CSV connector: no text content received. ' +
-          'Ensure the file is served not in the binary format.'
+        'Ensure the file is served with a text content type (e.g. text/plain, text/csv, or application/json).'
       );
     }
 

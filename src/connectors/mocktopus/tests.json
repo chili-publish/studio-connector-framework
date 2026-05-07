@@ -1,0 +1,52 @@
+{
+  "setup": {
+    "runtime_options": {
+      "schema": "firstName:shortText, age:number(min=0,max=100), active:boolean, joinDate:date",
+      "recordCount": "5",
+      "simulateDelays": false
+    }
+  },
+  "tests": [
+    {
+      "id": "getModel-basic",
+      "name": "getModel returns properties for each schema field",
+      "method": "getModel",
+      "arguments": {
+        "context": {}
+      },
+      "asserts": {
+        "fetch": []
+      }
+    },
+    {
+      "id": "getPage-first",
+      "name": "getPage returns first page of mock records",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 5,
+          "continuationToken": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": []
+      }
+    },
+    {
+      "id": "getPage-pagination",
+      "name": "getPage respects continuationToken for pagination",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 3,
+          "continuationToken": "3"
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": []
+      }
+    }
+  ]
+}
