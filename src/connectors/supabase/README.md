@@ -50,7 +50,31 @@ connector-cli set-auth -b ENV_API_URL -e ENV --connectorId <id> -au browser -at 
 connector-cli set-auth -b ENV_API_URL -e ENV --connectorId <id> -au server  -at staticKey --auth-data-file ./auth.json
 ```
 
-> **Note**: Supabase's gateway typically expects both the `apikey` header *and* `Authorization: Bearer <key>`. The framework's `staticKey` injection sets one of them; in practice the `apikey` header alone is usually sufficient because PostgREST validates the JWT contained in it. If you hit `401 No API key found`, try setting the `Authorization` header instead.
+> **Note**: The `apikey` header alone is sufficient — PostgREST validates the JWT it contains and resolves the role from there. No `Authorization: Bearer` header is needed for either anon or service-role keys.
+
+### Row Level Security
+
+The connector is RLS-aware out of the box: the `apikey`-only header strategy makes PostgREST evaluate every request under the role encoded in the key (`anon` or `service_role`).
+
+Recommended setup for a public-data connector:
+
+1. Enable RLS on every table the connector reads (silences Supabase's "Unrestricted" warning and gives you a hook to tighten later):
+   ```sql
+   alter table public.<table> enable row level security;
+   ```
+2. Add a permissive `SELECT` policy for `public` (covers `anon`, `authenticated`, and `service_role`):
+   ```sql
+   create policy "public read <table>" on public.<table>
+     for select to public using (true);
+   ```
+3. Verify with the anon key — should return rows, not `[]`:
+   ```sh
+   curl -i "https://<ref>.supabase.co/rest/v1/<table>?limit=1" -H "apikey: <anon-key>"
+   ```
+
+If you ship the **anon** key (recommended for public demos) the policies above are required — without a matching policy, RLS silently returns `[]`. If you ship the **service-role** key, RLS is bypassed entirely.
+
+> **Audit your public-schema functions.** PostgREST exposes every public function as `POST /rest/v1/rpc/<name>`. Any function with `EXECUTE` granted to `anon` is reachable by anyone holding the anon key. Run `select proname, has_function_privilege('anon', oid, 'EXECUTE') from pg_proc where pronamespace = 'public'::regnamespace;` and revoke EXECUTE from anon on anything that shouldn't be publicly callable (especially generic SQL-execution helpers).
 
 ### Per-template configuration (end-user)
 

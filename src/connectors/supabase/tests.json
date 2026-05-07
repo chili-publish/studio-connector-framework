@@ -111,6 +111,48 @@
       }
     },
     {
+      "name": "getPage rpc mode auto-discovers columns when no columnsOverride is given",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 5
+        },
+        "context": {
+          "queryMode": "rpc",
+          "targetName": "get_campaign_products",
+          "rpcParams": "{\"campaign_slug\":\"spring-fresh\"}"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/rpc/get_campaign_products?limit=5&offset=0",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": [
+                { "product": "Chill Cola Original 6x33cl", "effective_price": 4.99 }
+              ]
+            }
+          },
+          {
+            "url": "https://test.supabase.co/rest/v1/rpc/get_campaign_products?limit=1&offset=0",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": [
+                { "product": "Chill Cola Original 6x33cl", "effective_price": 4.99 }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "getPageItemById fetches single row by id",
       "method": "getPageItemById",
       "arguments": {
