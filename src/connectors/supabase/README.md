@@ -21,6 +21,27 @@ For server-side filtering and sorting the connector translates the framework's `
 
 Pagination uses a numeric offset (`continuationToken` / `previousPageToken`).
 
+## Database setup
+
+Short overview of what to provision on the Supabase side. **For full SQL examples and step-by-step instructions, see the Supabase connector setup guide (TODO: link once published).**
+
+### `rpc` mode (default)
+
+Create a Postgres function in the `public` schema, leave it as `SECURITY INVOKER` (so [RLS](#row-level-security) still applies to the tables it reads), and grant `EXECUTE` to `anon`:
+
+```sql
+create or replace function public.<name>(<args>)
+returns setof <table>
+language sql security invoker
+as $$ select ... $$;
+
+grant execute on function public.<name>(<args>) to anon;
+```
+
+### `view` mode (table or view)
+
+Create the table or view in the `public` schema, enable [RLS](#row-level-security) with a SELECT policy for `anon` (or `public`), and have an admin set `ALLOW_TABLE_VIEW=true` in the connector's Configuration tab.
+
 ## Configuration
 
 ### Publish-time runtime options
