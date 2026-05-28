@@ -1,5 +1,9 @@
 # Releases
 
+## 1.3.0
+
+- [Feat][WRS-3058] Return empty state instead of throwing an error for `getPage` and `getModel` when `spreadsheetURL` config is not provided
+
 ## 1.2.0
 
 - [Feat][WRS-2945] Update connector to support `Data Source Variable` requirements

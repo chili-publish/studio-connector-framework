@@ -18,6 +18,13 @@ import type {
   TypedBooleanCell,
 } from './types';
 
+class EmptySpreadsheetIdError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EmptySpreadsheetIdError';
+  }
+}
+
 class RangeHelper {
   static buildHeaderRange(sheetName: string | null) {
     return RangeHelper.buildRange(sheetName, 1, 1);
@@ -407,8 +414,21 @@ export default class GoogleSheetConnector
     context: Connector.Dictionary
   ): Promise<Data.BidirectionalDataPage> {
     return this.withTiming(async () => {
-      const { spreadsheetId, sheetId } =
-        this.extractSheetIdentityFromContext(context);
+      let spreadsheetId: string | null = null;
+      let sheetId: string | null = null;
+      try {
+        ({ spreadsheetId, sheetId } =
+          this.extractSheetIdentityFromContext(context));
+      } catch (error) {
+        if (error instanceof EmptySpreadsheetIdError) {
+          return {
+            previousPageToken: null,
+            continuationToken: null,
+            data: [],
+          };
+        }
+        throw error;
+      }
 
       if (config.limit < 1) {
         return {
@@ -513,8 +533,20 @@ export default class GoogleSheetConnector
     context: Connector.Dictionary
   ): Promise<Data.DataSourceVariableDataModel> {
     return this.withTiming(async () => {
-      const { spreadsheetId, sheetId } =
-        this.extractSheetIdentityFromContext(context);
+      let spreadsheetId: string | null = null;
+      let sheetId: string | null = null;
+      try {
+        ({ spreadsheetId, sheetId } =
+          this.extractSheetIdentityFromContext(context));
+      } catch (error) {
+        if (error instanceof EmptySpreadsheetIdError) {
+          return {
+            properties: [{ name: ITEM_ROW_ID_PROPERTY, type: 'singleLine' }],
+            itemIdPropertyName: ITEM_ROW_ID_PROPERTY,
+          };
+        }
+        throw error;
+      }
 
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
       const res = await this.withTiming(
@@ -712,12 +744,20 @@ export default class GoogleSheetConnector
   } {
     const spreadsheetURL = context[CONTEXT_SPREADSHEET_URL_PROPERTY];
 
-    if (!spreadsheetURL || typeof spreadsheetURL !== 'string') {
-      throw new Error(
-        `Google Sheet: The required configuration option "spreadsheetURL" is not provided or has a wrong type.
+    if (!spreadsheetURL) {
+      throw new EmptySpreadsheetIdError(
+        `Google Sheet: The required configuration option "spreadsheetURL" is not provided.
           Expected "string" URL. Actual is "${spreadsheetURL}"`
       );
     }
+
+    if (typeof spreadsheetURL !== 'string') {
+      throw new Error(
+        `Google Sheet: The required configuration option "spreadsheetURL" has a wrong type.
+          Expected "string" URL. Actual is "${spreadsheetURL}"`
+      );
+    }
+
     const spreadsheetIdMatch = spreadsheetURL
       .trim()
       .match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
