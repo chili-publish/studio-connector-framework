@@ -16,6 +16,8 @@ import type {
   TypedDateCell,
   TypedPlainTextCell,
   TypedBooleanCell,
+  TypedJsonCell,
+  PlainTextCell,
 } from './types';
 
 class RangeHelper {
@@ -165,6 +167,7 @@ class RangeHelper {
 const ITEM_ROW_ID_PROPERTY = '__rowId__' as const;
 
 const CONTEXT_SPREADSHEET_URL_PROPERTY = 'spreadsheetURL' as const;
+const CONTEXT_INTERPRET_JSON = 'interpretJson' as const;
 
 class RowIdHelper {
   /**
@@ -229,7 +232,8 @@ class RowIdHelper {
 class Converter {
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
-    tableBody: Array<Row>
+    tableBody: Array<Row>,
+    interpretJson: boolean
   ): Array<Data.DataItem> {
     const tableHeaderValues = tableHeader.values;
     return (
@@ -238,23 +242,38 @@ class Converter {
           const item =
             this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
               (acc, tableCell, colIndex) => {
-                const { type, cell } = Converter.toTypedCell(tableCell);
+                const columnName = tableHeaderValues[colIndex].formattedValue!;
+                const { type, cell } = Converter.toTypedCell(
+                  tableCell,
+                  columnName,
+                  interpretJson
+                );
+                const outputName = Converter.getOutputColumnName(
+                  columnName,
+                  interpretJson
+                );
 
                 switch (type) {
                   case 'number':
-                    acc[tableHeaderValues[colIndex].formattedValue] =
+                    acc[outputName] =
                       cell.effectiveValue?.numberValue ?? null;
                     break;
                   case 'date':
-                    acc[tableHeaderValues[colIndex].formattedValue] =
+                    acc[outputName] =
                       this.convertToDate(cell.effectiveValue?.numberValue);
                     break;
                   case 'boolean':
-                    acc[tableHeaderValues[colIndex].formattedValue] =
+                    acc[outputName] =
                       cell.effectiveValue.boolValue;
                     break;
+                  case 'json':
+                    acc[outputName] = this.parseJsonValue(
+                      cell.formattedValue,
+                      columnName
+                    );
+                    break;
                   case 'singleLine':
-                    acc[tableHeaderValues[colIndex].formattedValue] =
+                    acc[outputName] =
                       cell.formattedValue ?? null;
                     break;
                 }
@@ -273,7 +292,8 @@ class Converter {
 
   static toDataModelProperties(
     headerRow: Row<Required<CellData>>,
-    bodyRows: Array<Row>
+    bodyRows: Array<Row>,
+    interpretJson: boolean
   ): Array<Data.DataModelProperty> {
     if (!bodyRows.length) {
       throw new Error(
@@ -291,11 +311,30 @@ class Converter {
     }
     const { values } = normalizedBodyRow;
     return headerRow.values.map((column, idx) => {
+      const columnName = Converter.getOutputColumnName(
+        column.formattedValue!,
+        interpretJson
+      );
+      const type = Converter.toTypedCell(
+        values[idx],
+        column.formattedValue!,
+        interpretJson
+      ).type;
       return {
-        type: Converter.toTypedCell(values[idx]).type,
-        name: column.formattedValue,
-      };
+        name: columnName,
+        type,
+      } as Data.DataModelProperty;
     });
+  }
+
+  private static getOutputColumnName(
+    columnName: string,
+    interpretJson: boolean
+  ) {
+    if (interpretJson && columnName.startsWith('json_')) {
+      return columnName.slice(5);
+    }
+    return columnName;
   }
 
   /**
@@ -306,8 +345,22 @@ class Converter {
    * @param cell The cell data object returned by the Google Sheets API, possibly containing formatting and value information.
    */
   private static toTypedCell(
-    cell: CellData
-  ): TypedNumberCell | TypedDateCell | TypedPlainTextCell | TypedBooleanCell {
+    cell: CellData,
+    columnName: string,
+    interpretJson: boolean
+  ):
+    | TypedNumberCell
+    | TypedDateCell
+    | TypedPlainTextCell
+    | TypedBooleanCell
+    | TypedJsonCell {
+    if (interpretJson && columnName.startsWith('json_')) {
+      return {
+        type: 'json',
+        cell: cell as PlainTextCell,
+      };
+    }
+
     if (
       'effectiveFormat' in cell &&
       'numberFormat' in cell.effectiveFormat &&
@@ -345,6 +398,28 @@ class Converter {
       type: 'singleLine',
       cell: cell,
     };
+  }
+
+  private static parseJsonValue(
+    value: string | null | undefined,
+    columnName: string
+  ) {
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(trimmedValue);
+    } catch {
+      throw new Error(
+        `Google Sheet: Invalid JSON in column "${columnName}". Value must be valid JSON when the "interpretJson" configuration option is enabled.`
+      );
+    }
   }
 
   /**
@@ -409,6 +484,7 @@ export default class GoogleSheetConnector
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
+      const interpretJson = this.isInterpretJsonEnabled(context);
 
       if (config.limit < 1) {
         return {
@@ -480,7 +556,11 @@ export default class GoogleSheetConnector
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
 
       const startRowNumber = RangeHelper.getStartRow(cellsRange);
-      const data = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+      const data = Converter.toDataItems(
+        headerRow,
+        bodyRows,
+        interpretJson
+      ).map((item, i) =>
         RowIdHelper.assignRowIdToItem(
           item,
           spreadsheetId,
@@ -515,6 +595,7 @@ export default class GoogleSheetConnector
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
+      const interpretJson = this.isInterpretJsonEnabled(context);
 
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
       const res = await this.withTiming(
@@ -534,7 +615,11 @@ export default class GoogleSheetConnector
 
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetModel');
 
-      const properties = Converter.toDataModelProperties(headerRow, bodyRows);
+      const properties = Converter.toDataModelProperties(
+        headerRow,
+        bodyRows,
+        interpretJson
+      );
 
       return {
         properties: [
@@ -553,6 +638,11 @@ export default class GoogleSheetConnector
         name: CONTEXT_SPREADSHEET_URL_PROPERTY,
         displayName: 'Spreadsheet URL',
       },
+      {
+        type: 'boolean',
+        name: CONTEXT_INTERPRET_JSON,
+        displayName: 'Interpret JSON',
+      }
     ];
   }
 
@@ -573,6 +663,7 @@ export default class GoogleSheetConnector
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
+      const interpretJson = this.isInterpretJsonEnabled(context);
 
       const parsed = RowIdHelper.parse(id);
       if (!parsed) {
@@ -623,7 +714,11 @@ export default class GoogleSheetConnector
       }
 
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
-      const items = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+      const items = Converter.toDataItems(
+        headerRow,
+        bodyRows,
+        interpretJson
+      ).map((item, i) =>
         RowIdHelper.assignRowIdToItem(
           item,
           spreadsheetId,
@@ -734,6 +829,10 @@ export default class GoogleSheetConnector
     }
 
     return { spreadsheetId, sheetId };
+  }
+
+  private isInterpretJsonEnabled(context: Connector.Dictionary): boolean {
+    return context[CONTEXT_INTERPRET_JSON] === true;
   }
 
   private async fetchSheetName(
