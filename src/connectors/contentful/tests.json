@@ -1,0 +1,129 @@
+{
+  "//": "runtime_options must include every required option from package.json config.options, or tests silently no-op.",
+  "setup": {
+    "runtime_options": {
+      "CONTENTFUL_BASE_URL": "https://cdn.contentful.com",
+      "CONTENTFUL_SPACE_ID": "testspace",
+      "CONTENTFUL_ENVIRONMENT": "master",
+      "IMAGE_WIDTH": "1000"
+    }
+  },
+  "tests": [
+    {
+      "name": "getModel — maps content type fields to column types",
+      "method": "getModel",
+      "arguments": {
+        "context": { "contentType": "product" }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://cdn.contentful.com/spaces/testspace/environments/master/content_types/product",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "sys": { "id": "product", "type": "ContentType" },
+                "fields": [
+                  { "id": "title", "name": "Title", "type": "Symbol" },
+                  { "id": "description", "name": "Description", "type": "Text" },
+                  { "id": "price", "name": "Price", "type": "Number" },
+                  { "id": "inStock", "name": "In stock", "type": "Boolean" },
+                  { "id": "image", "name": "Image", "type": "Link", "linkType": "Asset" }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPage — fetches entries with skip/limit/include and resolves an asset URL",
+      "method": "getPage",
+      "arguments": {
+        "config": { "limit": 10 },
+        "context": {
+          "contentType": "product",
+          "columnsOverride": "[{\"name\":\"title\",\"type\":\"singleLine\"},{\"name\":\"price\",\"type\":\"number\"},{\"name\":\"image\",\"type\":\"singleLine\"}]"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://cdn.contentful.com/spaces/testspace/environments/master/entries?content_type=product&skip=0&limit=10&include=1",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "total": 1,
+                "skip": 0,
+                "limit": 10,
+                "items": [
+                  {
+                    "sys": { "id": "entry1", "type": "Entry", "createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-02-01T00:00:00Z" },
+                    "fields": {
+                      "title": "Widget Pro",
+                      "price": 9.99,
+                      "image": { "sys": { "type": "Link", "linkType": "Asset", "id": "asset1" } }
+                    }
+                  }
+                ],
+                "includes": {
+                  "Asset": [
+                    {
+                      "sys": { "id": "asset1", "type": "Asset" },
+                      "fields": {
+                        "title": "Widget image",
+                        "file": { "url": "//images.ctfassets.net/testspace/asset1/abc/widget.png", "contentType": "image/png" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPageItemById — looks up a single entry by sys.id",
+      "method": "getPageItemById",
+      "arguments": {
+        "id": "entry1",
+        "pageOptions": { "limit": 10 },
+        "context": {
+          "contentType": "product",
+          "columnsOverride": "[{\"name\":\"title\",\"type\":\"singleLine\"}]"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://cdn.contentful.com/spaces/testspace/environments/master/entries?content_type=product&sys.id=entry1&include=1&limit=1",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "total": 1,
+                "skip": 0,
+                "limit": 1,
+                "items": [
+                  {
+                    "sys": { "id": "entry1", "type": "Entry" },
+                    "fields": { "title": "Widget Pro" }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

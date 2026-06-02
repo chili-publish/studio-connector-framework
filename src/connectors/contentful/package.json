@@ -1,0 +1,38 @@
+{
+  "name": "contentful",
+  "description": "Read-only data connector for the Contentful Content Delivery API (CDA). Surfaces entries of a chosen content type as bindable rows, resolving linked assets to public image URLs.",
+  "version": "1.0.0",
+  "private": true,
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "Contentful",
+    "type": "data",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/contentful-connector.svg",
+    "options": {
+      "CONTENTFUL_BASE_URL": "https://cdn.contentful.com",
+      "CONTENTFUL_SPACE_ID": null,
+      "CONTENTFUL_ENVIRONMENT": "master",
+      "IMAGE_WIDTH": "",
+      "logEnabled": ""
+    },
+    "mappings": {},
+    "supportedAuth": ["staticKey"]
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1.39.0"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.9.0",
+    "typescript": "^5.2.2"
+  }
+}
