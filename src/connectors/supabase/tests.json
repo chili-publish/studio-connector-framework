@@ -58,7 +58,7 @@
       "asserts": {
         "fetch": [
           {
-            "url": "https://test.supabase.co/rest/v1/products?limit=10&offset=0&brand_id=eq.1&order=name.asc",
+            "url": "https://test.supabase.co/rest/v1/products?limit=10&offset=0&brand_id=eq.1&order=name.asc&select=id%2Cname%2Cbase_price",
             "method": "GET",
             "count": 1,
             "response": {
@@ -90,7 +90,7 @@
       "asserts": {
         "fetch": [
           {
-            "url": "https://test.supabase.co/rest/v1/rpc/spring_campaign?limit=5&offset=0",
+            "url": "https://test.supabase.co/rest/v1/rpc/spring_campaign?limit=5&offset=0&select=id%2Cproduct%2Ceffective_price",
             "method": "POST",
             "count": 1,
             "response": {
@@ -135,6 +135,35 @@
       }
     },
     {
+      "name": "getPage returns an empty page without a column-discovery round-trip",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 10,
+          "filters": [{ "property": "brand_id", "value": "999", "type": "exact" }]
+        },
+        "context": {
+          "queryMode": "view",
+          "targetName": "products",
+          "idColumn": "id"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://test.supabase.co/rest/v1/products?limit=10&offset=0&brand_id=eq.999",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": []
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "getPageItemById applies configured filter alongside the id lookup",
       "method": "getPageItemById",
       "arguments": {
@@ -151,7 +180,7 @@
       "asserts": {
         "fetch": [
           {
-            "url": "https://test.supabase.co/rest/v1/promo_products?limit=1&campaign_slug=eq.spring-fresh&sku=eq.NYB-COF-COL",
+            "url": "https://test.supabase.co/rest/v1/promo_products?limit=1&campaign_slug=eq.spring-fresh&sku=eq.NYB-COF-COL&select=sku%2CPrice",
             "method": "GET",
             "count": 1,
             "response": {
@@ -179,7 +208,7 @@
       "asserts": {
         "fetch": [
           {
-            "url": "https://test.supabase.co/rest/v1/products?limit=1&id=eq.5",
+            "url": "https://test.supabase.co/rest/v1/products?limit=1&id=eq.5&select=id%2Cname",
             "method": "GET",
             "count": 1,
             "response": {

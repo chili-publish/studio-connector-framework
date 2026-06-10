@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+Performance release. The platform proxy round-trip dominates request latency, so all three changes cut round-trips or payload size rather than connector-side compute.
+
+- **Column projection**: when `columnsOverride` is set, every `getPage` / `getPageItemById` request now sends a PostgREST `select=` with just those columns (plus the id column), shrinking the response payload. Inferred/discovered columns are unaffected (they already span the full row). Column names with spaces or special characters are double-quoted automatically.
+- **Empty results no longer trigger column discovery**: `getPage` returns an empty page immediately when the query matches zero rows. Previously a cold instance without `columnsOverride` would fire an extra discovery round-trip and then fail with a misleading "cannot infer columns" error instead of returning the (correct) empty page.
+- **Automatic retry on cold-start 401**: the platform auth layer can misfire its token path once on first load (401, succeeds on retry). `fetchJson` now retries a single time when a 401 comes back within 2 seconds — protecting headless renders where no human can retry. Slow failures are not retried, to stay clear of the 10s output-job ceiling. With `logTiming` on, the retry is visible as `fetch ... (retry after 401)`.
+
 ## 1.2.0
 
 - New runtime option `logTiming` (default `"false"`). Set it to `"true"` to log execution timings for each connector call. Mirrors the Google Sheets connector's `withTiming` helper so slow data bindings can be diagnosed.

@@ -55,8 +55,23 @@ export default class SupabaseConnector
       this.applyConfiguredFilters(params, context);
       this.applySorting(params, config.sorting);
 
+      const overrideColumns = this.parseColumnsOverride(context);
+      if (overrideColumns) {
+        params['select'] = this.buildSelect(overrideColumns, idColumn);
+      }
+
       const rows = await this.fetchRows(target, params, context);
-      const columns = await this.resolveColumns(target, context, rows);
+      // An empty page needs no columns — resolving them here would cost a
+      // discovery round-trip and then fail anyway (no rows to sample).
+      if (rows.length === 0) {
+        return {
+          data: [],
+          continuationToken: null,
+          previousPageToken: offset > 0 ? String(offset) : null,
+        };
+      }
+      const columns =
+        overrideColumns ?? (await this.resolveColumns(target, context, rows));
 
       return {
         data: rows.map((row) => this.toDataItem(row, columns, idColumn)),
@@ -99,6 +114,10 @@ export default class SupabaseConnector
       const params: Record<string, string> = { limit: '1' };
       this.applyConfiguredFilters(params, context);
       params[idColumn] = `eq.${id}`; // id lookup always wins for its own column
+      const overrideColumns = this.parseColumnsOverride(context);
+      if (overrideColumns) {
+        params['select'] = this.buildSelect(overrideColumns, idColumn);
+      }
       const url = this.buildUrl(
         `/rest/v1/${encodeURIComponent(target.name)}`,
         params
@@ -109,7 +128,8 @@ export default class SupabaseConnector
           `Supabase connector: row with ${idColumn}="${id}" not found in "${target.name}".`
         );
       }
-      const columns = await this.resolveColumns(target, context, rows);
+      const columns =
+        overrideColumns ?? (await this.resolveColumns(target, context, rows));
       return {
         data: this.toDataItem(rows[0], columns, idColumn),
         continuationToken: null,
@@ -171,7 +191,8 @@ export default class SupabaseConnector
         displayName: 'Columns override (JSON array)',
         type: 'text',
         helpText:
-          'Optional. JSON array like [{"name":"foo","type":"singleLine"}]. Bypasses PostgREST OpenAPI auto-discovery.',
+          'Optional. JSON array like [{"name":"foo","type":"singleLine"}]. Bypasses column auto-discovery ' +
+          'and narrows every query to just these columns (plus the id column), reducing payload size.',
       },
     ];
   }
@@ -351,38 +372,63 @@ export default class SupabaseConnector
     }
   }
 
+  private parseColumnsOverride(
+    context: Connector.Dictionary
+  ): ColumnSpec[] | null {
+    const override = context['columnsOverride'];
+    if (typeof override !== 'string' || override.trim() === '') {
+      return null;
+    }
+    try {
+      const parsed: unknown = JSON.parse(override);
+      if (!Array.isArray(parsed)) return null;
+      const result: ColumnSpec[] = [];
+      for (const entry of parsed) {
+        if (
+          entry &&
+          typeof entry === 'object' &&
+          typeof (entry as { name?: unknown }).name === 'string'
+        ) {
+          const e = entry as { name: string; type?: unknown };
+          result.push({
+            name: e.name,
+            type: this.normaliseColumnType(e.type),
+          });
+        }
+      }
+      return result.length > 0 ? result : null;
+    } catch (e) {
+      throw new Error(
+        `Supabase connector: invalid columnsOverride JSON: ${(e as Error).message}`
+      );
+    }
+  }
+
+  /**
+   * PostgREST column projection, sent only when columnsOverride is set:
+   * inferred/cached columns already span the whole row, so projecting them
+   * wouldn't shrink the payload. idColumn is always included so __id__ keeps
+   * resolving even when the override omits it.
+   */
+  private buildSelect(columns: ColumnSpec[], idColumn: string): string {
+    const names = columns.map((c) => c.name);
+    if (!names.includes(idColumn)) {
+      names.unshift(idColumn);
+    }
+    // Names with spaces or other special characters must be double-quoted in
+    // PostgREST's select syntax (e.g. "Product Line").
+    return names
+      .map((n) => (/^[A-Za-z_][A-Za-z0-9_]*$/.test(n) ? n : `"${n}"`))
+      .join(',');
+  }
+
   private async resolveColumns(
     target: ResolvedTarget,
     context: Connector.Dictionary,
     sampleRows?: Record<string, unknown>[]
   ): Promise<ColumnSpec[]> {
-    const override = context['columnsOverride'];
-    if (typeof override === 'string' && override.trim() !== '') {
-      try {
-        const parsed: unknown = JSON.parse(override);
-        if (Array.isArray(parsed)) {
-          const result: ColumnSpec[] = [];
-          for (const entry of parsed) {
-            if (
-              entry &&
-              typeof entry === 'object' &&
-              typeof (entry as { name?: unknown }).name === 'string'
-            ) {
-              const e = entry as { name: string; type?: unknown };
-              result.push({
-                name: e.name,
-                type: this.normaliseColumnType(e.type),
-              });
-            }
-          }
-          if (result.length > 0) return result;
-        }
-      } catch (e) {
-        throw new Error(
-          `Supabase connector: invalid columnsOverride JSON: ${(e as Error).message}`
-        );
-      }
-    }
+    const override = this.parseColumnsOverride(context);
+    if (override) return override;
     const cacheKey = `${target.mode}:${target.name}`;
     const cached = this.modelCache.get(cacheKey);
     if (cached) return cached;
@@ -517,10 +563,24 @@ export default class SupabaseConnector
     if (body !== undefined) {
       init.body = body;
     }
-    const response = await this.withTiming(
+    const label = `fetch ${method} ${this.describeUrl(url)}`;
+    const now = this.monotonicNow();
+    const start = now();
+    let response = await this.withTiming(
       () => this.runtime.fetch(url, init),
-      `fetch ${method} ${this.describeUrl(url)}`
+      label
     );
+    // The platform auth layer is known to misfire its token path once on a
+    // cold start (401, then the static key works on the next attempt). In the
+    // editor a human retries; in headless renders nobody does, so retry once
+    // here — but only when the 401 came back fast. Re-issuing a request that
+    // already burned seconds risks the 10s output-job ceiling.
+    if (response.status === 401 && now() - start < 2000) {
+      response = await this.withTiming(
+        () => this.runtime.fetch(url, init),
+        `${label} (retry after 401)`
+      );
+    }
     if (!response.ok) {
       const body =
         typeof response.text === 'string' && response.text.length > 0
@@ -576,13 +636,7 @@ export default class SupabaseConnector
     if (!this.isFlagOn('logTiming')) {
       return fn();
     }
-    // performance.now() is monotonic and higher-resolution; fall back to
-    // Date.now() if the sandbox doesn't expose it.
-    const now =
-      typeof performance !== 'undefined' &&
-      typeof performance.now === 'function'
-        ? () => performance.now()
-        : () => Date.now();
+    const now = this.monotonicNow();
     const start = now();
     try {
       const result = await fn();
@@ -596,6 +650,15 @@ export default class SupabaseConnector
       );
       throw error;
     }
+  }
+
+  // performance.now() is monotonic and higher-resolution; fall back to
+  // Date.now() if the sandbox doesn't expose it.
+  private monotonicNow(): () => number {
+    return typeof performance !== 'undefined' &&
+      typeof performance.now === 'function'
+      ? () => performance.now()
+      : () => Date.now();
   }
 
   private requireOption(key: string): string {
