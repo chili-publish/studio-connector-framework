@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- New runtime option `logTiming` (default `"false"`). Set it to `"true"` to log execution timings for each connector call. Mirrors the Google Sheets connector's `withTiming` helper so slow data bindings can be diagnosed.
+- Each public method (`getPage`, `getModel`, `getPageItemById`) is timed end-to-end, and the raw network round-trip nested inside it (`fetch GET|POST /rest/v1/...`) is timed separately. Comparing the two isolates connector-side JS overhead (parsing, column inference) from the Supabase request itself (DB query, platform proxy, network). Timings are emitted via `runtime.logError` to the CLI debugger console and the platform connector logs.
+- Zero overhead when the flag is off, so it is safe to keep in a production publish and flip on in the Configuration tab when investigating latency.
+
 ## 1.1.1
 
 - **Default mode is now `rpc`** instead of `view`. Pushes the data shape into named, version-controlled Postgres functions by default.

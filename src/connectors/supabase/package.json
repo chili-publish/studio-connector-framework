@@ -1,7 +1,7 @@
 {
   "name": "supabase",
   "description": "Read tables, views or RPC functions from a Supabase project (PostgREST) as a data source.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "private": true,
   "author": {
     "name": "CHILI publish",
@@ -14,7 +14,8 @@
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/supabase-connector.svg",
     "options": {
       "SUPABASE_URL": null,
-      "ALLOW_TABLE_VIEW": "false"
+      "ALLOW_TABLE_VIEW": "false",
+      "logTiming": "false"
     },
     "mappings": {},
     "supportedAuth": ["staticKey"]

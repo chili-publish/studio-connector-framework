@@ -50,8 +50,26 @@ Create the table or view in the `public` schema, enable [RLS](#row-level-securit
 | --- | --- | --- | --- |
 | `SUPABASE_URL` | yes | — | Your project URL, e.g. `https://abcdefgh.supabase.co`. |
 | `ALLOW_TABLE_VIEW` | no | `"false"` | Set to `"true"` to allow `queryMode=view`. |
+| `logTiming` | no | `"false"` | Set to `"true"` to log per-method and per-fetch timings (see [Performance timing](#performance-timing)). |
 
-Both runtime options are admin-editable in the platform's Configuration tab post-publish.
+All runtime options are admin-editable in the platform's Configuration tab post-publish.
+
+## Performance timing
+
+When a data binding feels slow, set `logTiming="true"` (at publish or in the Configuration tab) to find out *where* the time goes. The connector then logs two nested measurements per call via `runtime.logError`:
+
+- **Method total** — e.g. `[Supabase][Timing] getPage took 0.842s` — the whole connector call.
+- **Network round-trip** — e.g. `[Supabase][Timing] fetch POST /rest/v1/rpc/get_campaign_products?limit=25&offset=0 took 0.811s` — just the `fetch` to Supabase (which also includes the platform's outbound proxy and the network).
+
+Read the gap between them:
+
+| Observation | Where the time is | What to look at |
+| --- | --- | --- |
+| Method total ≈ fetch total | The Supabase request itself | The SQL/RPC query plan, missing indexes, the platform proxy, network latency to your project's region. |
+| Method total ≫ fetch total | Connector-side JS | Large result sets (JSON parse + per-row coercion), or cold-load column inference. |
+| First call slow, rest fast | Column auto-discovery | The first `getModel`/`getPage` samples a row to infer columns; supply `columnsOverride` to skip it. |
+
+Timings appear in the CLI debugger console (`yarn connector-cli debug`) and in the platform's connector logs. The flag is a zero-overhead no-op when off, so it's safe to leave in a production publish and switch on only while investigating.
 
 ## Query mode access control
 
@@ -129,6 +147,7 @@ connector-cli publish \
   -b ENV_API_URL -e ENV -n Supabase \
   --runtimeOption SUPABASE_URL=https://<ref>.supabase.co \
   --runtimeOption ALLOW_TABLE_VIEW=false \
+  --runtimeOption logTiming=false \
   --proxyOption.allowedDomains "*.supabase.co"
 ```
 

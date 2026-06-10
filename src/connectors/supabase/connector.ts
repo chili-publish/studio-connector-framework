@@ -15,19 +15,6 @@ interface ColumnSpec {
   type: string;
 }
 
-interface OpenApiProperty {
-  type?: string;
-  format?: string;
-}
-
-interface OpenApiDefinition {
-  properties?: Record<string, OpenApiProperty>;
-}
-
-interface OpenApiDoc {
-  definitions?: Record<string, OpenApiDefinition>;
-}
-
 interface ResolvedTarget {
   mode: QueryMode;
   name: string;
@@ -38,7 +25,6 @@ export default class SupabaseConnector
 {
   private runtime: Connector.ConnectorRuntimeContext;
   private modelCache: Map<string, ColumnSpec[]> = new Map();
-  private openApiCache: OpenApiDoc | null = null;
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -48,48 +34,53 @@ export default class SupabaseConnector
     config: Data.BidirectionalPageConfig,
     context: Connector.Dictionary
   ): Promise<Data.BidirectionalDataPage> {
-    if (config.limit < 1) {
-      return { data: [], continuationToken: null, previousPageToken: null };
-    }
+    return this.withTiming(async () => {
+      if (config.limit < 1) {
+        return { data: [], continuationToken: null, previousPageToken: null };
+      }
 
-    const target = this.readTarget(context);
-    const idColumn = this.readIdColumn(context);
-    const offset = this.parseOffset(
-      config.continuationToken,
-      config.previousPageToken,
-      config.limit
-    );
+      const target = this.readTarget(context);
+      const idColumn = this.readIdColumn(context);
+      const offset = this.parseOffset(
+        config.continuationToken,
+        config.previousPageToken,
+        config.limit
+      );
 
-    const params: Record<string, string> = {
-      limit: String(config.limit),
-      offset: String(offset),
-    };
-    this.applyFilters(params, config.filters);
-    this.applySorting(params, config.sorting);
+      const params: Record<string, string> = {
+        limit: String(config.limit),
+        offset: String(offset),
+      };
+      this.applyFilters(params, config.filters);
+      this.applyConfiguredFilters(params, context);
+      this.applySorting(params, config.sorting);
 
-    const rows = await this.fetchRows(target, params, context);
-    const columns = await this.resolveColumns(target, context);
+      const rows = await this.fetchRows(target, params, context);
+      const columns = await this.resolveColumns(target, context, rows);
 
-    return {
-      data: rows.map((row) => this.toDataItem(row, columns, idColumn)),
-      continuationToken:
-        rows.length === config.limit ? String(offset + rows.length) : null,
-      previousPageToken: offset > 0 ? String(offset) : null,
-    };
+      return {
+        data: rows.map((row) => this.toDataItem(row, columns, idColumn)),
+        continuationToken:
+          rows.length === config.limit ? String(offset + rows.length) : null,
+        previousPageToken: offset > 0 ? String(offset) : null,
+      };
+    }, 'getPage');
   }
 
   async getModel(
     context: Connector.Dictionary
   ): Promise<Data.DataSourceVariableDataModel> {
-    const target = this.readTarget(context);
-    const columns = await this.resolveColumns(target, context);
-    return {
-      properties: [
-        ...columns.map((c) => ({ name: c.name, type: c.type })),
-        { name: ITEM_ID_PROPERTY, type: 'singleLine' },
-      ],
-      itemIdPropertyName: ITEM_ID_PROPERTY,
-    };
+    return this.withTiming(async () => {
+      const target = this.readTarget(context);
+      const columns = await this.resolveColumns(target, context);
+      return {
+        properties: [
+          ...columns.map((c) => ({ name: c.name, type: c.type })),
+          { name: ITEM_ID_PROPERTY, type: 'singleLine' },
+        ],
+        itemIdPropertyName: ITEM_ID_PROPERTY,
+      };
+    }, 'getModel');
   }
 
   async getPageItemById(
@@ -97,29 +88,34 @@ export default class SupabaseConnector
     _pageOptions: Data.PageItemOptions,
     context: Connector.Dictionary
   ): Promise<BidirectionalDataPageItem> {
-    const target = this.readTarget(context);
-    if (target.mode === 'rpc') {
-      throw new Error(
-        'Supabase connector: getPageItemById is not supported in rpc mode. Use a view to look up rows by id.'
+    return this.withTiming(async () => {
+      const target = this.readTarget(context);
+      if (target.mode === 'rpc') {
+        throw new Error(
+          'Supabase connector: getPageItemById is not supported in rpc mode. Use a view to look up rows by id.'
+        );
+      }
+      const idColumn = this.readIdColumn(context);
+      const params: Record<string, string> = { limit: '1' };
+      this.applyConfiguredFilters(params, context);
+      params[idColumn] = `eq.${id}`; // id lookup always wins for its own column
+      const url = this.buildUrl(
+        `/rest/v1/${encodeURIComponent(target.name)}`,
+        params
       );
-    }
-    const idColumn = this.readIdColumn(context);
-    const url = this.buildUrl(`/rest/v1/${encodeURIComponent(target.name)}`, {
-      [idColumn]: `eq.${id}`,
-      limit: '1',
-    });
-    const rows = await this.fetchJson<Record<string, unknown>[]>(url, 'GET');
-    if (!rows || rows.length === 0) {
-      throw new Error(
-        `Supabase connector: row with ${idColumn}="${id}" not found in "${target.name}".`
-      );
-    }
-    const columns = await this.resolveColumns(target, context);
-    return {
-      data: this.toDataItem(rows[0], columns, idColumn),
-      continuationToken: null,
-      previousPageToken: null,
-    };
+      const rows = await this.fetchJson<Record<string, unknown>[]>(url, 'GET');
+      if (!rows || rows.length === 0) {
+        throw new Error(
+          `Supabase connector: row with ${idColumn}="${id}" not found in "${target.name}".`
+        );
+      }
+      const columns = await this.resolveColumns(target, context, rows);
+      return {
+        data: this.toDataItem(rows[0], columns, idColumn),
+        continuationToken: null,
+        previousPageToken: null,
+      };
+    }, 'getPageItemById');
   }
 
   getCapabilities(): Data.DataConnectorCapabilities {
@@ -160,6 +156,15 @@ export default class SupabaseConnector
         type: 'text',
         helpText:
           'Only used in rpc mode. JSON object passed as the function arguments.',
+      },
+      {
+        name: 'filter',
+        displayName: 'Filter (JSON object)',
+        type: 'text',
+        helpText:
+          'Always-on filter applied to every query, e.g. {"campaign_slug":"spring-fresh"}. ' +
+          'Values map to PostgREST "column=eq.value" by default; prefix a value with a ' +
+          'PostgREST operator (e.g. "ilike.*coffee*", "gte.10") to use it verbatim.',
       },
       {
         name: 'columnsOverride',
@@ -243,6 +248,49 @@ export default class SupabaseConnector
     }
   }
 
+  private applyConfiguredFilters(
+    params: Record<string, string>,
+    context: Connector.Dictionary
+  ): void {
+    const raw = context['filter'];
+    if (raw === undefined || raw === null || raw === '' || raw === false) {
+      return;
+    }
+    const text = typeof raw === 'string' ? raw : String(raw);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      throw new Error(
+        `Supabase connector: invalid filter JSON: ${(e as Error).message}`
+      );
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error(
+        'Supabase connector: "filter" must be a JSON object like ' +
+          '{"campaign_slug":"spring-fresh"}.'
+      );
+    }
+    const operators = [
+      'eq.',
+      'neq.',
+      'gt.',
+      'gte.',
+      'lt.',
+      'lte.',
+      'like.',
+      'ilike.',
+      'in.',
+      'is.',
+    ];
+    for (const [col, val] of Object.entries(parsed as Record<string, unknown>)) {
+      const value = String(val ?? '');
+      params[col] = operators.some((op) => value.startsWith(op))
+        ? value
+        : `eq.${value}`;
+    }
+  }
+
   private applySorting(
     params: Record<string, string>,
     sorting: DataSorting[] | null | undefined
@@ -305,7 +353,8 @@ export default class SupabaseConnector
 
   private async resolveColumns(
     target: ResolvedTarget,
-    context: Connector.Dictionary
+    context: Connector.Dictionary,
+    sampleRows?: Record<string, unknown>[]
   ): Promise<ColumnSpec[]> {
     const override = context['columnsOverride'];
     if (typeof override === 'string' && override.trim() !== '') {
@@ -337,6 +386,16 @@ export default class SupabaseConnector
     const cacheKey = `${target.mode}:${target.name}`;
     const cached = this.modelCache.get(cacheKey);
     if (cached) return cached;
+    // Reuse rows the caller already fetched (getPage/getPageItemById) to infer
+    // columns — avoids a second round-trip just to sample one row.
+    if (sampleRows && sampleRows.length > 0) {
+      const inferred = Object.keys(sampleRows[0]).map((name) => ({
+        name,
+        type: this.inferTypeFromValue(sampleRows[0][name]),
+      }));
+      this.modelCache.set(cacheKey, inferred);
+      return inferred;
+    }
     const discovered = await this.discoverColumns(target, context);
     this.modelCache.set(cacheKey, discovered);
     return discovered;
@@ -368,26 +427,13 @@ export default class SupabaseConnector
       }));
     }
 
-    // View: try the PostgREST OpenAPI doc first — gives proper Postgres
-    // types. Supabase locks /rest/v1/ to service_role by default, so this
-    // often 401s for anon callers; fall back to row sampling in that case.
-    try {
-      if (!this.openApiCache) {
-        const url = this.buildUrl('/rest/v1/', {});
-        const doc = await this.fetchJson<OpenApiDoc>(url, 'GET');
-        this.openApiCache = doc ?? {};
-      }
-      const definition = this.openApiCache.definitions?.[target.name];
-      if (definition && definition.properties) {
-        return Object.entries(definition.properties).map(([name, prop]) => ({
-          name,
-          type: this.openApiToColumnType(prop),
-        }));
-      }
-    } catch (_e) {
-      // OpenAPI not accessible — drop through to row sampling.
-    }
-
+    // View: sample one row and infer column types from its values. We do NOT
+    // probe the PostgREST OpenAPI doc (GET /rest/v1/): Supabase locks that
+    // root endpoint to service_role, so for the anon key it always 401s — a
+    // misleading auth error on every cold load before the row-sampling
+    // fallback succeeds. Row sampling works whenever RLS grants select, which
+    // is already required for the connector to read the view at all. Use
+    // "columnsOverride" if you need exact Postgres types instead of inference.
     const url = this.buildUrl(`/rest/v1/${encodeURIComponent(target.name)}`, {
       limit: '1',
     });
@@ -395,8 +441,8 @@ export default class SupabaseConnector
     if (!rows || rows.length === 0) {
       throw new Error(
         `Supabase connector: cannot infer columns for "${target.name}" — ` +
-          'OpenAPI not accessible and table returned no rows. ' +
-          'Provide "columnsOverride", or grant select on /rest/v1/ to your role.'
+          'the table/view returned no rows to sample. ' +
+          'Provide "columnsOverride", or ensure the role can select at least one row.'
       );
     }
     return Object.keys(rows[0]).map((name) => ({
@@ -414,23 +460,6 @@ export default class SupabaseConnector
       /^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(value)
     ) {
       return 'date';
-    }
-    return 'singleLine';
-  }
-
-  private openApiToColumnType(prop: OpenApiProperty): string {
-    const type = (prop.type ?? '').toLowerCase();
-    const format = (prop.format ?? '').toLowerCase();
-    if (type === 'integer' || type === 'number') return 'number';
-    if (type === 'boolean') return 'boolean';
-    if (type === 'string') {
-      if (
-        format === 'date' ||
-        format === 'date-time' ||
-        format.startsWith('timestamp')
-      ) {
-        return 'date';
-      }
     }
     return 'singleLine';
   }
@@ -488,7 +517,10 @@ export default class SupabaseConnector
     if (body !== undefined) {
       init.body = body;
     }
-    const response = await this.runtime.fetch(url, init);
+    const response = await this.withTiming(
+      () => this.runtime.fetch(url, init),
+      `fetch ${method} ${this.describeUrl(url)}`
+    );
     if (!response.ok) {
       const body =
         typeof response.text === 'string' && response.text.length > 0
@@ -509,6 +541,60 @@ export default class SupabaseConnector
       throw new Error(
         `Supabase connector: invalid JSON response: ${(e as Error).message}`
       );
+    }
+  }
+
+  /**
+   * Reduces a full request URL to its PostgREST path + query for log labels,
+   * e.g. "https://x.supabase.co/rest/v1/rpc/get_campaign_products?limit=5" ->
+   * "/rest/v1/rpc/get_campaign_products?limit=5". Keeps secrets (host) out of
+   * the log and makes it obvious which endpoint a timing refers to.
+   */
+  private describeUrl(url: string): string {
+    const idx = url.indexOf('/rest/');
+    return idx >= 0 ? url.slice(idx) : url;
+  }
+
+  /**
+   * Runs an async function and, when the `logTiming` runtime option is enabled,
+   * logs how long it took. Wrapped at two levels — the whole method ("getPage")
+   * and the raw network round-trip nested inside it ("fetch GET /rest/v1/...").
+   * Comparing the two pinpoints where a slow data binding spends its time:
+   *   - method total ≈ fetch total  → the time is in the Supabase request
+   *     itself (the DB query, the platform's outbound proxy, or the network).
+   *   - method total ≫ fetch total  → the time is connector-side JS work
+   *     (JSON parse, column inference, value coercion).
+   * Logs go through `runtime.logError` so they surface in the CLI debugger
+   * console and the platform connector logs. It is a zero-overhead no-op when
+   * the flag is off, so it is safe to leave enabled-by-flag in a production
+   * publish.
+   */
+  private async withTiming<T>(
+    fn: () => Promise<T>,
+    label: string
+  ): Promise<T> {
+    if (!this.isFlagOn('logTiming')) {
+      return fn();
+    }
+    // performance.now() is monotonic and higher-resolution; fall back to
+    // Date.now() if the sandbox doesn't expose it.
+    const now =
+      typeof performance !== 'undefined' &&
+      typeof performance.now === 'function'
+        ? () => performance.now()
+        : () => Date.now();
+    const start = now();
+    try {
+      const result = await fn();
+      const seconds = ((now() - start) / 1000).toFixed(3);
+      this.runtime.logError(`[Supabase][Timing] ${label} took ${seconds}s`);
+      return result;
+    } catch (error) {
+      const seconds = ((now() - start) / 1000).toFixed(3);
+      this.runtime.logError(
+        `[Supabase][Timing] ${label} failed after ${seconds}s`
+      );
+      throw error;
     }
   }
 
