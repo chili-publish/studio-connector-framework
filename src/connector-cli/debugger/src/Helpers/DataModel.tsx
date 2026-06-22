@@ -27,6 +27,12 @@ export type SimpleParameter = {
   componentType: 'text' | 'boolean' | 'list';
 };
 
+export type IdParameter = {
+  value?: string;
+  name: string;
+  componentType: 'id';
+};
+
 export type SelectParameter = {
   value?: any;
   name: string;
@@ -51,6 +57,7 @@ export type DictionaryParameter = {
 
 export type Parameter =
   | SimpleParameter
+  | IdParameter
   | ComplexParameter
   | SelectParameter
   | DictionaryParameter
@@ -60,5 +67,7 @@ export type ComplexParameter = {
   value?: any;
   name: string;
   componentType: 'complex';
-  complex: Array<SimpleParameter | DictionaryParameter | NumberParameter>;
+  complex: Array<
+    SimpleParameter | IdParameter | DictionaryParameter | NumberParameter
+  >;
 };

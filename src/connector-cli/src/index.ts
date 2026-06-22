@@ -127,7 +127,8 @@ function main() {
     .option('-p, --port [port]', 'Port to run debug application', '3300')
     .option(
       '-w, --watch',
-      "Enable watch mode to reload connector's code when changed"
+      'Watch connector.ts for changes and reload the browser. Use --no-watch to run once without file watching.',
+      true
     )
     .action(withErrorHandlerAction(runDebugger));
 

@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, type ClipboardEvent } from 'react';
 import { NumberParameter, Parameter } from '../Helpers/DataModel';
+import { normalizeConnectorId } from '../Helpers/connectorId';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { ParameterListInput } from './ParameterListInput';
 
@@ -47,17 +48,32 @@ export const ParameterInput = ({
     if (
       parameter.value !== undefined &&
       parameter.value !== null &&
-      ['text', 'number', 'boolean'].includes(parameter.componentType)
+      ['text', 'id', 'number', 'boolean'].includes(parameter.componentType)
     ) {
       handleInputChange(parameter.value);
     }
   }, [parameter.value, parameter.componentType, handleInputChange]);
 
+  const handleIdPaste = (event: ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData.getData('text');
+    if (!pasted) {
+      return;
+    }
+
+    const normalized = normalizeConnectorId(pasted);
+    if (normalized !== pasted.trim()) {
+      event.preventDefault();
+      handleInputChange(normalized);
+    }
+  };
+
+  const textInputClassName =
+    'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500';
+
   switch (parameter.componentType) {
     case 'text':
       return (
         <>
-          {/* <h3 className="text-lg font-semibold mb-4">{parameter.name}</h3> */}
           <div className="mb-3">
             <label
               htmlFor="name"
@@ -67,11 +83,40 @@ export const ParameterInput = ({
             </label>
             <input
               id="name"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className={textInputClassName}
               name={parameter.name}
               type="text"
               placeholder={parameter.name}
               onChange={(e) => handleInputChange(e.target.value)}
+              value={parameter.value ?? ''}
+            />
+          </div>
+        </>
+      );
+    case 'id':
+      return (
+        <>
+          <div className="mb-3">
+            <label
+              htmlFor="name"
+              className="capitalize block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              {parameter.name}
+            </label>
+            <input
+              id="name"
+              className={textInputClassName}
+              name={parameter.name}
+              type="text"
+              placeholder={parameter.name}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onBlur={(e) => {
+                const normalized = normalizeConnectorId(e.target.value);
+                if (normalized !== e.target.value) {
+                  handleInputChange(normalized);
+                }
+              }}
+              onPaste={handleIdPaste}
               value={parameter.value ?? ''}
             />
           </div>

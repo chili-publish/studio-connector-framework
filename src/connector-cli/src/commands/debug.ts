@@ -25,7 +25,7 @@ function getDebugConnectorType(configType: ConnectorType): string {
 
 interface DebuggerCommandOptions {
   port: number;
-  watch?: true;
+  watch?: boolean;
 }
 
 export async function runDebugger(
