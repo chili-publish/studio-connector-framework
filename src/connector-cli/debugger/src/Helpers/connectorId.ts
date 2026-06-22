@@ -31,7 +31,7 @@ function extractBracketedFragment(value: string): string | null {
       JSON.parse(inner);
       return inner;
     } catch {
-      return inner;
+      return null;
     }
   }
 }
