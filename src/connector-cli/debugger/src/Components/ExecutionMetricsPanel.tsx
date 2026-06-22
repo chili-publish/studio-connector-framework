@@ -53,7 +53,9 @@ export const ExecutionMetricsPanel = ({
       <div className="px-4 py-3 border-b border-slate-100">
         <p className="text-sm text-slate-800">
           <span className="font-semibold capitalize">{metrics.methodName}</span>{' '}
-          <span className={metrics.success ? 'text-emerald-700' : 'text-red-700'}>
+          <span
+            className={metrics.success ? 'text-emerald-700' : 'text-red-700'}
+          >
             {methodStatus}
           </span>
         </p>
@@ -81,12 +83,17 @@ export const ExecutionMetricsPanel = ({
               {metrics.fetchCalls.map((fetchCall, index) => (
                 <tr
                   key={`${fetchCall.method}-${fetchCall.url}-${index}`}
-                  className={fetchCall.success ? 'text-slate-700' : 'text-red-800'}
+                  className={
+                    fetchCall.success ? 'text-slate-700' : 'text-red-800'
+                  }
                 >
                   <td className="px-4 py-2 font-mono text-xs font-semibold">
                     {fetchCall.method}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs" title={fetchCall.url}>
+                  <td
+                    className="px-4 py-2 font-mono text-xs"
+                    title={fetchCall.url}
+                  >
                     {truncateUrl(fetchCall.url)}
                     {!fetchCall.success && fetchCall.error ? (
                       <span className="block text-red-600 mt-0.5 normal-case font-sans">
@@ -113,7 +120,9 @@ export const ExecutionMetricsPanel = ({
           </table>
         </div>
       ) : (
-        <p className="px-4 py-3 text-sm text-slate-500">No fetch calls recorded.</p>
+        <p className="px-4 py-3 text-sm text-slate-500">
+          No fetch calls recorded.
+        </p>
       )}
     </div>
   );

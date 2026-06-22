@@ -15,6 +15,13 @@ export type MethodExecutionMetrics = {
   fetchCalls: FetchMetric[];
 };
 
+export type MetricsSession = {
+  end: (options: {
+    success: boolean;
+    error?: string;
+  }) => MethodExecutionMetrics | null;
+};
+
 type ActiveSession = {
   methodName: string;
   startedAt: number;
@@ -22,51 +29,61 @@ type ActiveSession = {
 };
 
 class MetricsCollector {
-  private session: ActiveSession | null = null;
+  private activeSession: ActiveSession | null = null;
 
-  startSession(methodName: string): void {
-    this.session = {
+  startSession(methodName: string): MetricsSession | null {
+    if (this.activeSession) {
+      console.warn(
+        `[Connector][Metrics] startSession ignored: session already active for "${this.activeSession.methodName}"`
+      );
+      return null;
+    }
+
+    const session: ActiveSession = {
       methodName,
       startedAt: performance.now(),
       fetchCalls: [],
     };
+    this.activeSession = session;
+
+    return {
+      end: (options) => {
+        if (this.activeSession !== session) {
+          console.warn(
+            `[Connector][Metrics] end ignored: session for "${session.methodName}" is no longer active`
+          );
+          return null;
+        }
+
+        const durationMs = performance.now() - session.startedAt;
+        const metrics: MethodExecutionMetrics = {
+          methodName: session.methodName,
+          durationMs,
+          success: options.success,
+          error: options.error,
+          fetchCalls: [...session.fetchCalls],
+        };
+
+        const statusLabel = options.success ? 'completed in' : 'failed after';
+        console.debug(
+          `[Connector][Timing] "${metrics.methodName}" ${statusLabel} ${formatDuration(durationMs)}`
+        );
+
+        this.activeSession = null;
+        return metrics;
+      },
+    };
   }
 
   recordFetch(metric: FetchMetric): void {
-    if (!this.session) {
+    if (!this.activeSession) {
       return;
     }
 
-    this.session.fetchCalls.push(metric);
+    this.activeSession.fetchCalls.push(metric);
     console.debug(
       `[Connector][Fetch] ${metric.method} ${metric.url} — ${formatDuration(metric.durationMs)}${metric.status !== undefined ? ` (${metric.status})` : ''}${metric.success ? '' : ' (failed)'}`
     );
-  }
-
-  endSession(options: {
-    success: boolean;
-    error?: string;
-  }): MethodExecutionMetrics | null {
-    if (!this.session) {
-      return null;
-    }
-
-    const durationMs = performance.now() - this.session.startedAt;
-    const metrics: MethodExecutionMetrics = {
-      methodName: this.session.methodName,
-      durationMs,
-      success: options.success,
-      error: options.error,
-      fetchCalls: [...this.session.fetchCalls],
-    };
-
-    const statusLabel = options.success ? 'completed in' : 'failed after';
-    console.debug(
-      `[Connector][Timing] "${metrics.methodName}" ${statusLabel} ${formatDuration(durationMs)}`
-    );
-
-    this.session = null;
-    return metrics;
   }
 }
 

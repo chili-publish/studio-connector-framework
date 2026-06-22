@@ -95,30 +95,26 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     const normalizedValues = normalizeValues();
     setMetrics(undefined);
     setIsInvoking(true);
-    metricsCollector.startSession(dataModel.name);
+    const session = metricsCollector.startSession(dataModel.name);
+    let success = true;
+    let error: string | undefined;
 
     try {
       const result = await (dataModel as InvokableDataModel).invoke(
         normalizedValues
       );
       setResult(result);
-      setMetrics(
-        metricsCollector.endSession({ success: true }) ?? undefined
-      );
-    } catch (error) {
+    } catch (err) {
+      success = false;
+      error = `${err}`;
       setResult({
         message: `failed to invoke ${
           dataModel.name
-        }: with parameters ${JSON.stringify(normalizedValues)}: ${error}`,
-        error: `${error}`,
+        }: with parameters ${JSON.stringify(normalizedValues)}: ${err}`,
+        error,
       });
-      setMetrics(
-        metricsCollector.endSession({
-          success: false,
-          error: `${error}`,
-        }) ?? undefined
-      );
     } finally {
+      setMetrics(session?.end({ success, error }) ?? undefined);
       setIsInvoking(false);
     }
   };

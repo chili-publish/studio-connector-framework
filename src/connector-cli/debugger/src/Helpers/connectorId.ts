@@ -1,24 +1,45 @@
-export type ConnectorIdPayload = {
-  id: string;
-  eid?: string;
-  filename?: string;
-  fileType?: string;
-  width?: number;
-  height?: number;
-};
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-export function isConnectorIdPayload(value: unknown): value is ConnectorIdPayload {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    typeof (value as ConnectorIdPayload).id === 'string'
-  );
+function isStructuredConnectorId(
+  value: unknown
+): value is Record<string, unknown> | unknown[] {
+  return Array.isArray(value) || isJsonObject(value);
+}
+
+function canonicalizeParsedConnectorId(parsed: unknown): string | null {
+  if (isStructuredConnectorId(parsed)) {
+    return JSON.stringify(parsed);
+  }
+  return null;
+}
+
+function extractBracketedFragment(value: string): string | null {
+  const match = value.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (!match) {
+    return null;
+  }
+
+  const candidate = match[0];
+  try {
+    JSON.parse(candidate);
+    return candidate;
+  } catch {
+    const inner = candidate.slice(1, -1);
+    try {
+      JSON.parse(inner);
+      return inner;
+    } catch {
+      return inner;
+    }
+  }
 }
 
 /**
  * Normalizes a connector id string for detail/download methods.
- * Connectors such as Acquia store media ids as JSON.stringify(AssetId).
+ * Some connectors store ids as JSON.stringify(payload) — object or array
+ * (Acquia, Kadanza, Sitecore, …); others use plain strings (Bynder, AEM paths, …).
  */
 export function normalizeConnectorId(input: string): string {
   let value = input.trim();
@@ -35,17 +56,9 @@ export function normalizeConnectorId(input: string): string {
         continue;
       }
 
-      if (Array.isArray(parsed)) {
-        const firstString = parsed.find((entry) => typeof entry === 'string');
-        if (typeof firstString === 'string') {
-          value = firstString;
-          continue;
-        }
-        break;
-      }
-
-      if (isConnectorIdPayload(parsed)) {
-        return JSON.stringify(parsed);
+      const canonical = canonicalizeParsedConnectorId(parsed);
+      if (canonical !== null) {
+        return canonical;
       }
 
       break;
@@ -64,19 +77,13 @@ export function normalizeConnectorId(input: string): string {
         continue;
       }
 
-      break;
-    }
-  }
+      const extracted = extractBracketedFragment(value);
+      if (extracted !== null && extracted !== value) {
+        value = extracted;
+        continue;
+      }
 
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (isConnectorIdPayload(parsed)) {
-      return JSON.stringify(parsed);
-    }
-  } catch {
-    const objectMatch = value.match(/\{[\s\S]*\}/);
-    if (objectMatch) {
-      return normalizeConnectorId(objectMatch[0]);
+      break;
     }
   }
 
