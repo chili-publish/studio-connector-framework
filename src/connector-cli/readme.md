@@ -133,16 +133,10 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
-Watch mode is enabled by default: the CLI recompiles `connector.ts` on change and reloads the browser tab.
+The CLI recompiles `connector.ts` on change and reloads the browser tab.
 
 ```sh
 connector-cli debug -p 3300
-```
-
-To disable file watching and run a one-shot debug session:
-
-```sh
-connector-cli debug -p 3300 --no-watch
 ```
 
 ### Get connector information

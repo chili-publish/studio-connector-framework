@@ -125,11 +125,6 @@ function main() {
     .description('Run connector project in debug mode for testing in browser')
     .addArgument(connectorProject)
     .option('-p, --port [port]', 'Port to run debug application', '3300')
-    .option(
-      '-w, --watch',
-      'Watch connector.ts for changes and reload the browser. Use --no-watch to run once without file watching.',
-      true
-    )
     .action(withErrorHandlerAction(runDebugger));
 
   program
