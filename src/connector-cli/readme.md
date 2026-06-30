@@ -133,8 +133,10 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
+The CLI recompiles `connector.ts` on change and reloads the browser tab.
+
 ```sh
-connector-cli debug -p 3300 -w
+connector-cli debug -p 3300
 ```
 
 ### Get connector information
