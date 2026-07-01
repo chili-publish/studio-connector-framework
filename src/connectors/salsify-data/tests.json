@@ -1,0 +1,159 @@
+{
+  "setup": {
+    "runtime_options": {
+      "SALSIFY_ORG_ID": "test-org-id",
+      "SALSIFY_RESOURCE": "records"
+    }
+  },
+  "tests": [
+    {
+      "name": "getPage returns records with default paging",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 10
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/records?per_page=10",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "data": [
+                  {
+                    "salsify:id": "HT01",
+                    "Brand": "Touqe International",
+                    "Gender": "Men",
+                    "Online Flag - US Site": true
+                  }
+                ],
+                "meta": {
+                  "per_page": "10",
+                  "cursor": null,
+                  "total_entries": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPage applies filterExpression and forwards the meta.cursor",
+      "method": "getPage",
+      "arguments": {
+        "config": {
+          "limit": 5,
+          "continuationToken": "eyJzb3J0X3ZhbHVlcyI6WyJIVDAxQlIiXX0="
+        },
+        "context": {
+          "filterExpression": "='Brand':'Touqe International'"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/records?per_page=5&filter=%3D'Brand'%3A'Touqe%20International'&cursor=eyJzb3J0X3ZhbHVlcyI6WyJIVDAxQlIiXX0%3D",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "data": [
+                  {
+                    "salsify:id": "HT01BRF",
+                    "Brand": "Touqe International"
+                  }
+                ],
+                "meta": {
+                  "per_page": "5",
+                  "cursor": "eyJzb3J0X3ZhbHVlcyI6WyJIVDAxQlJUIl19",
+                  "total_entries": 19
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getPageItemById direct passthrough to /records/{id}",
+      "method": "getPageItemById",
+      "arguments": {
+        "id": "HT01",
+        "pageOptions": {
+          "limit": 10
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/records/HT01",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "salsify:id": "HT01",
+                "Brand": "Touqe International"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "getModel infers columns by sampling, excluding the id column",
+      "method": "getModel",
+      "arguments": {
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/records?per_page=5",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": {
+                "content-type": "application/json"
+              },
+              "body": {
+                "data": [
+                  {
+                    "salsify:id": "HT01",
+                    "Brand": "Touqe International",
+                    "salsify:version": 0,
+                    "Online Flag - US Site": true,
+                    "salsify:created_at": "2026-06-29T10:09:50.529Z"
+                  }
+                ],
+                "meta": {
+                  "per_page": "5",
+                  "cursor": null,
+                  "total_entries": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
