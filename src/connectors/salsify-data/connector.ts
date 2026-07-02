@@ -40,10 +40,22 @@ interface SalsifyListResponse {
   };
 }
 
+interface ColumnSpec {
+  name: string;
+  type: Data.DataModelProperty['type'];
+}
+
 export default class SalsifyConnector
   implements Data.DataConnector, Data.DataSourceVariableCapability
 {
   private runtime: Connector.ConnectorRuntimeContext;
+  // Resolved column list per (resource + filter). Salsify records are
+  // heterogeneous — different records expose different attributes — so every
+  // row MUST be projected onto one shared, ordered column set. Emitting each
+  // row's own keys makes DataItems different shapes and the Studio table maps
+  // values to the wrong columns. Keyed by resource+filter so distinct bindings
+  // don't cross-contaminate; first getModel/getPage that sees rows fills it.
+  private columnCache: Map<string, ColumnSpec[]> = new Map();
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -77,9 +89,12 @@ export default class SalsifyConnector
         'GET'
       );
       const items = response.data ?? [];
+      // Resolve a stable column set (cached, or sampled from this page) and
+      // project every row onto it so all DataItems share the same shape.
+      const columns = this.resolveColumns(context, idColumn, items);
 
       return {
-        data: items.map((item) => this.toDataItem(item, idColumn)),
+        data: items.map((item) => this.toDataItem(item, columns, idColumn)),
         // Salsify's cursor is opaque and forward-only — there is no equivalent
         // of a previous-page token to hand back.
         continuationToken: response.meta?.cursor ?? null,
@@ -113,21 +128,10 @@ export default class SalsifyConnector
         );
       }
 
-      // Salsify items are freeform key/value attribute sets with no fixed
-      // schema and no schema-introspection endpoint, so columns are inferred
-      // from the union of keys across the sampled rows (an item missing an
-      // attribute simply doesn't contribute to that column on that row).
-      const columns = new Map<string, Data.DataModelProperty['type']>();
-      for (const item of items) {
-        for (const [key, value] of Object.entries(item)) {
-          if (key === idColumn || columns.has(key)) continue;
-          columns.set(key, this.inferTypeFromValue(value));
-        }
-      }
-
+      const columns = this.resolveColumns(context, idColumn, items);
       return {
         properties: [
-          ...Array.from(columns, ([name, type]) => ({ name, type })),
+          ...columns.map((c) => ({ name: c.name, type: c.type })),
           { name: ITEM_ID_PROPERTY, type: 'singleLine' },
         ],
         itemIdPropertyName: ITEM_ID_PROPERTY,
@@ -147,8 +151,11 @@ export default class SalsifyConnector
         `https://app.salsify.com/api/v1/orgs/${encodeURIComponent(orgId)}` +
         `/${this.readResource()}/${encodeURIComponent(id)}`;
       const item = await this.fetchJson<Record<string, unknown>>(url, 'GET');
+      // Project onto the shared column set so a single-item lookup lines up with
+      // the same columns as the list view (falls back to this row if uncached).
+      const columns = this.resolveColumns(context, idColumn, [item]);
       return {
-        data: this.toDataItem(item, idColumn),
+        data: this.toDataItem(item, columns, idColumn),
         continuationToken: null,
         previousPageToken: null,
       };
@@ -228,19 +235,153 @@ export default class SalsifyConnector
     return 'singleLine';
   }
 
+  /**
+   * Resolves the ordered column set for a binding and caches it per
+   * resource+filter. Because Salsify records are heterogeneous, this MUST be
+   * stable across getModel/getPage/getPageItemById so every DataItem is
+   * projected onto the same columns — otherwise the Studio table maps values to
+   * the wrong headers. The first call that sees rows fills the cache (getModel
+   * normally runs first); later calls reuse it. An empty sample never caches.
+   */
+  private resolveColumns(
+    context: Connector.Dictionary,
+    idColumn: string,
+    sampleRows: Record<string, unknown>[]
+  ): ColumnSpec[] {
+    const key = `${this.readResource()}::${this.readFilterExpression(context)}`;
+    const cached = this.columnCache.get(key);
+    if (cached) return cached;
+
+    const columns: ColumnSpec[] = [];
+    const seen = new Set<string>();
+    for (const row of sampleRows) {
+      for (const [name, value] of Object.entries(this.flattenRecord(row))) {
+        if (name === idColumn || seen.has(name)) continue;
+        seen.add(name);
+        columns.push({ name, type: this.inferTypeFromValue(value) });
+      }
+    }
+    if (columns.length > 0) this.columnCache.set(key, columns);
+    return columns;
+  }
+
   private toDataItem(
     source: Record<string, unknown>,
+    columns: ColumnSpec[],
     idColumn: string
   ): Data.DataItem {
-    const idValue = source[idColumn];
+    const flat = this.flattenRecord(source);
+    const idValue = flat[idColumn];
     const item: Record<string, unknown> = {
       [ITEM_ID_PROPERTY]: idValue == null ? '' : String(idValue),
     };
-    for (const [key, value] of Object.entries(source)) {
-      if (key === idColumn) continue;
-      item[key] = this.coerce(value);
+    // Iterate the resolved COLUMNS (not this row's own keys) so every DataItem
+    // has exactly the model's columns, in order; a value missing on this row
+    // becomes the column type's neutral value rather than shifting later
+    // columns. Values are conformed to the declared type so Studio never sees
+    // a value it rejects (e.g. null under a boolean column).
+    for (const col of columns) {
+      item[col.name] = this.conformToType(flat[col.name], col.type);
     }
     return item as Data.DataItem;
+  }
+
+  /**
+   * Coerces an already-flattened scalar to its column's declared type so every
+   * emitted value is valid for that Studio variable type. The important case:
+   * a **boolean** column must never be null/absent — a Studio boolean is a
+   * checkbox with no empty state, so an absent flag (common on Salsify variant
+   * records that only the parent sets) is emitted as `false`, which is the
+   * value the framework would substitute anyway — just without the "invalid,
+   * default used" warning. Numbers accept numeric strings; text/date pass
+   * through, absent → null.
+   */
+  private conformToType(
+    value: string | number | boolean | null | undefined,
+    type: Data.DataModelProperty['type']
+  ): string | number | boolean | null {
+    switch (type) {
+      case 'boolean': {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          const t = value.trim().toLowerCase();
+          if (t === 'true') return true;
+          if (t === 'false') return false;
+        }
+        return false;
+      }
+      case 'number': {
+        if (typeof value === 'number') {
+          return Number.isFinite(value) ? value : null;
+        }
+        if (
+          typeof value === 'string' &&
+          value.trim() !== '' &&
+          Number.isFinite(Number(value))
+        ) {
+          return Number(value);
+        }
+        return null;
+      }
+      default: {
+        // singleLine, multiLine, date — text-ish; keep the string or null.
+        if (value === null || value === undefined) return null;
+        return typeof value === 'string' ? value : String(value);
+      }
+    }
+  }
+
+  /**
+   * Flattens a raw Salsify record into a flat map of scalar columns. Shared by
+   * getModel (column inference) and toDataItem (value emission) so they never
+   * disagree. Two Salsify-specific shapes are handled beyond plain scalars:
+   *   - `salsify:digital_assets` (an array of asset objects) is not emitted
+   *     raw; instead the primary (first) asset is surfaced as image:id /
+   *     image:url / image:width / image:height, plus image:ids (all ids,
+   *     pipe-joined). image:id is the handle a designer binds to the Salsify
+   *     media connector; image:url is the public CDN URL (usable directly).
+   *   - localised fields like `{ "en-US": "<asset-id>" }` (e.g. "CloseUp
+   *     Image") are unwrapped to the scalar value so the column holds the id
+   *     rather than a JSON blob.
+   */
+  private flattenRecord(
+    source: Record<string, unknown>
+  ): Record<string, string | number | boolean | null> {
+    const out: Record<string, string | number | boolean | null> = {};
+    for (const [key, value] of Object.entries(source)) {
+      if (key === 'salsify:digital_assets') {
+        this.addImageColumns(out, value);
+        continue;
+      }
+      out[key] = this.coerce(value);
+    }
+    return out;
+  }
+
+  private addImageColumns(
+    out: Record<string, string | number | boolean | null>,
+    value: unknown
+  ): void {
+    if (!Array.isArray(value)) return;
+    const assets = value.filter(
+      (a): a is Record<string, unknown> => !!a && typeof a === 'object'
+    );
+    if (assets.length === 0) return;
+    const first = assets[0];
+    out['image:id'] = this.asString(first['salsify:id']);
+    out['image:url'] = this.asString(first['salsify:url']);
+    const width = first['salsify:asset_width'];
+    const height = first['salsify:asset_height'];
+    if (typeof width === 'number') out['image:width'] = width;
+    if (typeof height === 'number') out['image:height'] = height;
+    out['image:ids'] = assets
+      .map((a) => this.asString(a['salsify:id']))
+      .filter((s) => s !== '')
+      .join('|');
+  }
+
+  private asString(value: unknown): string {
+    return value == null ? '' : String(value);
   }
 
   private coerce(value: unknown): string | number | boolean | null {
@@ -251,6 +392,23 @@ export default class SalsifyConnector
     // Salsify multi-select/list-valued attributes have no scalar equivalent
     // in the framework's DataItem contract — join into one delimited string.
     if (Array.isArray(value)) return value.map((v) => String(v)).join('|');
+    // A flat object whose values are all scalars is almost always a localised
+    // field (e.g. { "en-US": "…" }); surface the first locale's value instead
+    // of a JSON blob. Genuinely nested structures still fall through to JSON.
+    const values = Object.values(value as Record<string, unknown>);
+    if (
+      values.length > 0 &&
+      values.every(
+        (v) =>
+          v === null ||
+          typeof v === 'string' ||
+          typeof v === 'number' ||
+          typeof v === 'boolean'
+      )
+    ) {
+      const first = values[0];
+      return first == null ? null : (first as string | number | boolean);
+    }
     return JSON.stringify(value);
   }
 

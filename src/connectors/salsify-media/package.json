@@ -1,7 +1,7 @@
 {
-  "name": "salsify-data",
-  "description": "Read Salsify PXM products, filtered by a raw Salsify filter expression, as a data source.",
-  "version": "1.1.2",
+  "name": "salsify-media",
+  "description": "Visualize Salsify PXM digital assets (images) in CHILI Studio, resolved by Salsify asset id.",
+  "version": "1.1.0",
   "private": true,
   "author": {
     "name": "CHILI publish",
@@ -9,12 +9,11 @@
     "url": "https://github.com/chili-publish"
   },
   "config": {
-    "connectorName": "Salsify",
-    "type": "data",
+    "connectorName": "Salsify Media",
+    "type": "media",
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/salsify-connector.svg",
     "options": {
       "SALSIFY_ORG_ID": null,
-      "SALSIFY_RESOURCE": "records",
       "logTiming": "false"
     },
     "mappings": {},

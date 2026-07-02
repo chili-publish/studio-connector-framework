@@ -1,0 +1,159 @@
+{
+  "setup": {
+    "runtime_options": {
+      "SALSIFY_ORG_ID": "test-org-id"
+    }
+  },
+  "tests": [
+    {
+      "name": "query lists digital assets",
+      "method": "query",
+      "arguments": {
+        "options": { "pageSize": 25 },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/digital_assets?per_page=25",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "data": [
+                  {
+                    "salsify:id": "query-asset-1",
+                    "salsify:filename": "shot.jpg",
+                    "salsify:format": "jpg",
+                    "salsify:asset_width": 800,
+                    "salsify:asset_height": 800
+                  }
+                ],
+                "meta": { "per_page": "25", "cursor": null, "total_entries": 1 }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "query applies assetFilter and forwards the cursor",
+      "method": "query",
+      "arguments": {
+        "options": { "pageSize": 10, "pageToken": "cursor-abc" },
+        "context": { "assetFilter": "='salsify:format':'jpg'" }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/digital_assets?per_page=10&filter=%3D'salsify%3Aformat'%3A'jpg'&cursor=cursor-abc",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "data": [],
+                "meta": { "per_page": "10", "cursor": "cursor-def", "total_entries": 5 }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "detail resolves a single asset",
+      "method": "detail",
+      "arguments": {
+        "id": "detail-asset",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/digital_assets/detail-asset",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "salsify:id": "detail-asset",
+                "salsify:filename": "shot.jpg",
+                "salsify:format": "jpg",
+                "salsify:url": "https://images.salsify.com/image/upload/detailhash.jpg",
+                "salsify:asset_width": 800,
+                "salsify:asset_height": 800
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "download by asset id resolves then fetches the optimized thumbnail",
+      "method": "download",
+      "arguments": {
+        "id": "download-asset",
+        "previewType": "thumbnail",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/digital_assets/download-asset",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "salsify:id": "download-asset",
+                "salsify:url": "https://images.salsify.com/image/upload/dlhash.jpg",
+                "salsify:asset_resource_type": "image",
+                "salsify:format": "jpg"
+              }
+            }
+          },
+          {
+            "url": "https://images.salsify.com/image/upload/c_limit,w_240,q_auto/dlhash.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": "binary-image-bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "download by public URL id is one-hop (no resolve, transformed fetch only)",
+      "method": "download",
+      "arguments": {
+        "id": "https://images.salsify.com/image/upload/urlhash.jpg",
+        "previewType": "mediumres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://images.salsify.com/image/upload/c_limit,w_800,q_auto/urlhash.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": "binary-image-bytes"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

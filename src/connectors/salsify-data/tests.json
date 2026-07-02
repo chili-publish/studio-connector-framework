@@ -141,7 +141,16 @@
                     "Brand": "Touqe International",
                     "salsify:version": 0,
                     "Online Flag - US Site": true,
-                    "salsify:created_at": "2026-06-29T10:09:50.529Z"
+                    "salsify:created_at": "2026-06-29T10:09:50.529Z",
+                    "CloseUp Image": { "en-US": "2b93428adb6e816fe85a0993cad0c79b78432c25" },
+                    "salsify:digital_assets": [
+                      {
+                        "salsify:id": "2b93428adb6e816fe85a0993cad0c79b78432c25",
+                        "salsify:url": "https://images.salsify.com/image/upload/8a8976288d3437ef8e9bbe4e0dcb547feb698fb7.jpg",
+                        "salsify:asset_width": 1300,
+                        "salsify:asset_height": 866
+                      }
+                    ]
                   }
                 ],
                 "meta": {
