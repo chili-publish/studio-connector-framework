@@ -1,5 +1,13 @@
 # Releases
 
+# 1.1.1
+
+- [NO-TICKET] Robust id handling. Binding an image variable to a raw named image attribute (a
+  localised, multi-value field like `{"en-US":["hash1","hash2"]}`) previously 404'd because the
+  whole JSON string was used as the asset id. `download`/`detail` now normalise the id — unwrapping
+  localised objects, arrays, and pipe-joined `image:ids` down to the first asset id — before
+  resolving. Binding `image:id` / `image:url` remains the recommended clean path.
+
 # 1.1.0
 
 - [NO-TICKET] Faster previews. (1) **One-hop downloads:** `download`/`detail` accept an id that is

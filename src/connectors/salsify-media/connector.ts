@@ -96,19 +96,20 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
     _context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     return this.withTiming(async () => {
+      const assetId = this.normalizeAssetId(id);
       // One-hop: an id that is already a URL (bound from the data connector's
       // image:url column) carries no metadata — return what the URL gives us,
       // no API call. Dimensions come from the data connector's own columns.
-      if (this.isUrl(id)) {
+      if (this.isUrl(assetId)) {
         return {
-          id,
-          name: this.filenameFromUrl(id),
+          id: assetId,
+          name: this.filenameFromUrl(assetId),
           relativePath: '/',
           type: 0,
           metaData: {},
         };
       }
-      const asset = await this.resolveAsset(id);
+      const asset = await this.resolveAsset(assetId);
       const media = this.toMedia(asset);
       const width = asset['salsify:asset_width'];
       const height = asset['salsify:asset_height'];
@@ -127,21 +128,22 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
     _context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     return this.withTiming(async () => {
+      const assetId = this.normalizeAssetId(id);
       let url: string;
       let isImage = true;
-      if (this.isUrl(id)) {
+      if (this.isUrl(assetId)) {
         // One-hop path: the id IS the public Salsify CDN URL (bound from the
         // data connector's image:url column), so skip the id->url resolve
         // entirely — one proxy round-trip instead of two.
-        url = id.trim();
+        url = assetId;
       } else {
         // Asset-id path (e.g. from the asset browser): resolve id -> url,
         // cached so re-renders and other sizes don't re-resolve.
-        const asset = await this.resolveAsset(id);
+        const asset = await this.resolveAsset(assetId);
         const resolved = asset['salsify:url'];
         if (!resolved) {
           throw new Error(
-            `Salsify media connector: asset "${id}" has no downloadable salsify:url.`
+            `Salsify media connector: asset "${assetId}" has no downloadable salsify:url.`
           );
         }
         url = resolved;
@@ -192,6 +194,38 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
 
   private isUrl(id: string): boolean {
     return /^https?:\/\//i.test(id.trim());
+  }
+
+  /**
+   * Reduces whatever value got bound to the image variable down to a single
+   * usable asset id (or URL). Salsify image attributes come in messy shapes:
+   *   - a plain asset hash                     -> unchanged
+   *   - a public CDN URL (image:url)           -> unchanged (one-hop path)
+   *   - a localised/multi-value attribute,     -> first asset id
+   *     JSON-encoded, e.g. {"en-US":["h1","h2"]}
+   *   - a pipe-joined list (image:ids "h1|h2") -> first asset id
+   * Binding image:id / image:url stays the clean path; this just keeps the
+   * connector from 404-ing when a designer binds a raw named image column.
+   */
+  private normalizeAssetId(raw: string): string {
+    let id = (raw ?? '').trim();
+    if (id.startsWith('{') || id.startsWith('[')) {
+      try {
+        let cur: unknown = JSON.parse(id);
+        // Peel localised objects ({locale: X} -> X) and arrays ([a,…] -> a).
+        for (let depth = 0; depth < 6 && cur && typeof cur === 'object'; depth++) {
+          cur = Array.isArray(cur)
+            ? cur[0]
+            : Object.values(cur as Record<string, unknown>)[0];
+        }
+        if (typeof cur === 'string' && cur.trim() !== '') id = cur.trim();
+      } catch {
+        // not JSON after all — fall through with the raw string
+      }
+    }
+    const pipe = id.indexOf('|');
+    if (pipe >= 0) id = id.slice(0, pipe).trim();
+    return id;
   }
 
   private filenameFromUrl(url: string): string {

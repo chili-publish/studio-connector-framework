@@ -154,6 +154,44 @@
           }
         ]
       }
+    },
+    {
+      "name": "download normalizes a localized multi-value attribute id to the first asset",
+      "method": "download",
+      "arguments": {
+        "id": "{\"en-US\":[\"firsthash\",\"secondhash\"]}",
+        "previewType": "thumbnail",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://app.salsify.com/api/v1/orgs/test-org-id/digital_assets/firsthash",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "salsify:id": "firsthash",
+                "salsify:url": "https://images.salsify.com/image/upload/firsthashcdn.jpg",
+                "salsify:asset_resource_type": "image"
+              }
+            }
+          },
+          {
+            "url": "https://images.salsify.com/image/upload/c_limit,w_240,q_auto/firsthashcdn.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": "binary-image-bytes"
+            }
+          }
+        ]
+      }
     }
   ]
 }
