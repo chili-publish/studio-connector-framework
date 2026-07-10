@@ -1,7 +1,7 @@
 {
   "name": "csv",
   "description": "Use any publicly accessible CSV (UTF-8) file as a data source.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "author": {
     "name": "Spicy Labs",
@@ -14,7 +14,12 @@
     "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/csv-connector.svg",
     "options": {},
     "mappings": {},
-    "supportedAuth": []
+    "supportedAuth": [
+      "staticKey",
+      "oAuth2ClientCredentials",
+      "oAuth2AuthorizationCode",
+      "oAuth2ResourceOwnerPassword"
+    ]
   },
   "license": "MIT",
   "main": "out/connector.js",
