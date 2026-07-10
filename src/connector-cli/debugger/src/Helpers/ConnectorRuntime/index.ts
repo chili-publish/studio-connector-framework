@@ -1,3 +1,5 @@
+import { metricsCollector } from '../MetricsCollector';
+
 export const cache = new Map<string, ArrayBuffer>();
 
 export interface Header {
@@ -17,6 +19,14 @@ export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
   });
 }
 
+function isBinaryType(contentType?: string | null) {
+  return (
+    contentType?.includes('image/') ||
+    contentType?.includes('font/') ||
+    contentType?.includes('application/pdf')
+  );
+}
+
 export async function initRuntime(
   globalHeaders: Header[],
   runtimeOptions: Record<string, unknown>,
@@ -25,6 +35,7 @@ export async function initRuntime(
 ) {
   // proxy the fetch function to be able to inject headers
   const fetch = async (url: string, options: any) => {
+    const method = options?.method ?? 'GET';
     const authHeader =
       authorization.name && authorization.value
         ? { [authorization.name]: authorization.value }
@@ -46,24 +57,52 @@ export async function initRuntime(
       ]).toString();
     }
 
-    const response = await window.fetch(urlInstance, { ...options, headers });
+    const requestUrl = urlInstance.toString();
+    const start = performance.now();
 
-    // if binary file, add arrayBufferPointer property
-    if (response.headers.get('content-type')?.includes('json')) {
-      const text = await response.text();
-      // We couldn't make a ... copy of response object as it is not iterable
-      (response as any)['text'] = text;
-      return response;
-    } else {
-      const arrayBuffer = await response.arrayBuffer();
-      const id = Math.random().toString(36).substring(7);
-      cache.set(id, arrayBuffer);
-      // We couldn't make a ... copy of response object as it is not iterable
-      (response as any)['arrayBuffer'] = {
-        id: id,
-        bytes: arrayBuffer.byteLength,
-      };
-      return response;
+    try {
+      const response = await window.fetch(urlInstance, { ...options, headers });
+
+      const contentType = response.headers.get('content-type');
+      if (isBinaryType(contentType)) {
+        const arrayBuffer = await response.arrayBuffer();
+        const id = Math.random().toString(36).substring(7);
+        cache.set(id, arrayBuffer);
+        // We couldn't make a ... copy of response object as it is not iterable
+        (response as any)['arrayBuffer'] = {
+          id: id,
+          bytes: arrayBuffer.byteLength,
+        };
+        metricsCollector.recordFetch({
+          url: requestUrl,
+          method,
+          status: response.status,
+          durationMs: performance.now() - start,
+          success: response.ok,
+        });
+        return response;
+      } else {
+        const text = await response.text();
+        // We couldn't make a ... copy of response object as it is not iterable
+        (response as any)['text'] = text;
+        metricsCollector.recordFetch({
+          url: requestUrl,
+          method,
+          status: response.status,
+          durationMs: performance.now() - start,
+          success: response.ok,
+        });
+        return response;
+      }
+    } catch (error) {
+      metricsCollector.recordFetch({
+        url: requestUrl,
+        method,
+        durationMs: performance.now() - start,
+        success: false,
+        error: `${error}`,
+      });
+      throw error;
     }
   };
 

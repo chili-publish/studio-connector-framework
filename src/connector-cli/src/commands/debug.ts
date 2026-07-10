@@ -2,17 +2,29 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import reload from 'reload';
-import {
-  compileToTempFile,
-  introspectTsFile,
-} from '../compiler/connectorCompiler';
-import { error, info, startCommand, verbose } from '../core';
+import { compileToTempFile } from '../compiler/connectorCompiler';
+import { error, info, readConnectorConfig, startCommand, verbose } from '../core';
 import { ExecutionError } from '../core/types';
+import { ConnectorType } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
+
+function getDebugConnectorType(configType: ConnectorType): string {
+  switch (configType) {
+    case ConnectorType.Data:
+      return 'dataconnector';
+    case ConnectorType.Media:
+      return 'mediaconnector';
+    default: {
+      const exhaustive: never = configType;
+      throw new ExecutionError(
+        `Unsupported connector type "${exhaustive}" in config. Expected "data" or "media".`
+      );
+    }
+  }
+}
 
 interface DebuggerCommandOptions {
   port: number;
-  watch?: true;
 }
 
 export async function runDebugger(
@@ -21,16 +33,13 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { projectPath, options });
 
-  const { connectorFile } = getConnectorProjectFileInfo(projectPath);
+  const { connectorFile, packageJson } = getConnectorProjectFileInfo(projectPath);
+  const config = readConnectorConfig(packageJson);
+  const connectorType = getDebugConnectorType(config.type);
 
-  const connectorType = await introspectTsFile(connectorFile);
   const compilation = await compileToTempFile(connectorFile);
   if (compilation.errors.length > 0) {
-    if (options.watch) {
-      error(compilation.formattedDiagnostics);
-    } else {
-      throw new ExecutionError(compilation.formattedDiagnostics);
-    }
+    error(compilation.formattedDiagnostics);
   }
 
   const app = express();
@@ -38,41 +47,39 @@ export async function runDebugger(
   const port = options.port;
   const indexTemplate = debuggerHandleBarTemplate;
 
-  if (options.watch) {
-    info(
-      'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+  info(
+    'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+  );
+  const watcher = fs.watch(connectorFile, async function (event, filename) {
+    verbose(`Triggers watch callback for ${event}, ${filename}`);
+    info('Recompiling...');
+
+    const watchCompilation = await compileToTempFile(
+      connectorFile,
+      compilation.tempFile
     );
-    const watcher = fs.watch(connectorFile, async function (event, filename) {
-      verbose(`Triggers watch callback for ${event}, ${filename}`);
-      info('Recompiling...');
 
-      const watchCompilation = await compileToTempFile(
-        connectorFile,
-        compilation.tempFile
-      );
+    if (watchCompilation.errors.length > 0) {
+      error(watchCompilation.formattedDiagnostics);
+    } else {
+      verbose('Compiled -> ' + watchCompilation.tempFile);
+      info('Reloading browser tab...');
+      reloadTrigger.reload();
+    }
+    info('Watching for changes... (press ctrl+c to exit)');
+  });
 
-      if (watchCompilation.errors.length > 0) {
-        error(watchCompilation.formattedDiagnostics);
-      } else {
-        verbose('Compiled -> ' + watchCompilation.tempFile);
-        info('Reloading browser tab...');
-        reloadTrigger.reload();
-      }
-      info('Watching for changes... (press ctrl+c to exit)');
-    });
+  process.on('SIGINT', async () => {
+    verbose('Destroy debug for "SIGINT"');
+    verbose('Stop watching the connector file: ' + connectorFile);
+    watcher.close();
+  });
 
-    process.on('SIGINT', async () => {
-      verbose('Destroy debug for "SIGINT"');
-      verbose('Stop watching the connector file: ' + connectorFile);
-      watcher.close();
-    });
-
-    process.on('exit', async () => {
-      verbose('Destroy debug for "exit"');
-      verbose('Stop watching the connector file: ' + connectorFile);
-      watcher.close();
-    });
-  }
+  process.on('exit', async () => {
+    verbose('Destroy debug for "exit"');
+    verbose('Stop watching the connector file: ' + connectorFile);
+    watcher.close();
+  });
 
   // recursive (3 deep) find parent folder with subfolder 'out'
   function findOutFolder(folder: string, depth: number): string | undefined {

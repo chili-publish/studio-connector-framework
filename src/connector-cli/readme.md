@@ -19,6 +19,7 @@
 
 - **Publish**: Deploy your connector to the specified environment with `publish`.
 - **Set Auth**: Configure your connector authentication with `set-auth`.
+- **Delete Auth**: Remove configured connector authentication with `delete-auth`.
 - **Update**: Granular update of an environment connector (e.g. `enabled`, `default`, `name`). Not allowed for Hub-Based connectors.
 - **Delete**: Remove a published connector from an environment with `delete`.
 
@@ -106,6 +107,14 @@ Available authentication types: `staticKey`, `oAuth2ClientCredentials`, `oAuth2R
 
 Available usage types: `browser`, `server`
 
+### Remove connector authentication
+
+```sh
+connector-cli delete-auth -b EnvironmentAPIBaseURL -e YOUR_ENVIRONMENT --connectorId ConnectorIdFromEnv -au browser
+```
+
+`-au` / `--usage` is the same as for `set-auth`: `browser` or `server`.
+
 ### Update a connector (enabled / default / name)
 
 At least one of `--enabled`, `--default` or `--name` is required. Omitted options are not sent in the PATCH.
@@ -124,8 +133,10 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
+The CLI recompiles `connector.ts` on change and reloads the browser tab.
+
 ```sh
-connector-cli debug -p 3300 -w
+connector-cli debug -p 3300
 ```
 
 ### Get connector information

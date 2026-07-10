@@ -82,4 +82,10 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
    - Define boolean columns using checkboxes.
 
 4. **Row Structure**:
+
    - The spreadsheet must not contain empty rows between rows with data, as pagination logic relies on it.
+
+5. **\_\_rowId\_\_**
+
+   - The connector adds `__rowId__` as a property on each row.
+   - Do **not** use `__rowId__` in your spreadsheet data model (do not add a column whose header is that name).

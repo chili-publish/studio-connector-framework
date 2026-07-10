@@ -2,6 +2,7 @@ import { Option, program } from 'commander';
 import info from '../package.json';
 import { runBuild } from './commands/build';
 import { runDebugger } from './commands/debug';
+import { runDeleteAuth } from './commands/delete-auth';
 import { runDelete } from './commands/delete';
 import { runUpdate } from './commands/update';
 import { runGetInfo } from './commands/info';
@@ -124,10 +125,6 @@ function main() {
     .description('Run connector project in debug mode for testing in browser')
     .addArgument(connectorProject)
     .option('-p, --port [port]', 'Port to run debug application', '3300')
-    .option(
-      '-w, --watch',
-      "Enable watch mode to reload connector's code when changed"
-    )
     .action(withErrorHandlerAction(runDebugger));
 
   program
@@ -213,6 +210,39 @@ function main() {
       'Path to the file (json or yaml) that contains authentication information for the specified "--type"'
     )
     .action(withErrorHandlerAction(runSetAuth));
+
+  program
+    .command('delete-auth')
+    .description('Remove configured connector authentication')
+    .addOption(
+      new Option(
+        '-t, --tenant [tenant]',
+        'Which authentication tenant to use. Important: if you target "baseUrl" to dev Environment API,  you should specify "tenant" as dev'
+      )
+        .choices(Object.values(Tenant))
+        .default(Tenant.Prod)
+    )
+    .requiredOption(
+      '-e, --environment <environment>',
+      'Environment name to use for operation, i.e. "cp-qeb-191"'
+    )
+    .requiredOption(
+      '-b, --baseUrl <baseurl>',
+      'Environemnt API endpoint to use for operation, i.e. "https://main.cpstaging.online/grafx"'
+    )
+    .requiredOption(
+      '--connectorId <connectorId>',
+      'Id of the connector to perform operation'
+    )
+    .addOption(
+      new Option(
+        '-au, --usage <usage>',
+        'Execution context for authentication (browser or server)'
+      )
+        .choices(Object.values(AuthenticationUsage))
+        .makeOptionMandatory(true)
+    )
+    .action(withErrorHandlerAction(runDeleteAuth));
 
   program
     .command('delete')

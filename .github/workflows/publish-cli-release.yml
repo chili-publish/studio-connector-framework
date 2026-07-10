@@ -3,7 +3,8 @@ on:
   release:
     types: [published]
 env:
-  NODE_VERSION: 22.x
+  # NOTE: Stick to this node version because of the bug https://github.com/nodejs/node/issues/62425
+  NODE_VERSION: 22.22.1
 permissions:
   id-token: write # Required for OIDC authentication
   contents: read
@@ -17,7 +18,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Update to latest npm version
-        run: npm i -g npm@latest
+        run: npm i -g npm@11.13.0
       - name: Check version correctness
         env:
           GITHUB_REF: ${{ github.ref }}

@@ -1,4 +1,8 @@
-import { Connector, Data } from '@chili-publish/studio-connectors';
+import {
+  Connector,
+  Data,
+  BidirectionalDataPageItem,
+} from '@chili-publish/studio-connectors';
 import type {
   NumberCell,
   DateCell,
@@ -32,25 +36,103 @@ class RangeHelper {
     return RangeHelper.buildRange(sheetName, lastRow + 1, lastRow + limit);
   }
 
-  static buildRangeFromContinuationToken(
-    continuationToken: string,
+  static buildPreviousPageRange(currentRange: string, limit: number) {
+    const [sheetName, startRow] = RangeHelper.extractFromRange(currentRange);
+    if (Number.isNaN(startRow)) {
+      throw new Error(`Incorrect format of the cells range "${currentRange}"`);
+    }
+    const prevEndRow = startRow - 1;
+    const prevStartRow = Math.max(2, prevEndRow - limit + 1);
+    return RangeHelper.buildRange(sheetName, prevStartRow, prevEndRow);
+  }
+
+  static buildRowRange(sheetName: string | null, rowNumber: number) {
+    return RangeHelper.buildRange(sheetName, rowNumber, rowNumber);
+  }
+
+  /**
+   * Returns the range string for the next page page given the row number and the page size (limit).
+   * Row numbers are 1-indexed in the sheet; row 1 is the
+   * header, so data rows start at row 2.
+   */
+  static buildRangeForNextPage(
+    sheetName: string | null,
+    rowNumber: number,
     limit: number
   ) {
-    const [sheetName, startRow, endRow] =
-      RangeHelper.extractFromRange(continuationToken);
-    if (Number.isNaN(startRow) || Number.isNaN(endRow)) {
-      throw new Error(
-        `Incorrect format of the continuation token "${continuationToken}"`
+    const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
+
+    if (isFirstPage) {
+      return RangeHelper.buildRange(
+        sheetName,
+        rowNumber + 1,
+        rowNumber + limit
       );
     }
-    // Calculate the limit from the continuation token
-    const tokenLimit = endRow - startRow + 1;
-    // If the limit hasn't changed, return the continuation token as-is
-    if (tokenLimit === limit) {
-      return continuationToken;
+
+    const pageStartRow = rowNumber + 1;
+    const pageEndRow = pageStartRow + limit - 1;
+
+    return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
+  }
+
+  static buildRangeForPreviousPage(
+    sheetName: string | null,
+    rowNumber: number,
+    limit: number
+  ) {
+    const isFirstPage = RangeHelper.isFirstPage(rowNumber, limit);
+
+    if (isFirstPage) {
+      if (rowNumber - 1 < 2) return null; // (row 2 → pos 0)
+      return RangeHelper.buildRange(sheetName, 2, rowNumber - 1);
     }
-    // Otherwise, rebuild the range with the new limit
-    return RangeHelper.buildRange(sheetName, startRow, startRow + limit - 1);
+
+    const pageEndRow = rowNumber - 1;
+    const pageStartRow = Math.max(2, pageEndRow - limit + 1);
+
+    return RangeHelper.buildRange(sheetName, pageStartRow, pageEndRow);
+  }
+
+  static getStartRow(range: string): number {
+    const [, startRow] = RangeHelper.extractFromRange(range);
+    return startRow;
+  }
+
+  static getEndRow(range: string): number {
+    const [, , endRow] = RangeHelper.extractFromRange(range);
+    return endRow;
+  }
+
+  /**
+   * Builds a range for `limit` rows starting at startRow. Use when resolving
+   * continuationToken with a possibly changed limit.
+   */
+  static buildRangeFromStartRow(
+    sheetName: string | null,
+    startRow: number,
+    limit: number
+  ): string {
+    return RangeHelper.buildRange(
+      sheetName,
+      startRow,
+      startRow + Math.max(0, limit - 1)
+    );
+  }
+
+  /**
+   * Builds the previous page range when the token encodes the previous page's
+   * range and the request may use a different limit. Returns the last `limit`
+   * rows before the row after tokenEndRow.
+   */
+  static buildPreviousPageRangeFromToken(
+    sheetName: string | null,
+    tokenEndRow: number,
+    limit: number
+  ): string {
+    const prevEndRow = tokenEndRow;
+    const prevStartRow = Math.max(2, prevEndRow - limit + 1);
+    return RangeHelper.buildRange(sheetName, prevStartRow, prevEndRow);
   }
 
   private static buildRange(
@@ -59,6 +141,12 @@ class RangeHelper {
     end: number
   ) {
     return sheetName ? `${sheetName}!${start}:${end}` : `${start}:${end}`;
+  }
+
+  static isFirstPage(rowNumber: number, limit: number) {
+    const dataPos = rowNumber - 2; // 0-indexed data position (row 2 → pos 0)
+    const pageIndex = Math.floor(dataPos / limit);
+    return pageIndex === 0;
   }
 
   private static extractFromRange(
@@ -74,6 +162,70 @@ class RangeHelper {
   }
 }
 
+const ITEM_ROW_ID_PROPERTY = '__rowId__' as const;
+
+const CONTEXT_SPREADSHEET_URL_PROPERTY = 'spreadsheetURL' as const;
+
+class RowIdHelper {
+  /**
+   * When the URL has no `gid`, the connector targets the first sheet; row ids use `0` for that case.
+   */
+  static canonicalSheetId(sheetId: string | null): string {
+    return sheetId ?? '0';
+  }
+
+  static build(
+    spreadsheetId: string,
+    sheetId: string | null,
+    rowNumber: number
+  ): string {
+    return `${spreadsheetId}_${RowIdHelper.canonicalSheetId(
+      sheetId
+    )}_${rowNumber}`;
+  }
+
+  /**
+   * Parses `{spreadsheetId}_{sheetId}_{rowNumber}`. The spreadsheet id may contain `_`;
+   * sheet id and row are the last two segments (sheet id is numeric).
+   */
+  static parse(id: string): {
+    spreadsheetId: string;
+    sheetId: string;
+    rowNumber: number;
+  } | null {
+    const parts = id.split('_');
+    if (parts.length < 3) {
+      return null;
+    }
+    const rowPart = parts[parts.length - 1]!;
+    const sheetIdPart = parts[parts.length - 2]!;
+    const spreadsheetId = parts.slice(0, -2).join('_');
+    const rowNumber = parseInt(rowPart, 10);
+    if (!Number.isInteger(rowNumber) || rowNumber < 2) {
+      return null;
+    }
+    if (!/^\d+$/.test(sheetIdPart)) {
+      return null;
+    }
+    return { spreadsheetId, sheetId: sheetIdPart, rowNumber };
+  }
+
+  static assignRowIdToItem(
+    item: Data.DataItem,
+    spreadsheetId: string,
+    sheetId: string | null,
+    rowNumber: number
+  ): Data.DataItem {
+    const rowId = RowIdHelper.build(spreadsheetId, sheetId, rowNumber);
+    const rest = { ...(item as Record<string, unknown>) };
+    delete rest[ITEM_ROW_ID_PROPERTY];
+    return {
+      [ITEM_ROW_ID_PROPERTY]: rowId,
+      ...rest,
+    } as Data.DataItem;
+  }
+}
+
 class Converter {
   static toDataItems(
     tableHeader: Row<Required<CellData>>,
@@ -82,37 +234,40 @@ class Converter {
     const tableHeaderValues = tableHeader.values;
     return (
       tableBody
-        .map(
-          (row) =>
+        .map((row) => {
+          const item =
             this.normalizeRow(row, tableHeaderValues.length)?.values.reduce(
-              (item, tableCell, index) => {
+              (acc, tableCell, colIndex) => {
                 const { type, cell } = Converter.toTypedCell(tableCell);
 
                 switch (type) {
                   case 'number':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.effectiveValue?.numberValue ?? null;
                     break;
                   case 'date':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       this.convertToDate(cell.effectiveValue?.numberValue);
                     break;
                   case 'boolean':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.effectiveValue.boolValue;
                     break;
                   case 'singleLine':
-                    item[tableHeaderValues[index].formattedValue] =
+                    acc[tableHeaderValues[colIndex].formattedValue] =
                       cell.formattedValue ?? null;
                     break;
                 }
-                return item;
+                return acc;
               },
               {} as Data.DataItem
-            ) ?? null
-        )
+            ) ?? null;
+
+          if (item === null) return null;
+          return item;
+        })
         // Filter out empty rows
-        .filter((d) => d !== null)
+        .filter((d): d is Data.DataItem => d !== null)
     );
   }
 
@@ -239,34 +394,51 @@ class Converter {
 }
 
 const FIELDS_MASK = `sheets.properties(sheetId,title),sheets.data.rowData.values(formattedValue,effectiveFormat.numberFormat.type,effectiveValue)`;
-export default class GoogleSheetConnector implements Data.DataConnector {
+export default class GoogleSheetConnector
+  implements Data.DataConnector, Data.DataSourceVariableCapability
+{
   private runtime: Connector.ConnectorRuntimeContext;
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
   }
 
   async getPage(
-    config: Data.PageConfig,
+    config: Data.BidirectionalPageConfig,
     context: Connector.Dictionary
-  ): Promise<Data.DataPage> {
+  ): Promise<Data.BidirectionalDataPage> {
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
 
       if (config.limit < 1) {
         return {
+          previousPageToken: null,
           continuationToken: null,
           data: [],
         };
       }
       const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
 
-      let cellsRange = config.continuationToken
-        ? RangeHelper.buildRangeFromContinuationToken(
-            config.continuationToken,
-            config.limit
-          )
-        : RangeHelper.buildFirstPageRange(sheetName, config.limit);
+      // Resolve the cell range to fetch using the current request's limit, so
+      // that a changed page size between requests is respected.
+      let cellsRange: string;
+      if (config.continuationToken) {
+        const startRow = RangeHelper.getStartRow(config.continuationToken);
+        cellsRange = RangeHelper.buildRangeFromStartRow(
+          sheetName,
+          startRow,
+          config.limit
+        );
+      } else if (config.previousPageToken) {
+        const tokenEndRow = RangeHelper.getEndRow(config.previousPageToken);
+        cellsRange = RangeHelper.buildPreviousPageRangeFromToken(
+          sheetName,
+          tokenEndRow,
+          config.limit
+        );
+      } else {
+        cellsRange = RangeHelper.buildFirstPageRange(sheetName, config.limit);
+      }
 
       // Request two ranges of the cells
       // 1. Header range to properly map to DataItem
@@ -284,7 +456,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
         'fetch:getPage'
       );
 
-      // We handle 400 in a specific way since it might be related to the requesting the last "empty" batch of records
+      // We handle 400 in a specific way since it might be related to requesting the last "empty" batch of records
       // during batch output generation. In this case we need to complete request as success with empty return data
       if (!res.ok && res.status === 400) {
         try {
@@ -293,6 +465,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
             `Google Sheet: GetPage failed ${res.status} - ${error.message}`
           );
           return {
+            previousPageToken: null,
             continuationToken: null,
             data: [],
           };
@@ -306,10 +479,29 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
       const [headerRow, bodyRows] = this.parseResponse(res, 'GetPage');
 
-      const data = Converter.toDataItems(headerRow, bodyRows);
+      const startRowNumber = RangeHelper.getStartRow(cellsRange);
+      const data = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+        RowIdHelper.assignRowIdToItem(
+          item,
+          spreadsheetId,
+          sheetId,
+          startRowNumber + i
+        )
+      );
+
+      // Return the range to request for each direction (different tokens).
+      const isFirstPage = startRowNumber === 2;
+      const hasNextPage = this.shouldOfferContinuationToken(
+        config,
+        cellsRange,
+        data.length
+      );
 
       return {
-        continuationToken: this.isNextPageAvailable(config.limit, data.length)
+        previousPageToken: isFirstPage
+          ? null
+          : RangeHelper.buildPreviousPageRange(cellsRange, config.limit),
+        continuationToken: hasNextPage
           ? RangeHelper.buildNextPageRange(cellsRange, config.limit)
           : null,
         data,
@@ -317,7 +509,9 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     }, 'getPage');
   }
 
-  async getModel(context: Connector.Dictionary): Promise<Data.DataModel> {
+  async getModel(
+    context: Connector.Dictionary
+  ): Promise<Data.DataSourceVariableDataModel> {
     return this.withTiming(async () => {
       const { spreadsheetId, sheetId } =
         this.extractSheetIdentityFromContext(context);
@@ -343,7 +537,11 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       const properties = Converter.toDataModelProperties(headerRow, bodyRows);
 
       return {
-        properties,
+        properties: [
+          ...properties,
+          { name: ITEM_ROW_ID_PROPERTY, type: 'singleLine' },
+        ],
+        itemIdPropertyName: ITEM_ROW_ID_PROPERTY,
       };
     }, 'getModel');
   }
@@ -352,7 +550,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     return [
       {
         type: 'text',
-        name: 'spreadsheetURL',
+        name: CONTEXT_SPREADSHEET_URL_PROPERTY,
         displayName: 'Spreadsheet URL',
       },
     ];
@@ -363,7 +561,103 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       filtering: false,
       sorting: false,
       model: true,
+      dataSourceVariable: true,
     };
+  }
+
+  async getPageItemById(
+    id: string,
+    pageOptions: Data.PageItemOptions,
+    context: Connector.Dictionary
+  ): Promise<BidirectionalDataPageItem> {
+    return this.withTiming(async () => {
+      const { spreadsheetId, sheetId } =
+        this.extractSheetIdentityFromContext(context);
+
+      const parsed = RowIdHelper.parse(id);
+      if (!parsed) {
+        throw new Error(
+          `Google Sheet: Invalid ${ITEM_ROW_ID_PROPERTY} "${id}". Expected format "{spreadsheetId}_{sheetId}_{rowNumber}" with numeric sheet id and row number >= 2.`
+        );
+      }
+
+      const expectedSheetKey = RowIdHelper.canonicalSheetId(sheetId);
+      if (
+        parsed.spreadsheetId !== spreadsheetId ||
+        parsed.sheetId !== expectedSheetKey
+      ) {
+        throw new Error(
+          `Google Sheet: ${ITEM_ROW_ID_PROPERTY} "${id}" does not match the current "${CONTEXT_SPREADSHEET_URL_PROPERTY}" context (spreadsheetURL: "${context[CONTEXT_SPREADSHEET_URL_PROPERTY]}").`
+        );
+      }
+
+      const rowNumber = parsed.rowNumber;
+      const sheetName = await this.fetchSheetName(spreadsheetId, sheetId);
+      const limit = Math.max(1, pageOptions.limit);
+
+      const res = await this.withTiming(
+        () =>
+          this.runtime.fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/?fields=${FIELDS_MASK}&ranges=${encodeURIComponent(
+              RangeHelper.buildHeaderRange(sheetName)
+            )}&ranges=${encodeURIComponent(
+              RangeHelper.buildRowRange(sheetName, rowNumber)
+            )}`,
+            { method: 'GET' }
+          ),
+        'fetch:getPageItemById'
+      );
+
+      if (!res.ok && (res.status === 400 || res.status === 404)) {
+        try {
+          const { error }: ApiError = JSON.parse(res.text);
+          this.runtime.logError(
+            `Google Sheet: getPageItemById failed ${res.status} - ${error.message}`
+          );
+        } catch {
+          // ignore parse failure
+        }
+        throw new Error(
+          `Google Sheet: Record not found for ${ITEM_ROW_ID_PROPERTY} "${id}". The row may not exist or be outside the sheet.`
+        );
+      }
+
+      const [headerRow, bodyRows] = this.parseResponse(res, 'GetPageItemById');
+      const items = Converter.toDataItems(headerRow, bodyRows).map((item, i) =>
+        RowIdHelper.assignRowIdToItem(
+          item,
+          spreadsheetId,
+          sheetId,
+          rowNumber + i
+        )
+      );
+
+      if (items.length === 0) {
+        throw new Error(
+          `Google Sheet: No data found for row ${rowNumber} (${ITEM_ROW_ID_PROPERTY} "${id}").`
+        );
+      }
+
+      const item = items[0];
+
+      const nextPageRange = RangeHelper.buildRangeForNextPage(
+        sheetName,
+        rowNumber,
+        limit
+      );
+
+      const previousPageRange = RangeHelper.buildRangeForPreviousPage(
+        sheetName,
+        rowNumber,
+        limit
+      );
+
+      return {
+        data: item,
+        previousPageToken: previousPageRange,
+        continuationToken: nextPageRange,
+      };
+    }, 'getPageItemById');
   }
 
   /**
@@ -371,9 +665,23 @@ export default class GoogleSheetConnector implements Data.DataConnector {
    * @param response
    * @returns [headerRow, bodyRows]
    */
+  private logReservedRowIdColumnIfPresent(
+    headerRow: Row<Required<CellData>>
+  ): void {
+    if (
+      headerRow.values.some(
+        (cell) => cell.formattedValue === ITEM_ROW_ID_PROPERTY
+      )
+    ) {
+      this.runtime.logError(
+        `Google Sheet: The sheet defines a column header "${ITEM_ROW_ID_PROPERTY}", which is reserved. Cell values under that column are ignored; ${ITEM_ROW_ID_PROPERTY} is set from spreadsheet id, sheet id, and row number.`
+      );
+    }
+  }
+
   private parseResponse(
     response: Connector.ChiliResponse,
-    method: 'GetPage' | 'GetModel'
+    method: 'GetPage' | 'GetModel' | 'GetPageItemById'
   ): [Row<Required<CellData>>, Array<Row>] {
     if (!response.ok) {
       throw new ConnectorHttpError(
@@ -391,6 +699,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
       );
     }
     const headerRow = headerData.rowData[0];
+    this.logReservedRowIdColumnIfPresent(headerRow);
 
     const bodyRows = regularData.rowData;
     // When we request for range that contains only empty rows (without any custom styling), "bodyRows" will be undefined => we return empty data
@@ -401,7 +710,7 @@ export default class GoogleSheetConnector implements Data.DataConnector {
     spreadsheetId: string;
     sheetId: string | null;
   } {
-    const spreadsheetURL = context['spreadsheetURL'];
+    const spreadsheetURL = context[CONTEXT_SPREADSHEET_URL_PROPERTY];
 
     if (!spreadsheetURL || typeof spreadsheetURL !== 'string') {
       throw new Error(
@@ -464,6 +773,23 @@ export default class GoogleSheetConnector implements Data.DataConnector {
 
   private isNextPageAvailable(requestedSize: number, resultItems: number) {
     return requestedSize === resultItems;
+  }
+
+  private shouldOfferContinuationToken(
+    config: Data.BidirectionalPageConfig,
+    cellsRange: string,
+    dataLength: number
+  ): boolean {
+    if (this.isNextPageAvailable(config.limit, dataLength)) {
+      return true;
+    }
+    if (!config.previousPageToken) {
+      return false;
+    }
+    const startRow = RangeHelper.getStartRow(cellsRange);
+    const endRow = RangeHelper.getEndRow(cellsRange);
+    const rowsInRequestedRange = endRow - startRow + 1;
+    return startRow === 2 && rowsInRequestedRange < config.limit;
   }
 
   /**
