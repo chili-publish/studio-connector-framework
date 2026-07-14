@@ -3,7 +3,7 @@
 |  | Connector Type |
 | --- | --- |
 |  | Built-in |
-| :fontawesome-regular-square-check: | Built by CHILI publish |
+| ✅ | Built by CHILI publish |
 |  | Third party |
 
 [See Connector Types](/GraFx-Studio/concepts/connectors/#types-of-connectors)
