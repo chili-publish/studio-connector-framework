@@ -25,14 +25,15 @@ interface ParsedSheet {
 // Handles:
 //   • Comma-separated and semicolon-separated files
 //   • Quoted fields (fields containing commas, semicolons or line breaks)
-//   • UTF-8 BOM added by Excel's "CSV UTF-8" export
-//   • Windows (CRLF) and Unix (LF) line endings
+//   • UTF-8 BOM, and UTF-8 mis-decoded as Latin-1 (repairs ®, ™, accents…)
+//   • Windows (CRLF), Unix (LF) and classic-Mac (CR) line endings
 //   • Type inference: numbers, booleans, ISO dates → singleLine fallback
 
 class CsvParser {
   parse(raw: string): ParsedSheet {
-    // Strip UTF-8 BOM that Excel prepends to CSV UTF-8 exports.
-    const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+    // Normalise encoding: strip any BOM and repair UTF-8 that the runtime
+    // decoded as Latin-1 (which mangles ®, ™, accented characters, etc.).
+    const text = this.decodeText(raw);
 
     const allRows = this.tokenize(text);
 
@@ -87,6 +88,86 @@ class CsvParser {
       .filter((row) => row.values.some((v) => v !== null && v !== ''));
 
     return { headers, types, rows };
+  }
+
+  // Normalise the raw response text before parsing.
+  //
+  // The GraFx runtime can hand us text that was decoded as Latin-1 rather than
+  // UTF-8. When that happens every multi-byte UTF-8 sequence is split into its
+  // individual bytes as separate characters — e.g. the UTF-8 BOM (EF BB BF)
+  // appears as "ï»¿", "®" (C2 AE) becomes "Â®", and "™" (E2 84 A2) becomes
+  // "â„¢". We detect this via the tell-tale Latin-1 BOM prefix and, when found,
+  // re-interpret the whole string as UTF-8 bytes so the original characters are
+  // restored. This is deliberately gated on the BOM signature: a correctly
+  // decoded file can never start with "ï»¿", so this is a no-op in that case.
+  private decodeText(raw: string): string {
+    // UTF-8 / UTF-16 BOM decoded correctly as U+FEFF → just strip it.
+    if (raw.charCodeAt(0) === 0xfeff) return raw.slice(1);
+
+    // UTF-8 BOM (EF BB BF) decoded byte-for-byte as Latin-1 → "ï»¿".
+    // Signals the whole payload is UTF-8 bytes mis-decoded as Latin-1.
+    if (
+      raw.charCodeAt(0) === 0x00ef &&
+      raw.charCodeAt(1) === 0x00bb &&
+      raw.charCodeAt(2) === 0x00bf
+    ) {
+      const decoded = this.utf8FromLatin1(raw);
+      // The re-decoded BOM becomes U+FEFF — drop it.
+      return decoded.charCodeAt(0) === 0xfeff ? decoded.slice(1) : decoded;
+    }
+
+    // UTF-16 LE / BE BOMs decoded byte-for-byte as Latin-1.
+    if (
+      (raw.charCodeAt(0) === 0x00ff && raw.charCodeAt(1) === 0x00fe) ||
+      (raw.charCodeAt(0) === 0x00fe && raw.charCodeAt(1) === 0x00ff)
+    )
+      return raw.slice(2);
+
+    return raw;
+  }
+
+  // Re-decode a string whose code units are actually raw UTF-8 bytes
+  // (each 0x00–0xFF) that were mistakenly decoded as Latin-1. Hand-rolled
+  // because the QuickJS runtime does not expose TextDecoder.
+  private utf8FromLatin1(s: string): string {
+    let out = '';
+    let i = 0;
+    const n = s.length;
+    while (i < n) {
+      const b0 = s.charCodeAt(i) & 0xff;
+      if (b0 < 0x80) {
+        out += String.fromCharCode(b0);
+        i += 1;
+      } else if (b0 >= 0xc0 && b0 < 0xe0 && i + 1 < n) {
+        const b1 = s.charCodeAt(i + 1) & 0xff;
+        out += String.fromCharCode(((b0 & 0x1f) << 6) | (b1 & 0x3f));
+        i += 2;
+      } else if (b0 >= 0xe0 && b0 < 0xf0 && i + 2 < n) {
+        const b1 = s.charCodeAt(i + 1) & 0xff;
+        const b2 = s.charCodeAt(i + 2) & 0xff;
+        out += String.fromCharCode(
+          ((b0 & 0x0f) << 12) | ((b1 & 0x3f) << 6) | (b2 & 0x3f)
+        );
+        i += 3;
+      } else if (b0 >= 0xf0 && i + 3 < n) {
+        const b1 = s.charCodeAt(i + 1) & 0xff;
+        const b2 = s.charCodeAt(i + 2) & 0xff;
+        const b3 = s.charCodeAt(i + 3) & 0xff;
+        let cp =
+          ((b0 & 0x07) << 18) |
+          ((b1 & 0x3f) << 12) |
+          ((b2 & 0x3f) << 6) |
+          (b3 & 0x3f);
+        cp -= 0x10000;
+        out += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff));
+        i += 4;
+      } else {
+        // Not a valid lead byte — pass through unchanged.
+        out += String.fromCharCode(b0);
+        i += 1;
+      }
+    }
+    return out;
   }
 
   // RFC 4180-compliant tokeniser — returns a 2-D array of raw cell strings.
@@ -166,7 +247,8 @@ class CsvParser {
       return 'boolean';
     if (
       sample.length > 0 &&
-      !/^[+0]/.test(sample) &&
+      !/^[+]/.test(sample) &&
+      !/^0\d/.test(sample) &&
       Number.isFinite(Number(sample))
     )
       return 'number';
