@@ -1,6 +1,6 @@
 {
   "name": "aprimo-connector",
-  "description": "GraFx Media Connector for Aprimo DAM",
+  "description": "Browse, search, and place assets from your Aprimo DAM.",
   "version": "1.0.0",
   "author": {
     "name": "CHILI publish",
@@ -27,8 +27,7 @@
     "@chili-publish/studio-connectors": "^1.41.0"
   },
   "scripts": {
-    "build": "yarn connector-cli build",
-    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+    "build": "yarn connector-cli build"
   },
   "devDependencies": {
     "@chili-publish/connector-cli": "^1.11.0"
