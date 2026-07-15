@@ -146,7 +146,7 @@ export const Models: {
       parameters: [
         {
           name: 'id',
-          componentType: 'text',
+          componentType: 'id',
         },
         {
           name: 'pageOptions',
@@ -247,7 +247,7 @@ export const Models: {
       parameters: [
         {
           name: 'id',
-          componentType: 'text',
+          componentType: 'id',
         },
         {
           name: 'context',
@@ -274,7 +274,7 @@ export const Models: {
       parameters: [
         {
           name: 'id',
-          componentType: 'text',
+          componentType: 'id',
         },
         {
           name: 'downloadType',

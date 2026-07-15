@@ -5,13 +5,23 @@ import {
   Parameter,
   SettableDataModel,
 } from '../Helpers/DataModel';
+import { normalizeConnectorId } from '../Helpers/connectorId';
+import {
+  metricsCollector,
+  type MethodExecutionMetrics,
+} from '../Helpers/MetricsCollector';
 import ArrayBufferImage from './ImageFromBuffer';
 import JsonObjectRenderer from './JsonObjectRenderer';
+import { ResultsSection } from './ResultsSection';
 import { ParameterInput } from './ParameterInput';
 
 export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<any>(undefined);
+  const [metrics, setMetrics] = useState<MethodExecutionMetrics | undefined>(
+    undefined
+  );
+  const [isInvoking, setIsInvoking] = useState(false);
 
   const handleInputChange = useCallback(
     (changedName: string, parameter: Parameter, newValue: any) => {
@@ -72,25 +82,40 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     // Extract from "values" only required params an pass them in
     // appropriate order
     return dataModel.parameters.reduce<unknown[]>((v, param, index) => {
-      v[index] = flattenedValues[param.name];
+      let value = flattenedValues[param.name];
+      if (param.componentType === 'id' && typeof value === 'string') {
+        value = normalizeConnectorId(value);
+      }
+      v[index] = value;
       return v;
     }, []);
   };
 
   const handleInvoke = async () => {
     const normalizedValues = normalizeValues();
+    setMetrics(undefined);
+    setIsInvoking(true);
+    const session = metricsCollector.startSession(dataModel.name);
+    let success = true;
+    let error: string | undefined;
+
     try {
       const result = await (dataModel as InvokableDataModel).invoke(
         normalizedValues
       );
       setResult(result);
-    } catch (error) {
+    } catch (err) {
+      success = false;
+      error = `${err}`;
       setResult({
         message: `failed to invoke ${
           dataModel.name
-        }: with parameters ${JSON.stringify(normalizedValues)}: ${error}`,
-        error: `${error}`,
+        }: with parameters ${JSON.stringify(normalizedValues)}: ${err}`,
+        error,
       });
+    } finally {
+      setMetrics(session?.end({ success, error }) ?? undefined);
+      setIsInvoking(false);
     }
   };
 
@@ -118,10 +143,11 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
       {!(dataModel as InvokableDataModel).invoke ? null : (
         <div className="flex flex-row py-8">
           <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleInvoke}
+            disabled={isInvoking}
           >
-            Invoke
+            {isInvoking ? 'Invoking...' : 'Invoke'}
           </button>
         </div>
       )}
@@ -142,14 +168,20 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
 
   if (result !== undefined) {
     if (result.error) {
-      resultRender = <JsonObjectRenderer data={result} />;
+      resultRender = <JsonObjectRenderer data={result} isError />;
     } else {
       const invokableDataModel = dataModel as InvokableDataModel;
       if (invokableDataModel.returnJson || invokableDataModel.returnJsonArray) {
         resultRender = <JsonObjectRenderer data={result} />;
       } else if (invokableDataModel.returnsImage) {
         resultRender = (
-          <ArrayBufferImage buffer={result.id} width={'100%'} height={'100%'} />
+          <div className="flex justify-center rounded-lg bg-slate-50 border border-slate-100 p-4">
+            <ArrayBufferImage
+              buffer={result.id}
+              width={'100%'}
+              height={'100%'}
+            />
+          </div>
         );
       }
     }
@@ -159,12 +191,12 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     <div className="flex-1 flex flex-col overflow-y-auto">
       <div className="bg-white p-0 flex flex-col flex-1 overflow-y-auto">
         <div className="mb-4 border-b pb-4">
-          <h1 className="capitalize  text-xl font-semibold">
+          <h1 className="capitalize text-xl font-semibold text-slate-900">
             {dataModel.displayName ?? dataModel.name}
           </h1>
         </div>
         {inputRender}
-        {resultRender}
+        <ResultsSection metrics={metrics}>{resultRender}</ResultsSection>
       </div>
     </div>
   );
