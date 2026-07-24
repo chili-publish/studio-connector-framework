@@ -5,6 +5,7 @@ import { Sidebar } from './Components/Sidebar';
 import { useConnectorSettings } from './core/useConnectorSettings';
 import { initRuntime } from './Helpers/ConnectorRuntime';
 import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
+import { initRuntimeSleep } from './Helpers/ConnectorRuntime/sleep';
 import { ComplexParameter, DataModel } from './Helpers/DataModel';
 import { Models } from './Helpers/Models';
 
@@ -56,6 +57,7 @@ function App() {
 
   useEffect(() => {
     initRuntimeErrors();
+    initRuntimeSleep();
   }, []);
 
   useEffect(() => {
