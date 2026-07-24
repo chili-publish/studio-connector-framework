@@ -324,7 +324,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.12.1-rc.1"
+  version "1.12.1-rc.2"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -1540,7 +1540,7 @@ csstype@^3.2.2:
   integrity sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
 
 "csv@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/csv":
-  version "1.0.3"
+  version "1.0.4"
   resolved "file:src/connectors/csv"
   dependencies:
     "@chili-publish/studio-connectors" "^1.39.0"
