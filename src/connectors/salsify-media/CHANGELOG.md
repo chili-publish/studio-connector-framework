@@ -1,5 +1,15 @@
 # Releases
 
+# 1.1.2
+
+- [NO-TICKET] Crash-hardening pass (mirrors data connector v1.1.3):
+  - **`nextPage` forward-progress guard** — never return a cursor from an empty page or one
+    identical to the request's `pageToken`, so the asset picker can't page forever.
+  - **Validated, bounded asset cache** — only plain-object assets with a real `salsify:url` are
+    cached (an empty/garbage response stays retryable instead of poisoning the id for the
+    session); FIFO-capped at 500 entries; non-object single-asset responses throw a clear error.
+  - **401 retry once per instance** — same guard as the data connector.
+
 # 1.1.1
 
 - [NO-TICKET] Robust id handling. Binding an image variable to a raw named image attribute (a

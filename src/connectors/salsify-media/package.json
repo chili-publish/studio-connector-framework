@@ -1,7 +1,7 @@
 {
   "name": "salsify-media",
   "description": "Visualize Salsify PXM digital assets (images) in CHILI Studio, resolved by Salsify asset id.",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "author": {
     "name": "CHILI publish",
@@ -17,7 +17,9 @@
       "logTiming": "false"
     },
     "mappings": {},
-    "supportedAuth": ["staticKey"]
+    "supportedAuth": [
+      "staticKey"
+    ]
   },
   "license": "MIT",
   "main": "out/connector.js",

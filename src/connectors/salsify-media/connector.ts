@@ -41,14 +41,41 @@ const TRANSFORM_BY_PREVIEW: Record<Media.DownloadType, string> = {
   original: '',
 };
 
+// Bound on the id->asset resolve cache: browsing a huge asset library page by
+// page must not grow instance memory without limit. FIFO eviction is fine —
+// entries are tiny and re-resolvable.
+const MAX_ASSET_CACHE = 500;
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
 export default class SalsifyMediaConnector implements Media.MediaConnector {
   private runtime: Connector.ConnectorRuntimeContext;
   // Caches the id -> asset resolution so repeat downloads of the same asset
   // (different preview sizes, re-renders) skip the metadata round-trip.
   private assetCache: Map<string, SalsifyAsset> = new Map();
+  // Cold-start 401 retry is spent once per instance (see data connector).
+  private retried401 = false;
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
+  }
+
+  /**
+   * Caches only assets that are actually usable (plain object with a
+   * downloadable salsify:url) — permanently caching an empty/garbage response
+   * would break that asset for the whole session. Bounded FIFO.
+   */
+  private cacheAsset(id: string, asset: unknown): void {
+    if (!isPlainObject(asset) || typeof asset['salsify:url'] !== 'string') {
+      return;
+    }
+    if (!this.assetCache.has(id) && this.assetCache.size >= MAX_ASSET_CACHE) {
+      const oldest = this.assetCache.keys().next().value;
+      if (oldest !== undefined) this.assetCache.delete(oldest);
+    }
+    this.assetCache.set(id, asset as SalsifyAsset);
   }
 
   // ─── Public connector methods ─────────────────────────────────────────────
@@ -76,17 +103,29 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
       const response = await this.fetchJson<SalsifyAssetsResponse>(
         this.buildAssetsUrl(params)
       );
-      const assets = response.data ?? [];
+      const assets = (response.data ?? []).filter(
+        (a): a is SalsifyAsset => isPlainObject(a)
+      );
       // Warm the cache so a subsequent detail/download of a browsed asset skips
       // the resolve round-trip.
       for (const asset of assets) {
         const aid = asset['salsify:id'];
-        if (typeof aid === 'string' && aid) this.assetCache.set(aid, asset);
+        if (typeof aid === 'string' && aid) this.cacheAsset(aid, asset);
       }
+      // Forward-progress guard, mirroring the data connector: the host pages
+      // until nextPage is empty, so never return a token that cannot advance.
+      const rawCursor = response.meta?.cursor;
+      const nextPage =
+        assets.length > 0 &&
+        typeof rawCursor === 'string' &&
+        rawCursor.trim() !== '' &&
+        rawCursor !== (options.pageToken ?? '')
+          ? rawCursor
+          : '';
       return {
         pageSize: assets.length,
         data: assets.map((asset) => this.toMedia(asset)),
-        links: { nextPage: response.meta?.cursor ?? '' },
+        links: { nextPage },
       };
     }, 'query');
   }
@@ -238,7 +277,15 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
     const cached = this.assetCache.get(id);
     if (cached) return cached;
     const asset = await this.fetchJson<SalsifyAsset>(this.buildAssetUrl(id));
-    this.assetCache.set(id, asset);
+    // Only usable resolutions are cached (cacheAsset validates) — an
+    // empty/garbage response must stay retryable, not poison the id for the
+    // whole session.
+    this.cacheAsset(id, asset);
+    if (!isPlainObject(asset)) {
+      throw new Error(
+        `Salsify media connector: unexpected non-object response for asset "${id}".`
+      );
+    }
     return asset;
   }
 
@@ -318,8 +365,10 @@ export default class SalsifyMediaConnector implements Media.MediaConnector {
     );
     // Same cold-start 401 misfire the data connector guards against: the auth
     // layer occasionally 401s once, then the static key works on retry. Only
-    // retry a fast failure (a slow one risks the 10s output-job ceiling).
-    if (response.status === 401 && now() - start < 2000) {
+    // retry a fast failure (a slow one risks the 10s output-job ceiling), and
+    // only once per instance — after that a 401 is a real auth failure.
+    if (response.status === 401 && !this.retried401 && now() - start < 2000) {
+      this.retried401 = true;
       response = await this.withTiming(
         () => this.runtime.fetch(url, init),
         `${label} (retry after 401)`

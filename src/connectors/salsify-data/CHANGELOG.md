@@ -1,5 +1,22 @@
 # Releases
 
+# 1.1.3
+
+- [NO-TICKET] Crash-hardening pass (multi-agent review after a Studio crash report):
+  - **Pagination forward-progress guard** — never return a `continuationToken` from an empty page,
+    a non-string cursor, or a cursor identical to the one just sent; the host pages until the token
+    is null, so a non-advancing token would loop Studio forever.
+  - **Plain-object row guard** — non-object rows (strings auto-box into per-character
+    `Object.entries`!) are filtered from `getPage`/`getModel` and rejected in `getPageItemById`,
+    so garbage columns can never be inferred or cached.
+  - **Bounded output** — column count capped (300), list-attribute joins capped (100 items),
+    every text cell clamped (20k chars), `JSON.stringify` wrapped (deep nesting degrades to
+    `[object]` instead of failing the row).
+  - **Cache hygiene** — `getPageItemById` no longer seeds the column cache from a single (often
+    sparse) record; it only reads it.
+  - **401 retry once per instance** — the cold-start retry no longer doubles request volume for
+    integrations that call the connector rapidly when auth is genuinely broken.
+
 # 1.1.2
 
 - [NO-TICKET] Conform every emitted value to its column's declared type so Studio never rejects a

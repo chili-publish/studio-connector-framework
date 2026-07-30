@@ -24,6 +24,13 @@ const ALLOWED_RESOURCES = ['records', 'products'];
 const MAX_PAGE_SIZE = 100;
 const MODEL_SAMPLE_SIZE = 5;
 
+// Hard bounds so no upstream response shape can make the connector emit
+// unbounded output (the host has to materialize whatever we return — a
+// million-column model or megabyte cell strings hurt Studio, not just us).
+const MAX_COLUMNS = 300;
+const MAX_LIST_JOIN_ITEMS = 100;
+const MAX_CELL_CHARS = 20000;
+
 // Response shape confirmed against the live PXM API, e.g.
 // GET app.salsify.com/api/v1/orgs/{org}/records?per_page=2 :
 //   { "data": [ ... ], "meta": { "per_page": "2",
@@ -45,6 +52,13 @@ interface ColumnSpec {
   type: Data.DataModelProperty['type'];
 }
 
+// Rows and single-item responses must be plain objects before Object.entries
+// touches them: a string row would auto-box and enumerate PER CHARACTER
+// (garbage columns), an array row enumerates numeric indices.
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
 export default class SalsifyConnector
   implements Data.DataConnector, Data.DataSourceVariableCapability
 {
@@ -56,6 +70,11 @@ export default class SalsifyConnector
   // values to the wrong columns. Keyed by resource+filter so distinct bindings
   // don't cross-contaminate; first getModel/getPage that sees rows fills it.
   private columnCache: Map<string, ColumnSpec[]> = new Map();
+  // The cold-start 401 misfire happens once per sandbox instance — after one
+  // retry has been spent, further 401s are real auth failures. Without this
+  // guard, integrations that hammer the connector (rapid setDataRow loops)
+  // double their request volume on every call when the token is bad.
+  private retried401 = false;
 
   constructor(runtime: Connector.ConnectorRuntimeContext) {
     this.runtime = runtime;
@@ -88,16 +107,29 @@ export default class SalsifyConnector
         this.buildListUrl(params),
         'GET'
       );
-      const items = response.data ?? [];
+      const items = (response.data ?? []).filter(isPlainObject);
       // Resolve a stable column set (cached, or sampled from this page) and
       // project every row onto it so all DataItems share the same shape.
       const columns = this.resolveColumns(context, idColumn, items);
+
+      // Forward-progress guard on the cursor: the HOST drives pagination off
+      // this token and loops until it is null, so never hand back a token that
+      // cannot make progress — an empty page, a non-string cursor, or a cursor
+      // identical to the one we just sent would page forever.
+      const rawCursor = response.meta?.cursor;
+      const nextToken =
+        items.length > 0 &&
+        typeof rawCursor === 'string' &&
+        rawCursor.trim() !== '' &&
+        rawCursor !== (config.continuationToken ?? null)
+          ? rawCursor
+          : null;
 
       return {
         data: items.map((item) => this.toDataItem(item, columns, idColumn)),
         // Salsify's cursor is opaque and forward-only — there is no equivalent
         // of a previous-page token to hand back.
-        continuationToken: response.meta?.cursor ?? null,
+        continuationToken: nextToken,
         previousPageToken: null,
       };
     }, 'getPage');
@@ -120,7 +152,7 @@ export default class SalsifyConnector
         this.buildListUrl(params),
         'GET'
       );
-      const items = response.data ?? [];
+      const items = (response.data ?? []).filter(isPlainObject);
       if (items.length === 0) {
         throw new Error(
           'Salsify connector: cannot infer columns — no items returned ' +
@@ -151,9 +183,17 @@ export default class SalsifyConnector
         `https://app.salsify.com/api/v1/orgs/${encodeURIComponent(orgId)}` +
         `/${this.readResource()}/${encodeURIComponent(id)}`;
       const item = await this.fetchJson<Record<string, unknown>>(url, 'GET');
-      // Project onto the shared column set so a single-item lookup lines up with
-      // the same columns as the list view (falls back to this row if uncached).
-      const columns = this.resolveColumns(context, idColumn, [item]);
+      if (!isPlainObject(item)) {
+        throw new Error(
+          `Salsify connector: unexpected non-object response for item "${id}".`
+        );
+      }
+      // Project onto the shared column set so a single-item lookup lines up
+      // with the same columns as the list view. Falls back to this row if
+      // nothing is cached yet, but never SEEDS the cache from it — a single
+      // (often sparse variant) record would pin an incomplete column set for
+      // the whole binding.
+      const columns = this.resolveColumns(context, idColumn, [item], false);
       return {
         data: this.toDataItem(item, columns, idColumn),
         continuationToken: null,
@@ -246,7 +286,8 @@ export default class SalsifyConnector
   private resolveColumns(
     context: Connector.Dictionary,
     idColumn: string,
-    sampleRows: Record<string, unknown>[]
+    sampleRows: Record<string, unknown>[],
+    seedCache = true
   ): ColumnSpec[] {
     const key = `${this.readResource()}::${this.readFilterExpression(context)}`;
     const cached = this.columnCache.get(key);
@@ -254,14 +295,17 @@ export default class SalsifyConnector
 
     const columns: ColumnSpec[] = [];
     const seen = new Set<string>();
-    for (const row of sampleRows) {
+    outer: for (const row of sampleRows) {
+      if (!isPlainObject(row)) continue;
       for (const [name, value] of Object.entries(this.flattenRecord(row))) {
         if (name === idColumn || seen.has(name)) continue;
+        // Hard cap: no upstream shape may emit an unbounded model.
+        if (columns.length >= MAX_COLUMNS) break outer;
         seen.add(name);
         columns.push({ name, type: this.inferTypeFromValue(value) });
       }
     }
-    if (columns.length > 0) this.columnCache.set(key, columns);
+    if (seedCache && columns.length > 0) this.columnCache.set(key, columns);
     return columns;
   }
 
@@ -386,12 +430,22 @@ export default class SalsifyConnector
 
   private coerce(value: unknown): string | number | boolean | null {
     if (value === null || value === undefined) return null;
-    if (typeof value === 'string') return value;
+    if (typeof value === 'string') return this.clampCell(value);
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
     if (typeof value === 'boolean') return value;
     // Salsify multi-select/list-valued attributes have no scalar equivalent
     // in the framework's DataItem contract — join into one delimited string.
-    if (Array.isArray(value)) return value.map((v) => String(v)).join('|');
+    // Bounded: a pathological 100k-entry attribute must not become a
+    // megabyte cell the Studio table has to render.
+    if (Array.isArray(value)) {
+      const slice = value.slice(0, MAX_LIST_JOIN_ITEMS);
+      const joined = slice.map((v) => String(v)).join('|');
+      const suffix =
+        value.length > MAX_LIST_JOIN_ITEMS
+          ? `|…(+${value.length - MAX_LIST_JOIN_ITEMS} more)`
+          : '';
+      return this.clampCell(joined + suffix);
+    }
     // A flat object whose values are all scalars is almost always a localised
     // field (e.g. { "en-US": "…" }); surface the first locale's value instead
     // of a JSON blob. Genuinely nested structures still fall through to JSON.
@@ -407,9 +461,24 @@ export default class SalsifyConnector
       )
     ) {
       const first = values[0];
-      return first == null ? null : (first as string | number | boolean);
+      if (first == null) return null;
+      return typeof first === 'string'
+        ? this.clampCell(first)
+        : (first as number | boolean);
     }
-    return JSON.stringify(value);
+    try {
+      return this.clampCell(JSON.stringify(value));
+    } catch {
+      // Deep nesting can blow JSON.stringify inside the sandbox — degrade
+      // gracefully instead of failing the whole row.
+      return '[object]';
+    }
+  }
+
+  private clampCell(value: string): string {
+    return value.length > MAX_CELL_CHARS
+      ? `${value.slice(0, MAX_CELL_CHARS)}…`
+      : value;
   }
 
   private buildListUrl(params: Record<string, string>): string {
@@ -437,8 +506,11 @@ export default class SalsifyConnector
     // cold start (401, then the static key works on the next attempt). In the
     // editor a human retries; in headless renders nobody does, so retry once
     // here — but only when the 401 came back fast, since re-issuing a request
-    // that already burned seconds risks the 10s output-job ceiling.
-    if (response.status === 401 && now() - start < 2000) {
+    // that already burned seconds risks the 10s output-job ceiling. Once per
+    // instance: after the cold-start misfire is spent, a 401 is a real auth
+    // failure and retrying every call just doubles request volume.
+    if (response.status === 401 && !this.retried401 && now() - start < 2000) {
+      this.retried401 = true;
       response = await this.withTiming(
         () => this.runtime.fetch(url, init),
         `${label} (retry after 401)`
