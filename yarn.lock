@@ -204,9 +204,9 @@
     "@babel/helper-validator-identifier" "^7.28.5"
 
 "@chili-publish/connector-cli@^1.0.50":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -224,9 +224,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.10.0":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -244,9 +244,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -264,9 +264,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6.2":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -284,9 +284,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.0":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -304,9 +304,9 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.6":
-  version "1.12.0"
-  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.0.tgz"
-  integrity sha512-h7PTK1/6ahYAi5KSasmCJVJWt3AIZVjivrPVMoNUaz3N9T9YZaLl38EYUSlDk3KTBKx0XkNGm+10G3t+2Er6dg==
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -324,7 +324,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.12.1-rc.1"
+  version "1.12.2-rc.0"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -1540,7 +1540,7 @@ csstype@^3.2.2:
   integrity sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
 
 "csv@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/csv":
-  version "1.0.3"
+  version "1.0.4"
   resolved "file:src/connectors/csv"
   dependencies:
     "@chili-publish/studio-connectors" "^1.39.0"
