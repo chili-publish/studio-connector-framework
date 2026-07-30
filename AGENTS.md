@@ -25,7 +25,7 @@ This repository is a Yarn workspaces monorepo with **two product tracks**:
 | Track | Path | Role |
 | ----- | ---- | ---- |
 | connector-cli | `src/connector-cli/` | `@chili-publish/connector-cli` — standalone CLI to create, build, test, and publish connectors |
-| Connectors | `src/connectors/*` | Connector Hub packages (one package per connector) |
+| Connectors | `src/connectors/**` | Connector Hub packages (one package per connector) |
 
 Also present: `src/connector-cli/debugger/` (CLI debugger UI), `scripts/` (Hub publish helpers).
 
