@@ -1,10 +1,14 @@
 name: Check PR description for JIRA ticket
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, labeled, unlabeled, reopened]
     paths-ignore:
       - 'src/connectors/**'
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   check-description:
