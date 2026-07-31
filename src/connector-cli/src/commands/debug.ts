@@ -7,6 +7,7 @@ import { error, info, readConnectorConfig, startCommand, verbose } from '../core
 import { ExecutionError } from '../core/types';
 import { ConnectorType } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
+import { watchConnectorProject } from '../utils/watch-connector-project';
 
 function getDebugConnectorType(configType: ConnectorType): string {
   switch (configType) {
@@ -33,7 +34,8 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { projectPath, options });
 
-  const { connectorFile, packageJson } = getConnectorProjectFileInfo(projectPath);
+  const { projectDir, connectorFile, packageJson } =
+    getConnectorProjectFileInfo(projectPath);
   const config = readConnectorConfig(packageJson);
   const connectorType = getDebugConnectorType(config.type);
 
@@ -48,10 +50,10 @@ export async function runDebugger(
   const indexTemplate = debuggerHandleBarTemplate;
 
   info(
-    'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+    'Watching for changes on project .ts files... (press ctrl+c to exit)'
   );
-  const watcher = fs.watch(connectorFile, async function (event, filename) {
-    verbose(`Triggers watch callback for ${event}, ${filename}`);
+  const watcher = watchConnectorProject(projectDir, async (changedFile) => {
+    verbose(`Triggers watch callback for ${changedFile}`);
     info('Recompiling...');
 
     const watchCompilation = await compileToTempFile(
@@ -71,13 +73,13 @@ export async function runDebugger(
 
   process.on('SIGINT', async () => {
     verbose('Destroy debug for "SIGINT"');
-    verbose('Stop watching the connector file: ' + connectorFile);
+    verbose('Stop watching project .ts files in: ' + projectDir);
     watcher.close();
   });
 
   process.on('exit', async () => {
     verbose('Destroy debug for "exit"');
-    verbose('Stop watching the connector file: ' + connectorFile);
+    verbose('Stop watching project .ts files in: ' + projectDir);
     watcher.close();
   });
 
