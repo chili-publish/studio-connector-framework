@@ -134,6 +134,9 @@ export function watchConnectorProject(
         try {
           if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
             if (eventType === 'rename' && !shouldIgnoreDirName(filename)) {
+              // Drop any stale watcher from a previous directory at this path
+              // so watchDir can register the replacement.
+              closeWatchersUnder(fullPath);
               watchDir(fullPath);
               schedule(fullPath);
             }

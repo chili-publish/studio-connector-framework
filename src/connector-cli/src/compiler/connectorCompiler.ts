@@ -44,16 +44,24 @@ export async function compileToTempFile(
 
   const tempFileUsed = path.resolve(tempFile);
   const stagingFile = `${tempFileUsed}.${process.pid}.${Date.now()}.tmp`;
+  let stagingCreated = false;
 
   verbose(`Write compiled results to ${tempFileUsed}`);
   try {
-    fs.writeFileSync(stagingFile, compileResult.script);
+    // Exclusive create avoids following a pre-planted symlink in os.tmpdir().
+    fs.writeFileSync(stagingFile, compileResult.script, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+    stagingCreated = true;
     fs.renameSync(stagingFile, tempFileUsed);
   } catch (err) {
-    try {
-      fs.unlinkSync(stagingFile);
-    } catch {
-      // Staging file may already be gone.
+    if (stagingCreated) {
+      try {
+        fs.unlinkSync(stagingFile);
+      } catch {
+        // Staging file may already be gone (e.g. after a successful rename).
+      }
     }
     throw err;
   }
