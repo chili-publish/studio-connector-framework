@@ -13,7 +13,9 @@ export function isPathInsideDir(filePath: string, dir: string): boolean {
   const relative = path.relative(dir, filePath);
   return (
     relative === '' ||
-    (!relative.startsWith('..') && !path.isAbsolute(relative))
+    (relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
   );
 }
 

@@ -43,9 +43,20 @@ export async function compileToTempFile(
   }
 
   const tempFileUsed = path.resolve(tempFile);
+  const stagingFile = `${tempFileUsed}.${process.pid}.${Date.now()}.tmp`;
 
   verbose(`Write compiled results to ${tempFileUsed}`);
-  fs.writeFileSync(tempFileUsed, compileResult.script);
+  try {
+    fs.writeFileSync(stagingFile, compileResult.script);
+    fs.renameSync(stagingFile, tempFileUsed);
+  } catch (err) {
+    try {
+      fs.unlinkSync(stagingFile);
+    } catch {
+      // Staging file may already be gone.
+    }
+    throw err;
+  }
 
   return {
     tempFile: tempFileUsed,

@@ -4,7 +4,8 @@ import { error, verbose } from '../core';
 import { isPathInsideDir, outputDirectory } from './connector-project';
 
 const WATCH_DEBOUNCE_MS = 150;
-const IGNORED_DIR_NAMES = new Set(['node_modules', outputDirectory, '.git']);
+/** Basename filters applied only to directory components (not file basenames). */
+const IGNORED_DIR_NAMES = new Set(['node_modules', '.git']);
 
 export type WatchConnectorProjectHandle = {
   close: () => void;
@@ -12,16 +13,18 @@ export type WatchConnectorProjectHandle = {
 
 /**
  * Watch a connector project directory for `.ts` file changes.
- * Ignores `node_modules`, `out`, and dot-directories. Debounces rapid filesystem events.
+ * Ignores `node_modules`, the project `out` directory, and dot-directories.
+ * Debounces rapid filesystem events.
  */
 export function watchConnectorProject(
   projectDir: string,
   onChange: (filename: string) => void | Promise<void>
 ): WatchConnectorProjectHandle {
   const absoluteProjectDir = path.resolve(projectDir);
+  const projectOutDir = path.resolve(absoluteProjectDir, outputDirectory);
   const ignoredDirs = new Set([
     path.resolve(absoluteProjectDir, 'node_modules'),
-    path.resolve(absoluteProjectDir, outputDirectory),
+    projectOutDir,
   ]);
 
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -66,6 +69,11 @@ export function watchConnectorProject(
   const shouldIgnoreDirName = (name: string): boolean =>
     IGNORED_DIR_NAMES.has(name) || name.startsWith('.');
 
+  /**
+   * Ignore the configured project output / node_modules trees, and any
+   * ignored directory names among *parent* path segments only.
+   * File basenames (e.g. `.helpers.ts`) are not filtered here.
+   */
   const shouldIgnore = (filePath: string): boolean => {
     for (const ignored of ignoredDirs) {
       if (isPathInsideDir(filePath, ignored)) {
@@ -73,14 +81,40 @@ export function watchConnectorProject(
       }
     }
 
-    const segments = path.relative(absoluteProjectDir, filePath).split(path.sep);
-    return segments.some((segment) => shouldIgnoreDirName(segment));
+    const relative = path.relative(absoluteProjectDir, filePath);
+    if (relative === '' || path.isAbsolute(relative)) {
+      return false;
+    }
+
+    const segments = relative.split(path.sep);
+    const parentSegments = segments.slice(0, -1);
+    return parentSegments.some((segment) => shouldIgnoreDirName(segment));
   };
 
-  const watchers: fs.FSWatcher[] = [];
+  const watchersByDir = new Map<string, fs.FSWatcher>();
+
+  const closeWatcherForDir = (dir: string) => {
+    const watcher = watchersByDir.get(dir);
+    if (!watcher) {
+      return;
+    }
+    watcher.close();
+    watchersByDir.delete(dir);
+  };
+
+  const closeWatchersUnder = (dir: string) => {
+    for (const watchedDir of [...watchersByDir.keys()]) {
+      if (watchedDir === dir || isPathInsideDir(watchedDir, dir)) {
+        closeWatcherForDir(watchedDir);
+      }
+    }
+  };
 
   const watchDir = (dir: string) => {
-    if (shouldIgnore(dir) || closed) {
+    if (shouldIgnore(dir) || shouldIgnoreDirName(path.basename(dir)) || closed) {
+      return;
+    }
+    if (watchersByDir.has(dir)) {
       return;
     }
 
@@ -101,11 +135,19 @@ export function watchConnectorProject(
           if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
             if (eventType === 'rename' && !shouldIgnoreDirName(filename)) {
               watchDir(fullPath);
+              schedule(fullPath);
             }
             return;
           }
         } catch {
-          // File may have been deleted; still notify if it looked like a .ts path
+          // Path may have been deleted between exists and stat.
+        }
+
+        // Directory removed or moved away: drop its watchers and rebuild.
+        if (watchersByDir.has(fullPath)) {
+          closeWatchersUnder(fullPath);
+          schedule(fullPath);
+          return;
         }
 
         if (!filename.endsWith('.ts') && !filename.endsWith('.tsx')) {
@@ -123,7 +165,16 @@ export function watchConnectorProject(
       return;
     }
 
-    watchers.push(watcher);
+    watcher.on('error', (err) => {
+      verbose(
+        `Watcher error for "${dir}": ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+      closeWatcherForDir(dir);
+    });
+
+    watchersByDir.set(dir, watcher);
 
     let entries: fs.Dirent[];
     try {
@@ -152,10 +203,9 @@ export function watchConnectorProject(
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
-      for (const watcher of watchers) {
-        watcher.close();
+      for (const dir of [...watchersByDir.keys()]) {
+        closeWatcherForDir(dir);
       }
-      watchers.length = 0;
     },
   };
 }
