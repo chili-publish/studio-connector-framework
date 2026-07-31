@@ -84,6 +84,8 @@ export async function runBuild(
 
     process.on('SIGINT', () => {
       watcher.close();
+      process.stdin.pause();
+      process.exit(0);
     });
 
     // wait for user to press ctrl+c

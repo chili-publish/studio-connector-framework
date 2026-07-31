@@ -1,5 +1,6 @@
 import express from 'express';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import reload from 'reload';
 import { compileToTempFile } from '../compiler/connectorCompiler';
@@ -39,7 +40,17 @@ export async function runDebugger(
   const config = readConnectorConfig(packageJson);
   const connectorType = getDebugConnectorType(config.type);
 
-  const compilation = await compileToTempFile(connectorFile);
+  // Allocate a stable temp path up front so watch rebuilds reuse it even when
+  // the initial compile fails (compileToTempFile returns tempFile: '' on error).
+  const tempConnectorBuild = path.join(
+    os.tmpdir(),
+    `file_${Date.now()}_${Math.floor(Math.random() * 10000)}.js`
+  );
+
+  const compilation = await compileToTempFile(
+    connectorFile,
+    tempConnectorBuild
+  );
   if (compilation.errors.length > 0) {
     error(compilation.formattedDiagnostics);
   }
@@ -58,7 +69,7 @@ export async function runDebugger(
 
     const watchCompilation = await compileToTempFile(
       connectorFile,
-      compilation.tempFile
+      tempConnectorBuild
     );
 
     if (watchCompilation.errors.length > 0) {
@@ -103,9 +114,6 @@ export async function runDebugger(
   }
 
   verbose('Detected out folder: ' + outFolder);
-
-  // make sure connectorFile is absolute path
-  const tempConnectorBuild = path.resolve(compilation.tempFile);
 
   // handle all preflight requests
   app.options('*', (req, res) => {

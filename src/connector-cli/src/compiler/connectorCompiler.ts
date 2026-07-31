@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as ts from 'typescript';
 import { verbose, verboseWarning, warn } from '../core';
-import { outputDirectory } from '../utils/connector-project';
+import { isPathInsideDir, outputDirectory } from '../utils/connector-project';
 import {
   CONNECTOR_JS_TARGET,
   formatTsConfigMismatchWarning,
@@ -81,7 +81,15 @@ export async function compile(
       plugins: [createImportAllowlistPlugin(projectDir)],
     });
 
-    const script = result.outputFiles?.[0]?.text ?? '';
+    const script = result.outputFiles?.[0]?.text;
+    if (script === undefined) {
+      const message = 'esbuild produced no output for the connector bundle.';
+      return {
+        script: '',
+        errors: [{ line: '', error: message }],
+        formattedDiagnostics: message,
+      };
+    }
     return {
       script,
       errors: [],
@@ -123,7 +131,9 @@ function getTypeScriptDiagnostics(
     projectDir
   );
   const program = ts.createProgram(rootNames, options);
-  const diagnostics = ts.getPreEmitDiagnostics(program);
+  const diagnostics = ts
+    .getPreEmitDiagnostics(program)
+    .filter((d) => d.category === ts.DiagnosticCategory.Error);
 
   return {
     errors: diagnostics.map((d) => ({
@@ -320,14 +330,6 @@ function realpathSafe(filePath: string): string {
   } catch {
     return path.resolve(filePath);
   }
-}
-
-function isPathInsideDir(filePath: string, dir: string): boolean {
-  const relative = path.relative(dir, filePath);
-  return (
-    relative === '' ||
-    (!relative.startsWith('..') && !path.isAbsolute(relative))
-  );
 }
 
 function mapEsbuildFailure(err: unknown): InMemoryCompilationResult {

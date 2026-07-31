@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { outputDirectory } from './connector-project';
+import { error, verbose } from '../core';
+import { isPathInsideDir, outputDirectory } from './connector-project';
 
 const WATCH_DEBOUNCE_MS = 150;
+const IGNORED_DIR_NAMES = new Set(['node_modules', outputDirectory, '.git']);
 
 export type WatchConnectorProjectHandle = {
   close: () => void;
@@ -10,7 +12,7 @@ export type WatchConnectorProjectHandle = {
 
 /**
  * Watch a connector project directory for `.ts` file changes.
- * Ignores `node_modules` and `out`. Debounces rapid filesystem events.
+ * Ignores `node_modules`, `out`, and dot-directories. Debounces rapid filesystem events.
  */
 export function watchConnectorProject(
   projectDir: string,
@@ -38,6 +40,10 @@ export function watchConnectorProject(
     running = true;
     try {
       await onChange(filename);
+    } catch (err) {
+      error(
+        `Watch callback failed: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       running = false;
       if (pendingFilename !== undefined && !closed) {
@@ -57,17 +63,18 @@ export function watchConnectorProject(
     }, WATCH_DEBOUNCE_MS);
   };
 
+  const shouldIgnoreDirName = (name: string): boolean =>
+    IGNORED_DIR_NAMES.has(name) || name.startsWith('.');
+
   const shouldIgnore = (filePath: string): boolean => {
     for (const ignored of ignoredDirs) {
-      const relative = path.relative(ignored, filePath);
-      if (
-        relative === '' ||
-        (!relative.startsWith('..') && !path.isAbsolute(relative))
-      ) {
+      if (isPathInsideDir(filePath, ignored)) {
         return true;
       }
     }
-    return false;
+
+    const segments = path.relative(absoluteProjectDir, filePath).split(path.sep);
+    return segments.some((segment) => shouldIgnoreDirName(segment));
   };
 
   const watchers: fs.FSWatcher[] = [];
@@ -92,7 +99,7 @@ export function watchConnectorProject(
 
         try {
           if (fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory()) {
-            if (eventType === 'rename') {
+            if (eventType === 'rename' && !shouldIgnoreDirName(filename)) {
               watchDir(fullPath);
             }
             return;
@@ -107,7 +114,12 @@ export function watchConnectorProject(
 
         schedule(fullPath);
       });
-    } catch {
+    } catch (err) {
+      verbose(
+        `Failed to watch directory "${dir}": ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
       return;
     }
 
@@ -116,12 +128,17 @@ export function watchConnectorProject(
     let entries: fs.Dirent[];
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
-    } catch {
+    } catch (err) {
+      verbose(
+        `Failed to read directory "${dir}": ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
       return;
     }
 
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      if (entry.isDirectory() && !shouldIgnoreDirName(entry.name)) {
         watchDir(path.join(dir, entry.name));
       }
     }
