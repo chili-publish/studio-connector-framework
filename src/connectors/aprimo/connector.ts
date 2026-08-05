@@ -16,7 +16,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     // talks to (e.g. "https://acme.dam.aprimo.com"). There is deliberately no
     // default: a baked-in tenant would silently misroute every deployment that
     // forgot to set it, so fail loudly instead.
-    const base = (this.runtime.options["BASE_URL"] as string) || "";
+    const base = this.runtime.options["BASE_URL"] as string;
     if (!base) {
       throw new ConnectorHttpError(500, "BASE_URL option is required (e.g. https://<tenant>.dam.aprimo.com)");
     }
