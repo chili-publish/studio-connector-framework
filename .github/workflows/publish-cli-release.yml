@@ -48,30 +48,26 @@ jobs:
         working-directory: src/connector-cli
         run: npm publish --access=public --tag=latest
       - name: Notify Teams success
-        uses: ./.github/actions/cd-notify
+        uses: ./.github/actions/teams-notify
         with:
-          status: success
-          pipeline_name: Publish CLI to NPM
-          step_name: npm publish
-          environment: production
-          version: ${{ steps.version.outputs.version }}
-          tag_name: ${{ steps.version.outputs.tag }}
+          text: |
+            🎉 Production Deployment Completed
+
+            **Version:** ${{ steps.version.outputs.version }}
+
+            **Tag:** ${{ steps.version.outputs.tag }}
+
+            **Repository:** ${{ github.repository }}
+
+            Deployment to Production environment completed successfully.
+
+            [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
-          REPOSITORY: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       - name: Notify Teams failure
         if: failure()
-        uses: ./.github/actions/cd-notify
+        uses: ./.github/actions/cd-notify-failure
         with:
-          status: failure
           pipeline_name: Publish CLI to NPM
-          step_name: npm publish
-          environment: production
-          is_blocking: 'true'
         env:
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
-          REPOSITORY: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
