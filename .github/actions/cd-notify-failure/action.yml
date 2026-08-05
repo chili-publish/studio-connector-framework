@@ -30,10 +30,12 @@ runs:
           TEXT=$(printf '%s\n\n%s' "$TEXT" "[View Run](${RUN_URL})")
         fi
 
+        # Collision-resistant delimiter so pipeline_name / TEXT cannot terminate the output early.
+        DELIM="ghadelim_$(openssl rand -hex 16)"
         {
-          echo "text<<EOF"
+          echo "text<<${DELIM}"
           printf '%s\n' "$TEXT"
-          echo "EOF"
+          echo "${DELIM}"
         } >> "$GITHUB_OUTPUT"
 
     - name: Send Teams notification

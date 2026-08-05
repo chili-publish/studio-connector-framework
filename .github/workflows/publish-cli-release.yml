@@ -48,6 +48,7 @@ jobs:
         working-directory: src/connector-cli
         run: npm publish --access=public --tag=latest
       - name: Notify Teams success
+        continue-on-error: true
         uses: ./.github/actions/teams-notify
         with:
           text: |

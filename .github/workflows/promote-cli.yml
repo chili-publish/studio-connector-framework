@@ -37,6 +37,7 @@ jobs:
         env:
           VERSION_OVERRIDE: ${{ inputs.version }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
         run: |
           chmod +x scripts/compute-cli-promote-version.sh
           scripts/compute-cli-promote-version.sh
@@ -82,6 +83,7 @@ jobs:
             --target main
 
       - name: Notify Teams success
+        continue-on-error: true
         uses: ./.github/actions/teams-notify
         with:
           text: |

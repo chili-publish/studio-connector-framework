@@ -4,6 +4,7 @@
 # Inputs (env):
 #   VERSION_OVERRIDE — optional exact stable semver (e.g. 1.13.0)
 #   GITHUB_REPOSITORY — owner/repo (set by Actions)
+#   GH_TOKEN — optional; used to resolve PR titles via the GitHub API
 #   GITHUB_OUTPUT — optional; when set, writes version / previous_tag / notes_file
 #
 # Outputs:
@@ -50,20 +51,79 @@ validate_stable_semver() {
   fi
 }
 
+# Returns 0 when $1 is strictly greater than $2 (both X.Y.Z without v).
+version_gt() {
+  local left="$1"
+  local right="$2"
+  [[ "$(printf '%s\n%s\n' "$left" "$right" | sort -V | tail -n1)" == "$left" && "$left" != "$right" ]]
+}
+
+tag_exists() {
+  local tag="$1"
+  [ -n "$(git tag -l "$tag")" ]
+}
+
+extract_pr_number() {
+  local subject="$1"
+  if [[ "$subject" =~ \(#([0-9]+)\)$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+  elif [[ "$subject" =~ [Mm]erge\ pull\ request\ #([0-9]+) ]]; then
+    echo "${BASH_REMATCH[1]}"
+  fi
+}
+
+resolve_pr_title() {
+  local pr="$1"
+  local fallback="$2"
+  local title=""
+
+  if [ -z "${GITHUB_REPOSITORY:-}" ] || ! command -v gh >/dev/null 2>&1; then
+    echo "$fallback"
+    return
+  fi
+
+  if title="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" --jq .title 2>/dev/null)" && [ -n "$title" ]; then
+    echo "$title"
+    return
+  fi
+
+  echo "$fallback"
+}
+
+# Squash / merge subjects that touched connector-cli, resolved to PR titles when possible.
 collect_cli_pr_subjects() {
   local previous_tag="$1"
-  # Squash-merge subjects on main that touched connector-cli since the last stable tag.
-  # Exclude CI prerelease / promote commits.
   local range_args=()
+  local raw subject pr fallback title
+
   if [ -n "$previous_tag" ]; then
     range_args=("${previous_tag}..HEAD")
   fi
+
   # Squash merges / CI commits that only bump or promote versions are noise for notes.
-  git log "${range_args[@]}" --pretty=format:'%s' -- "$CLI_PATH" \
-    | grep -v '^CI: bumps version' \
-    | grep -v '^CI: promote connector-cli' \
-    | grep -vi 'connector cli release' \
-    || true
+  raw="$(
+    git log "${range_args[@]}" --pretty=format:'%s' -- "$CLI_PATH" \
+      | grep -v '^CI: bumps version' \
+      | grep -v '^CI: promote connector-cli' \
+      | grep -vi 'connector cli release' \
+      || true
+  )"
+
+  while IFS= read -r subject; do
+    [ -z "$subject" ] && continue
+    pr="$(extract_pr_number "$subject")"
+    if [ -n "$pr" ]; then
+      if [[ "$subject" =~ \(#${pr}\)$ ]]; then
+        fallback="${subject% (#${pr})}"
+      else
+        fallback="$subject"
+      fi
+      title="$(resolve_pr_title "$pr" "$fallback")"
+      echo "${title} (#${pr})"
+    else
+      echo "$subject"
+    fi
+  done <<<"$raw"
 }
 
 infer_bump_from_subjects() {
@@ -112,11 +172,22 @@ else
 fi
 
 SUBJECTS="$(collect_cli_pr_subjects "$PREVIOUS_TAG")"
-echo "CLI-related commit subjects since ${PREVIOUS_TAG:-beginning}:" >&2
+echo "CLI-related PR titles / subjects since ${PREVIOUS_TAG:-beginning}:" >&2
 echo "$SUBJECTS" >&2
 
 if [ -n "$VERSION_OVERRIDE" ]; then
   validate_stable_semver "$VERSION_OVERRIDE"
+
+  if [ -n "$PREVIOUS_TAG" ] && ! version_gt "$VERSION_OVERRIDE" "${PREVIOUS_TAG#v}"; then
+    echo "Version override '${VERSION_OVERRIDE}' must be greater than previous stable tag '${PREVIOUS_TAG}'." >&2
+    exit 1
+  fi
+
+  if tag_exists "v${VERSION_OVERRIDE}"; then
+    echo "Tag v${VERSION_OVERRIDE} already exists. Choose a newer version." >&2
+    exit 1
+  fi
+
   NEXT_VERSION="$VERSION_OVERRIDE"
   echo "Using version override: ${NEXT_VERSION}" >&2
 else
