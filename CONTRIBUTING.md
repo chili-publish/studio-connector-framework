@@ -76,6 +76,8 @@ Applies to `src/connector-cli/**`, root tooling, `.github/`, `scripts/`, docs, a
 | `[MINOR]` | Substantial feature work                |
 | _(none)_  | Small change or bug fix                 |
 
+For **connector-cli** PRs, `[MAJOR]` / `[MINOR]` also drive the next stable version when the **Promote CLI to NPM** workflow runs (empty `version` input). Default is patch. Optional workflow input `version` (exact `X.Y.Z`) overrides inference.
+
 Examples:
 
 ```text

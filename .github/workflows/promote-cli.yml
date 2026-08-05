@@ -1,0 +1,122 @@
+name: Promote CLI to NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional exact stable semver (e.g. 1.13.0). Leave empty to infer from CLI PR titles since the last stable tag.'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Promote connector-cli
+    runs-on: ubuntu-latest
+    environment: cli-production
+    steps:
+      - name: Get GitHub App Access Token
+        id: github-app-access-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.GH_APP_ID_CHILI_FRONTEND_VERSION_MANAGER }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_CHILI_FRONTEND_VERSION_MANAGER }}
+          owner: ${{ github.repository_owner }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.github-app-access-token.outputs.token }}
+          fetch-depth: 0
+          ref: main
+
+      - name: Compute promote version and CLI release notes
+        id: compute
+        env:
+          VERSION_OVERRIDE: ${{ inputs.version }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          chmod +x scripts/compute-cli-promote-version.sh
+          scripts/compute-cli-promote-version.sh
+          NOTES_FILE=$(grep '^notes_file=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          cp "$NOTES_FILE" "${RUNNER_TEMP}/cli-release-notes.md"
+          echo "notes_path=${RUNNER_TEMP}/cli-release-notes.md" >> "$GITHUB_OUTPUT"
+          echo "Resolved version=$(grep '^version=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)"
+
+      - name: Apply stable version to package.json files
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+        run: |
+          npm --prefix=src/connector-cli pkg set "version=${VERSION}"
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.devDependencies['@chili-publish/connector-cli'] = '^' + process.env.VERSION;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          echo "CLI version: $(npm --prefix=src/connector-cli pkg get version | tr -d '"')"
+          node -p "require('./package.json').devDependencies['@chili-publish/connector-cli']"
+
+      - name: Commit and push promote version
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/connector-cli/package.json package.json
+          git commit -m "CI: promote connector-cli to ${VERSION} [skip ci]"
+          git push origin HEAD:main
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+          TAG: ${{ steps.compute.outputs.tag }}
+          NOTES_PATH: ${{ steps.compute.outputs.notes_path }}
+        run: |
+          gh release create "$TAG" \
+            --draft \
+            --title "$TAG" \
+            --notes-file "$NOTES_PATH" \
+            --target main
+
+      - name: Notify Teams success
+        uses: ./.github/actions/cd-notify
+        with:
+          status: success
+          pipeline_name: Promote connector-cli
+          step_name: Draft release created
+          environment: cli-production
+          notification_text: |
+            📝 Connector CLI draft release created
+
+            **Version:** ${{ steps.compute.outputs.version }}
+
+            **Tag:** ${{ steps.compute.outputs.tag }}
+
+            **Repository:** ${{ github.repository }}
+
+            Publish the draft GitHub Release to ship `@chili-publish/connector-cli` to public npm `latest`.
+
+            [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Notify Teams failure
+        if: failure()
+        uses: ./.github/actions/cd-notify
+        with:
+          status: failure
+          pipeline_name: Promote connector-cli
+          step_name: Promote
+          environment: cli-production
+          is_blocking: 'true'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
