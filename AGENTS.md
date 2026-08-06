@@ -100,7 +100,15 @@ yarn build-cli
 
 Useful root scripts: `yarn refresh-cli`, `yarn build-connectors`, `yarn publish-all` (see root `package.json`).
 
-Do **not** manually bump `src/connector-cli/package.json` for the normal merge-to-main prerelease flow — CI owns that. For a stable public npm release, set the final version in `package.json`, merge, then create a GitHub Release tag matching `v<version>`.
+Do **not** manually bump `src/connector-cli/package.json` for the normal merge-to-main prerelease flow — CI owns that (`publish-cli.yml` publishes `-rc.N` to GitHub Packages).
+
+For a stable public npm release:
+
+1. Run the **Promote CLI to NPM** workflow (`promote-cli.yml`) on `main` (environment `cli-production`; optional `version` input overrides inferred semver).
+2. Promote commits the stable version (and root `^` dependency), creates tag `vX.Y.Z`, and opens a **draft** GitHub Release with connector-cli-only notes.
+3. Publish the draft Release — `publish-cli-release.yml` publishes `@chili-publish/connector-cli` to public npm `latest`.
+
+`[MAJOR]` / `[MINOR]` in connector-cli-related PR titles since the last stable tag drive the inferred bump (default patch). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Work on a connector
 
