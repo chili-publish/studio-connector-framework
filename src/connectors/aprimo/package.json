@@ -24,12 +24,12 @@
   "main": "out/connector.js",
   "dependencies": {
     "typescript": "^5.2.2",
-    "@chili-publish/studio-connectors": "^1.41.0"
+    "@chili-publish/studio-connectors": "^1.45.0"
   },
   "scripts": {
     "build": "yarn connector-cli build"
   },
   "devDependencies": {
-    "@chili-publish/connector-cli": "^1.11.0"
+    "@chili-publish/connector-cli": "^1.12.1"
   }
 }
