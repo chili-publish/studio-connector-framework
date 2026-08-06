@@ -10,7 +10,7 @@
   "config": {
     "type": "media",
     "connectorName": "Aprimo",
-    "iconUrl": "",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/Aprimo_logo.svg",
     "options": {
       "BASE_URL": null,
       "META_DATA_FIELDS": "",
