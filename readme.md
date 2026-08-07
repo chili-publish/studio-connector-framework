@@ -21,22 +21,7 @@ yarn run build-cli # to build local version of the CLI
 
 NOTE: Inspect root package.json for more commands to run
 
-## Updating / adding a connector:
-
-- Open PR
-
-  - CICD will only pass if the PR contains changes of exactly 1 connector.
-  - CICD validates the package.json version is > current released one
-  - CICD validates all required metadata is available (see package.json => name, description, author, license, config (options+mappings))
-  - CICD validates the license is correct (MIT for now)
-  - CICD will build the connector using the `yarn build` command. This means each connector should expose this command. A template package will be hosted in this repo to bootstrap this process for anyone.
-  - After building, we expect the main file of the package.json to be the compiled connector code.
-  - The PR should also contain a tests.json file, which contains the definition of all tests written for the connector. Obviously all tests should pass
-  - We should run our own suite of tests to verify capabilities / options, etc are all returning without errors.
-  - The PR is now ready to be reviewed by repo maintainers
-
-* After merge
-  - The connector is now available via the Connector Hub to choose from when adding a connector to an environment. People can choose a connector, and then pick a version (this info is loaded from the index json file)
+Contribution guidelines (branching, PR titles, adding/updating connectors): see [CONTRIBUTING.md](CONTRIBUTING.md). AI coding agents: see [AGENTS.md](AGENTS.md).
 
 ### Verified Developers
 

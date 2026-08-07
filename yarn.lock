@@ -243,6 +243,26 @@
     reload "^3.2.1"
     typescript "^5.2.2"
 
+"@chili-publish/connector-cli@^1.12.1":
+  version "1.12.1"
+  resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
+  integrity sha512-ABdj9cie9viRiDml1tHCEf68ldmy1BRQb4caN2gQvcNRnFuZrt0OTX7liDKqp+dqrUBwpyO4eyqAPyL6Sc25UA==
+  dependencies:
+    "@chili-publish/studio-connectors" "^1"
+    "@inquirer/prompts" "^7.2.0"
+    chalk "^4"
+    commander "^12.0.0"
+    deepmerge-json "^1.5.0"
+    dot-object "^2.1.4"
+    express "^4.21.0"
+    js-yaml "^4.1.0"
+    open "^9.1.0"
+    prettier "^3.0.3"
+    quickjs-emscripten "^0.23.0"
+    quicktype-core "23.0.0"
+    reload "^3.2.1"
+    typescript "^5.2.2"
+
 "@chili-publish/connector-cli@^1.6":
   version "1.12.1"
   resolved "https://registry.npmjs.org/@chili-publish/connector-cli/-/connector-cli-1.12.1.tgz"
@@ -324,7 +344,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connector-cli":
-  version "1.12.2-rc.0"
+  version "1.12.2-rc.1"
   resolved "file:src/connector-cli"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
@@ -371,6 +391,11 @@
   version "1.41.0"
   resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.41.0.tgz"
   integrity sha512-0jzk9in2xqWuXnxuyucDknQt/oEQB4aH2TINA6PrTxyhiRORpFvn5JGvz1trLbtG6CeiIoXlAE87pomAU52gBg==
+
+"@chili-publish/studio-connectors@^1.45.0":
+  version "1.45.0"
+  resolved "https://registry.npmjs.org/@chili-publish/studio-connectors/-/studio-connectors-1.45.0.tgz"
+  integrity sha512-DnRkv30WMoG2vCSBZr+o5hBTEhARP/jD+lCYq0oEp5oanYfcYE8j4UClY0W0Av7wWZ/48aXFym66ODfE8wfo7g==
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
@@ -1116,6 +1141,13 @@ anymatch@~3.1.2:
   dependencies:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
+
+"aprimo-connector@file:/home/runner/work/studio-connector-framework/studio-connector-framework/src/connectors/aprimo":
+  version "1.0.0"
+  resolved "file:src/connectors/aprimo"
+  dependencies:
+    "@chili-publish/studio-connectors" "^1.45.0"
+    typescript "^5.2.2"
 
 arg@^4.1.0:
   version "4.1.3"

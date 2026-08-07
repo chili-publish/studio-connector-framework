@@ -1,0 +1,121 @@
+name: Promote CLI to NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional exact stable semver (e.g. 1.13.0). Leave empty to infer from CLI PR titles since the last stable tag.'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Promote connector-cli
+    runs-on: ubuntu-latest
+    environment: cli-production
+    steps:
+      - name: Get GitHub App Access Token
+        id: github-app-access-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.GH_APP_ID_CHILI_FRONTEND_VERSION_MANAGER }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_CHILI_FRONTEND_VERSION_MANAGER }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: read
+
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.github-app-access-token.outputs.token }}
+          fetch-depth: 0
+          ref: main
+          persist-credentials: false
+
+      - name: Compute promote version and CLI release notes
+        id: compute
+        env:
+          VERSION_OVERRIDE: ${{ inputs.version }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+        run: |
+          chmod +x scripts/compute-cli-promote-version.sh
+          scripts/compute-cli-promote-version.sh
+          NOTES_FILE=$(grep '^notes_file=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)
+          cp "$NOTES_FILE" "${RUNNER_TEMP}/cli-release-notes.md"
+          echo "notes_path=${RUNNER_TEMP}/cli-release-notes.md" >> "$GITHUB_OUTPUT"
+          echo "Resolved version=$(grep '^version=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2-)"
+
+      - name: Apply stable version to package.json files
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+        run: |
+          npm --prefix=src/connector-cli pkg set "version=${VERSION}"
+          node <<'NODE'
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.devDependencies['@chili-publish/connector-cli'] = '^' + process.env.VERSION;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          NODE
+          echo "CLI version: $(npm --prefix=src/connector-cli pkg get version | tr -d '"')"
+          node -p "require('./package.json').devDependencies['@chili-publish/connector-cli']"
+
+      - name: Commit and push promote version
+        env:
+          VERSION: ${{ steps.compute.outputs.version }}
+          APP_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+        run: |
+          echo "::add-mask::${APP_TOKEN}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/connector-cli/package.json package.json
+          git commit -m "CI: promote connector-cli to ${VERSION} [skip ci]"
+          AUTHORIZATION=$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')
+          echo "::add-mask::${AUTHORIZATION}"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTHORIZATION}" \
+            git push "https://github.com/${{ github.repository }}.git" HEAD:main
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+          TAG: ${{ steps.compute.outputs.tag }}
+          NOTES_PATH: ${{ steps.compute.outputs.notes_path }}
+        run: |
+          gh release create "$TAG" \
+            --draft \
+            --title "$TAG" \
+            --notes-file "$NOTES_PATH" \
+            --target main
+
+      - name: Notify Teams success
+        continue-on-error: true
+        uses: ./.github/actions/teams-notify
+        with:
+          text: |
+            📝 Connector CLI draft release created
+
+            **Version:** ${{ steps.compute.outputs.version }}
+
+            **Tag:** ${{ steps.compute.outputs.tag }}
+
+            **Repository:** ${{ github.repository }}
+
+            Publish the draft GitHub Release to ship `@chili-publish/connector-cli` to public npm `latest`.
+
+            [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
+
+      - name: Notify Teams failure
+        if: failure()
+        uses: ./.github/actions/cd-notify-failure
+        with:
+          pipeline_name: Promote connector-cli
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}

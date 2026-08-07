@@ -13,27 +13,23 @@ jobs:
       connector: ${{ steps.check_connector.outputs.connector }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Fetch head branch
+      - name: Fetch PR head
         run: |
-          # Check if the PR is from a fork
-          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
-            echo "Pull request is from a fork. Fetching head branch from the fork repository."
-            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          else
-            echo "Pull request is from the same repository. Fetching head branch locally."
-            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          fi
+          # pull/N/head works for same-repo and fork PRs on the base repository
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
+          # Fail if a force-push moved pull/N/head away from the event that triggered this run
+          test "$(git rev-parse --verify 'pr-head^{commit}')" = \
+            "${{ github.event.pull_request.head.sha }}"
 
       - name: Get changed files
         id: files
         run: |
-          # Get the list of changed files as a comma-separated string
-          files=$(git diff --name-only ${{ github.event.pull_request.head.ref }} | tr '\n' ',')
+          # Three-dot diff matches the PR "Files changed" list (works for stacked bases)
+          files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...pr-head | tr '\n' ',')
           echo "files=$files" >> $GITHUB_ENV
 
       - name: Ensure only one connector is changed
@@ -77,21 +73,16 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-version-validation') }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Fetch head branch
+      - name: Fetch PR head
         run: |
-          # Check if the PR is from a fork
-          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
-            echo "Pull request is from a fork. Fetching head branch from the fork repository."
-            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
-              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          else
-            echo "Pull request is from the same repository. Fetching head branch locally."
-            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
-          fi
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-head
+          # Fail if a force-push moved pull/N/head away from the event that triggered this run
+          test "$(git rev-parse --verify 'pr-head^{commit}')" = \
+            "${{ github.event.pull_request.head.sha }}"
 
       - name: Ensure connector version is bumped
         env:
@@ -104,7 +95,7 @@ jobs:
 
           connector_name="$CONNECTOR_NAME"
           MAIN_VERSION=$(git show origin/main:src/connectors/$connector_name/package.json | jq -r .version)
-          PR_VERSION=$(git show ${{ github.event.pull_request.head.ref }}:src/connectors/$connector_name/package.json | jq -r .version)
+          PR_VERSION=$(git show pr-head:src/connectors/$connector_name/package.json | jq -r .version)
 
           echo "Comparing versions for connector '$connector_name':"
           echo "Main version: '$MAIN_VERSION'"
