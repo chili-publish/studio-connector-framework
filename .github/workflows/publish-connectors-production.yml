@@ -27,10 +27,10 @@ jobs:
       connectors_json: ${{ steps.parse-input.outputs.connectors_json }}
       validated_connectors: ${{ steps.parse-input.outputs.validated_connectors }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -54,7 +54,7 @@ jobs:
     environment: uat
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Azure Login
         uses: azure/login@v2
@@ -68,7 +68,7 @@ jobs:
             }
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -121,7 +121,7 @@ jobs:
             ls -la uat_connectors/
 
       - name: Upload connector files as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: uat-connectors
           path: uat_connectors/
@@ -162,7 +162,7 @@ jobs:
             echo "Downloaded PRD index.json"
 
       - name: Upload PRD index as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prd-index
           path: prd_index.json
@@ -175,21 +175,21 @@ jobs:
     outputs:
       skip_upload: ${{ steps.filter-versions.outputs.skip_upload }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Download connector files artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: uat-connectors
           path: uat_connectors/
 
       - name: Download PRD index artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: prd-index
           path: ./
@@ -230,7 +230,7 @@ jobs:
 
       - name: Upload filtered connectors as artifact
         if: env.SKIP_UPLOAD != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: filtered-connectors
           path: uat_connectors/
@@ -238,7 +238,7 @@ jobs:
 
       - name: Upload updated PRD index as artifact
         if: env.SKIP_UPLOAD != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prd-index-updated
           path: prd_index.json
@@ -251,13 +251,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download filtered connector files artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: filtered-connectors
           path: uat_connectors/
 
       - name: Download updated PRD index artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: prd-index-updated
           path: ./

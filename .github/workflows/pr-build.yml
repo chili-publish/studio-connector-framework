@@ -9,11 +9,11 @@ jobs:
     outputs:
       cli_changed: ${{ steps.git_diff.outputs.cli_changed }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Fetches all history for all branches and tags
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
@@ -28,7 +28,7 @@ jobs:
           git fetch --depth=1 origin main # Ensures the main branch is up to date
           if git diff --name-only origin/main...HEAD | grep 'src/connector-cli/'
           then
-            echo "::set-output name=cli_changed::true"
+            echo "cli_changed=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Prepare artifact
         if: steps.git_diff.outputs.cli_changed == 'true'
@@ -43,7 +43,7 @@ jobs:
           mkdir -p "src/connector-cli/$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
       - name: Upload CLI build artifacts
         if: steps.git_diff.outputs.cli_changed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cli-build
           path: src/connector-cli/upload/
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build CLI artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cli-build
           path: connector-cli/upload/
