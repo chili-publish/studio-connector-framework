@@ -20,8 +20,12 @@
 const fs = require('fs');
 const path = require('path');
 
+// SemVer core + optional prerelease/build (rejects forms like 1.2.3.rc).
+const SEMVER_RE =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+
 const version = process.argv[2];
-if (!version || !/^\d+\.\d+\.\d+([.-][\w.-]+)?$/.test(version)) {
+if (!version || !SEMVER_RE.test(version)) {
   console.error('Usage: node scripts/sync-connector-cli-lock-version.js <semver>');
   process.exit(1);
 }
@@ -36,12 +40,6 @@ if (!pkg.resolutions || typeof pkg.resolutions !== 'object') {
 }
 const previousResolution = pkg.resolutions['@chili-publish/connector-cli'];
 pkg.resolutions['@chili-publish/connector-cli'] = version;
-fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
-console.log(
-  previousResolution === version
-    ? `package.json resolutions already at connector-cli ${version}`
-    : `Updated package.json resolutions @chili-publish/connector-cli: ${previousResolution} → ${version}`,
-);
 
 const lock = fs.readFileSync(lockPath, 'utf8');
 
@@ -50,7 +48,7 @@ const pattern =
   /^("[^"]*@chili-publish\/connector-cli@[^"]+"(?:, "[^"]+")*:)\n((?:  .*\n)*?)(  version )"[^"]*"/gm;
 
 let replacements = 0;
-const updated = lock.replace(pattern, (match, keyLine, middle, versionPrefix) => {
+const updatedLock = lock.replace(pattern, (match, keyLine, middle, versionPrefix) => {
   replacements += 1;
   return `${keyLine}\n${middle}${versionPrefix}"${version}"`;
 });
@@ -62,12 +60,20 @@ if (replacements === 0) {
   process.exit(1);
 }
 
-if (updated === lock) {
+// Persist only after lockfile validation succeeds (avoid partial updates).
+fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+console.log(
+  previousResolution === version
+    ? `package.json resolutions already at connector-cli ${version}`
+    : `Updated package.json resolutions @chili-publish/connector-cli: ${previousResolution} → ${version}`,
+);
+
+if (updatedLock === lock) {
   console.log(
     `yarn.lock already at connector-cli ${version} (${replacements} entr${replacements === 1 ? 'y' : 'ies'})`,
   );
 } else {
-  fs.writeFileSync(lockPath, updated);
+  fs.writeFileSync(lockPath, updatedLock);
   console.log(
     `Updated ${replacements} yarn.lock entr${replacements === 1 ? 'y' : 'ies'} to connector-cli ${version}`,
   );
