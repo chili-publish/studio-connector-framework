@@ -100,7 +100,7 @@ yarn build-cli
 
 Useful root scripts: `yarn build-connectors`, `yarn publish-all` (see root `package.json`).
 
-Root `resolutions` pins `@chili-publish/connector-cli` to the workspace package (`file:src/connector-cli`) so connectors in this monorepo always use the local CLI build.
+Root `resolutions` pins `@chili-publish/connector-cli` to the exact workspace package version so connectors in this monorepo always use the local CLI build (kept in sync by `scripts/sync-connector-cli-lock-version.js` on publish/promote).
 
 Do **not** manually bump `src/connector-cli/package.json` for the normal merge-to-main prerelease flow — CI owns that (`publish-cli.yml` publishes `-rc.N` to GitHub Packages).
 
