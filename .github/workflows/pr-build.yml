@@ -1,4 +1,4 @@
-# workflow to run both yarn && yarn build in the repo when pr is created
+# workflow to install (frozen lockfile) and build when a PR is created
 name: Build PR
 on: [pull_request]
 env:
@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
       - name: Build CLI
         run: yarn run build-cli
       - name: Build connectors
