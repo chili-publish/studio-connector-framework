@@ -23,9 +23,12 @@ jobs:
           app-id: ${{ vars.GH_APP_ID_CHILI_FRONTEND_VERSION_MANAGER }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY_CHILI_FRONTEND_VERSION_MANAGER }}
           owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
       - uses: actions/checkout@v7
         with:
           token: ${{ steps.github-app-access-token.outputs.token }}
+          persist-credentials: false
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v7
         with:
