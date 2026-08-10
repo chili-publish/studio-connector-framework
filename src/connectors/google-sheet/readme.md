@@ -89,3 +89,9 @@ https://docs.chiligrafx.com/GraFx-Developers/connectors/authorization-for-connec
 
    - The connector adds `__rowId__` as a property on each row.
    - Do **not** use `__rowId__` in your spreadsheet data model (do not add a column whose header is that name).
+
+6. **Json support**:
+
+  - The connector optionally supports basic support for json-in-text-cell. If the option is turned on,
+  any columns that start with "json_" get special treatment: The json_ prefix is removed from all reported
+  references, the content of the cell is parsed as json and returned as such

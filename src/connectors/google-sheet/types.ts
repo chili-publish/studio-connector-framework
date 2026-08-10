@@ -65,6 +65,11 @@ type TypedBooleanCell = {
   cell: BooleanCell;
 };
 
+type TypedJsonCell = {
+  type: 'json';
+  cell: PlainTextCell;
+};
+
 export type {
   BaseSheetCells,
   NumberCell,
@@ -80,4 +85,5 @@ export type {
   TypedDateCell,
   TypedPlainTextCell,
   TypedBooleanCell,
+  TypedJsonCell,
 };
