@@ -1,4 +1,4 @@
-# workflow to run both yarn && yarn build in the repo when pr is merged to main
+# workflow to install (frozen lockfile), build, and publish connectors when merged to main
 name: Publish Connectors
 
 on:
@@ -55,7 +55,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: Azure Login
         uses: azure/login@v2
