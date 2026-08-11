@@ -1,24 +1,18 @@
 {
   "compilerOptions": {
     "strict": true,
-    "lib": [
-      "ES2020"
-    ],
+    "lib": ["ES2020"],
     "noEmitHelpers": true,
     "module": "ES2020",
     "outDir": "out",
     "target": "ES2020",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "preserveConstEnums": false,
     "esModuleInterop": false,
     "removeComments": true,
-    "declaration": false
+    "declaration": false,
+    "noEmit": true
   },
-  "include": [
-    "connector.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "out"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "out"]
 }
