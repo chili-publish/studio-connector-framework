@@ -75,16 +75,18 @@ jobs:
             git push "https://github.com/${{ github.repository }}.git" HEAD:main
 
       - name: Create draft GitHub Release
+        id: release
         env:
           GH_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
           TAG: ${{ steps.compute.outputs.tag }}
           NOTES_PATH: ${{ steps.compute.outputs.notes_path }}
         run: |
-          gh release create "$TAG" \
+          RELEASE_URL=$(gh release create "$TAG" \
             --draft \
             --title "$TAG" \
             --notes-file "$NOTES_PATH" \
-            --target main
+            --target main)
+          echo "url=${RELEASE_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Teams success
         continue-on-error: true
@@ -100,6 +102,8 @@ jobs:
             **Repository:** ${{ github.repository }}
 
             Publish the draft GitHub Release to ship `@chili-publish/connector-cli` to public npm `latest`.
+
+            [View Draft Release](${{ steps.release.outputs.url }})
 
             [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
         env:
