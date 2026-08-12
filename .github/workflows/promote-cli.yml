@@ -62,10 +62,15 @@ jobs:
           VERSION: ${{ steps.compute.outputs.version }}
           APP_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
         run: |
+          set -euo pipefail
           echo "::add-mask::${APP_TOKEN}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add src/connector-cli/package.json package.json yarn.lock
+          if git diff --cached --quiet; then
+            echo "Version ${VERSION} already applied on main; skipping commit."
+            exit 0
+          fi
           git commit -m "CI: promote connector-cli to ${VERSION} [skip ci]"
           AUTHORIZATION=$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')
           echo "::add-mask::${AUTHORIZATION}"
@@ -81,11 +86,16 @@ jobs:
           TAG: ${{ steps.compute.outputs.tag }}
           NOTES_PATH: ${{ steps.compute.outputs.notes_path }}
         run: |
-          RELEASE_URL=$(gh release create "$TAG" \
-            --draft \
-            --title "$TAG" \
-            --notes-file "$NOTES_PATH" \
-            --target main)
+          set -euo pipefail
+          if RELEASE_URL=$(gh release view "$TAG" --json url -q .url 2>/dev/null); then
+            echo "Release ${TAG} already exists; reusing ${RELEASE_URL}"
+          else
+            RELEASE_URL=$(gh release create "$TAG" \
+              --draft \
+              --title "$TAG" \
+              --notes-file "$NOTES_PATH" \
+              --target main)
+          fi
           echo "url=${RELEASE_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Teams success
