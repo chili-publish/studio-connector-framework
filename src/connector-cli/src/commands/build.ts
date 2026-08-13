@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { compile } from '../compiler/connectorCompiler';
 import {
+  error,
   info,
   readConnectorConfig,
   startCommand,
@@ -14,6 +15,7 @@ import {
   outputDirectory,
   outputFilename,
 } from '../utils/connector-project';
+import { watchConnectorProject } from '../utils/watch-connector-project';
 
 interface BuildCommandOptions {
   watch?: boolean;
@@ -33,7 +35,7 @@ export async function runBuild(
 
   if (!watch) {
     // Doing validation for config
-    const config = readConnectorConfig(packageJson);
+    readConnectorConfig(packageJson);
   }
 
   // if no outfolder, user the directory of the connector file and create subfolder 'out'
@@ -59,27 +61,32 @@ export async function runBuild(
 
   if (watch) {
     info(
-      'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+      'Watching for changes on project .ts files... (press ctrl+c to exit)'
     );
-    const watcher = fs.watchFile(
-      path.resolve(connectorFile),
-      async function () {
-        info('Rebuilding...');
-        const compilation = await compile(connectorFile);
-        if (compilation.errors.length > 0) {
-          throw new ExecutionError(compilation.formattedDiagnostics);
-        }
-
-        verbose(`Recompiling to ${path.join(out, outputFilename)}`);
-        success('Rebuild succeeded');
-
-        // write to output file
-        fs.writeFileSync(path.join(out, outputFilename), compilation.script);
-
+    const watcher = watchConnectorProject(projectDir, async (changedFile) => {
+      verbose(`Detected change: ${changedFile}`);
+      info('Rebuilding...');
+      const watchCompilation = await compile(connectorFile);
+      if (watchCompilation.errors.length > 0) {
+        error(watchCompilation.formattedDiagnostics);
         info('');
         info('Watching for changes... (press ctrl+c to exit)');
+        return;
       }
-    );
+
+      verbose(`Recompiling to ${path.join(out, outputFilename)}`);
+      fs.writeFileSync(path.join(out, outputFilename), watchCompilation.script);
+      success('Rebuild succeeded');
+
+      info('');
+      info('Watching for changes... (press ctrl+c to exit)');
+    });
+
+    process.on('SIGINT', () => {
+      watcher.close();
+      process.stdin.pause();
+      process.exit(0);
+    });
 
     // wait for user to press ctrl+c
     await new Promise((resolve) => {

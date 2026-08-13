@@ -18,33 +18,53 @@ jobs:
     steps:
       - name: Get GitHub App Access Token
         id: github-app-access-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ vars.GH_APP_ID_CHILI_FRONTEND_VERSION_MANAGER }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY_CHILI_FRONTEND_VERSION_MANAGER }}
           owner: ${{ github.repository_owner }}
-      - uses: actions/checkout@v4
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - uses: actions/checkout@v7
         with:
           token: ${{ steps.github-app-access-token.outputs.token }}
+          persist-credentials: false
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+      # Requires an up-to-date yarn.lock (install uses --frozen-lockfile).
       - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn run build-cli
-      - name: Bump version
-        uses: phips28/gh-action-bump-version@v11.0.7
+      - name: Bump version and push
+        id: bump
         env:
-          GITHUB_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
-          PACKAGEJSON_DIR: 'src/connector-cli'
-        with:
-          version-type: 'prerelease'
-          commit-message: 'CI: bumps version to {{version}} [skip ci]'
+          APP_TOKEN: ${{ steps.github-app-access-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          echo "::add-mask::${APP_TOKEN}"
+
+          NEW_VERSION=$(npm --prefix=src/connector-cli version prerelease --no-git-tag-version | tr -d 'v[:space:]')
+          echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Bumped connector-cli to ${NEW_VERSION}"
+
+          node scripts/sync-connector-cli-lock-version.js "${NEW_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/connector-cli/package.json package.json yarn.lock
+          git commit -m "CI: bumps version to ${NEW_VERSION} [skip ci]"
+
+          AUTHORIZATION=$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')
+          echo "::add-mask::${AUTHORIZATION}"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTHORIZATION}" \
+            git push "https://github.com/${{ github.repository }}.git" HEAD:main
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'

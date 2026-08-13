@@ -1,4 +1,4 @@
-# workflow to run both yarn && yarn build in the repo when pr is merged to main
+# workflow to install (frozen lockfile), build, and publish connectors when merged to main
 name: Publish Connectors
 
 on:
@@ -16,9 +16,10 @@ jobs:
     outputs:
       changed_connector: ${{ steps.changed-connectors.outputs.changed_connector }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Determine changed connectors
         id: changed-connectors
@@ -43,17 +44,18 @@ jobs:
     environment: ${{ matrix.environment }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: Azure Login
         uses: azure/login@v2

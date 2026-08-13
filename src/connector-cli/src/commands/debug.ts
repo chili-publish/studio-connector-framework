@@ -1,5 +1,6 @@
 import express from 'express';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import reload from 'reload';
 import { compileToTempFile } from '../compiler/connectorCompiler';
@@ -7,6 +8,7 @@ import { error, info, readConnectorConfig, startCommand, verbose } from '../core
 import { ExecutionError } from '../core/types';
 import { ConnectorType } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
+import { watchConnectorProject } from '../utils/watch-connector-project';
 
 function getDebugConnectorType(configType: ConnectorType): string {
   switch (configType) {
@@ -33,11 +35,22 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { projectPath, options });
 
-  const { connectorFile, packageJson } = getConnectorProjectFileInfo(projectPath);
+  const { projectDir, connectorFile, packageJson } =
+    getConnectorProjectFileInfo(projectPath);
   const config = readConnectorConfig(packageJson);
   const connectorType = getDebugConnectorType(config.type);
 
-  const compilation = await compileToTempFile(connectorFile);
+  // Allocate a stable temp path up front so watch rebuilds reuse it even when
+  // the initial compile fails (compileToTempFile returns tempFile: '' on error).
+  const tempConnectorBuild = path.join(
+    os.tmpdir(),
+    `file_${Date.now()}_${Math.floor(Math.random() * 10000)}.js`
+  );
+
+  const compilation = await compileToTempFile(
+    connectorFile,
+    tempConnectorBuild
+  );
   if (compilation.errors.length > 0) {
     error(compilation.formattedDiagnostics);
   }
@@ -48,15 +61,15 @@ export async function runDebugger(
   const indexTemplate = debuggerHandleBarTemplate;
 
   info(
-    'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+    'Watching for changes on project .ts files... (press ctrl+c to exit)'
   );
-  const watcher = fs.watch(connectorFile, async function (event, filename) {
-    verbose(`Triggers watch callback for ${event}, ${filename}`);
+  const watcher = watchConnectorProject(projectDir, async (changedFile) => {
+    verbose(`Triggers watch callback for ${changedFile}`);
     info('Recompiling...');
 
     const watchCompilation = await compileToTempFile(
       connectorFile,
-      compilation.tempFile
+      tempConnectorBuild
     );
 
     if (watchCompilation.errors.length > 0) {
@@ -71,13 +84,13 @@ export async function runDebugger(
 
   process.on('SIGINT', async () => {
     verbose('Destroy debug for "SIGINT"');
-    verbose('Stop watching the connector file: ' + connectorFile);
+    verbose('Stop watching project .ts files in: ' + projectDir);
     watcher.close();
   });
 
   process.on('exit', async () => {
     verbose('Destroy debug for "exit"');
-    verbose('Stop watching the connector file: ' + connectorFile);
+    verbose('Stop watching project .ts files in: ' + projectDir);
     watcher.close();
   });
 
@@ -101,9 +114,6 @@ export async function runDebugger(
   }
 
   verbose('Detected out folder: ' + outFolder);
-
-  // make sure connectorFile is absolute path
-  const tempConnectorBuild = path.resolve(compilation.tempFile);
 
   // handle all preflight requests
   app.options('*', (req, res) => {
