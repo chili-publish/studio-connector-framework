@@ -140,9 +140,9 @@ export default class DamConnector implements Media.MediaConnector {
     let queryEndpoint = `${this._getBaseMediaUrl()}/api/assets?page=${currentPage}&pageSize=${pageSize}`;
     queryEndpoint += this._buildSearchQuery(options, context);
 
-    this._logError(`Query: endpoint ${encodeURI(queryEndpoint)}`);
+    this._logError(`Query: endpoint ${queryEndpoint}`);
 
-    const result = await this.runtime.fetch(encodeURI(queryEndpoint), {
+    const result = await this.runtime.fetch(queryEndpoint, {
       method: 'GET',
       headers: this._getHeaders(),
     });
@@ -234,9 +234,9 @@ export default class DamConnector implements Media.MediaConnector {
     let queryEndpoint = `${this._getBaseMediaUrl()}/api/assets?page=${currentPage}&pageSize=${pageSize}&category=${categoryId}&includeChildren=false`;
     queryEndpoint += this._buildSearchQuery(options, context);
 
-    this._logError(`Query: endpoint ${encodeURI(queryEndpoint)}`);
+    this._logError(`Query: endpoint ${queryEndpoint}`);
 
-    const result = await this.runtime.fetch(encodeURI(queryEndpoint), {
+    const result = await this.runtime.fetch(queryEndpoint, {
       method: 'GET',
       headers: this._getHeaders(),
     });
@@ -431,7 +431,7 @@ export default class DamConnector implements Media.MediaConnector {
 
   private _buildSearchQuery(options: Connector.QueryOptions, context: Connector.Dictionary): string {
     const stringifiedFilter = this._getFilterText(options);
-    let searchQuery = '&search=format:(eps OR jpeg OR jpg OR pdf OR png OR psd OR tif OR tiff OR ai)';
+    let searchValue = 'format:(eps OR jpeg OR jpg OR pdf OR png OR psd OR tif OR tiff OR ai)';
 
     if (stringifiedFilter) {
       let id;
@@ -450,18 +450,18 @@ export default class DamConnector implements Media.MediaConnector {
           `Filtering query by _id: ${id}`
         );
 
-        searchQuery += `AND _id: ${id}`;
-      } else if (stringifiedFilter && context?.searchQuery) {
+        searchValue += `AND _id: ${id}`;
+      } else if (context?.searchQuery) {
         this._logError(
           `Filtering query by ${stringifiedFilter} in ${context.searchQuery}`
         );
 
         const searchInput = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
-        searchQuery += `AND ${searchInput}`;
+        searchValue += `AND ${searchInput}`;
       }
     }
 
-    return searchQuery;
+    return `&search=${encodeURIComponent(searchValue)}`;
   }
 
   private _toPathSegments(collection?: string): Array<string> {
@@ -473,7 +473,7 @@ export default class DamConnector implements Media.MediaConnector {
   }
 
   private _toRelativePath(segments: Array<string>): string {
-    return `/${segments.join('/')}/`;
+    return segments.length === 0 ? '/' : `/${segments.join('/')}/`;
   }
 
   private _categoryToFolderMedia(category: DamCategory, relativePath: string): Media.Media {
