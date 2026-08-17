@@ -74,13 +74,8 @@ function App() {
     ) {
       model.parameters[0].value = runtimeOptions;
     }
-    if (model.name === 'http-params' && authorization) {
+    if (model.name === 'http-params') {
       model.parameters[0].value = authorization;
-    }
-    if (
-      model.name === 'http-params' &&
-      Object.keys(globalHeaders).length !== 0
-    ) {
       model.parameters[1].value = globalHeaders.reduce(
         (val, gh) => {
           val[gh.name] = gh.value;
@@ -88,9 +83,6 @@ function App() {
         },
         {} as Record<string, string>
       );
-    }
-
-    if (model.name === 'http-params' && globalQueryParams.size !== 0) {
       model.parameters[2].value = Array.from(
         globalQueryParams.entries()
       ).reduce(
