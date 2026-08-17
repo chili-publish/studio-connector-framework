@@ -32,7 +32,7 @@
 
 ### Prerequisites
 
-- Node.js 20 LTS or higher
+- Node.js 22 LTS or higher
 - [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/install/) or higher (for building from source)
 
 You can install `@chili-publish/connector-cli` globally via npm:
