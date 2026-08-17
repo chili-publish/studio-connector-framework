@@ -1,21 +1,10 @@
-import {
-  connectorFileName,
-  outputDirectory,
-} from '../../../utils/connector-project';
+import { outputDirectory } from '../../../utils/connector-project';
+import { connectorTsCompilerOptionsJson } from '../../../compiler/connectorTsConfig';
 
 export const getTsConfig = () => ({
   compilerOptions: {
-    lib: ['ES2020'],
-    noEmitHelpers: true,
-    module: 'ES2020',
-    outDir: `${outputDirectory}`,
-    target: 'ES2020',
-    moduleResolution: 'Node',
-    preserveConstEnums: false,
-    esModuleInterop: false,
-    removeComments: true,
-    declaration: false,
+    ...connectorTsCompilerOptionsJson,
   },
-  include: [connectorFileName],
+  include: ['**/*.ts'],
   exclude: ['node_modules', `${outputDirectory}`],
 });

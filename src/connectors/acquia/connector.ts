@@ -1,85 +1,11 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
-
-interface AcquiaAssetV2 {
-  id: string;
-  filename: string;
-  external_id: string;
-  file_properties: {
-    format: string;
-    format_type: string;
-    image_properties?: {
-      width: number;
-      height: number;
-    };
-  };
-  metadata: {
-    fields: { [metadata_key: string]: Array<string> | string };
-  };
-}
-
-interface GetAssetsResponse {
-  items: Array<AcquiaAssetV2>;
-}
-
-interface AssetId {
-  id: string;
-  eid: string;
-  filename: string;
-  fileType: 'image' | 'pdf' | unknown;
-  width?: number;
-  height?: number;
-}
-
-class Converter {
-  static assetToMedia(item: AcquiaAssetV2): Media.Media {
-    const { width, height } = item.file_properties.image_properties ?? {};
-    const assetId: AssetId = {
-      id: item.id,
-      eid: item.external_id,
-      filename: item.filename,
-      fileType: item.file_properties.format_type.toLowerCase(),
-      width,
-      height,
-    };
-    return {
-      id: JSON.stringify(assetId),
-      name: item.filename,
-      // TODO: to be defined
-      relativePath: '/',
-      // 0 - file
-      // 1 - folder
-      type: 0,
-      extension: Converter.formatToExtension(item.file_properties.format),
-      metaData: Object.entries(item.metadata.fields).reduce(
-        (metadata, [fieldKey, fieldValue]) => {
-          metadata[fieldKey] = Array.isArray(fieldValue)
-            ? fieldValue[0]
-            : fieldValue;
-          return metadata;
-        },
-        {} as Connector.Dictionary
-      ),
-    };
-  }
-
-  static assetToMediaDetail(item: AcquiaAssetV2): Media.MediaDetail {
-    const { width, height } = item.file_properties.image_properties ?? {};
-    const media = this.assetToMedia(item);
-    return {
-      ...media,
-      width,
-      height,
-    };
-  }
-
-  static formatToExtension(format: string): string {
-    // Acquia identifies Pdf files with following format but we need file extenstion type
-    if (format === 'PdfDocument') {
-      return 'pdf';
-    }
-    return format.toLowerCase();
-  }
-}
+import { Converter } from './lib/converter';
+import {
+  buildPreviewUrl,
+  ensureTrailingSlash,
+  tryThumbnail,
+} from './lib/preview';
+import type { AssetId, GetAssetsResponse } from './lib/types';
 
 export default class AcquiaConnector implements Media.MediaConnector {
   constructor(runtime: Connector.ConnectorRuntimeContext) {
@@ -93,7 +19,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
     const { id: rawAssetId } = JSON.parse(id) as AssetId;
-    let url = this.ensureTrailingSlash(
+    let url = ensureTrailingSlash(
       this.runtime.options['BASE_URL'] as string
     );
 
@@ -121,7 +47,7 @@ export default class AcquiaConnector implements Media.MediaConnector {
 
     // TODO: implement the options.sort and append to query in a proper way
 
-    let url = this.ensureTrailingSlash(
+    let url = ensureTrailingSlash(
       this.runtime.options['BASE_URL'] as string
     );
 
@@ -184,9 +110,13 @@ export default class AcquiaConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
     // For backward compatibility with existing templates
-    let endpoint = this._tryThumbnail(id);
+    let endpoint = tryThumbnail(id);
     if (!endpoint) {
-      endpoint = this._tryPreviewUrl(id, { previewType, intent });
+      endpoint = buildPreviewUrl(
+        id,
+        this.runtime.options['PREVIEW_BASE_URL'] as string,
+        { previewType, intent }
+      );
     }
 
     const result = await this.runtime.fetch(endpoint, {
@@ -216,92 +146,5 @@ export default class AcquiaConnector implements Media.MediaConnector {
       filtering: true,
       metadata: true,
     };
-  }
-  ensureTrailingSlash(arg0: string) {
-    if (!arg0) return '';
-    return arg0.endsWith('/') ? arg0 : arg0 + '/';
-  }
-
-  _tryThumbnail(id: string) {
-    const { thumbnails } = JSON.parse(id) as {
-      thumbnails: { '600px': { url: string } } | undefined;
-    };
-    let thumbnail = thumbnails?.['600px'];
-
-    if (!thumbnail && thumbnails) {
-      // take the last property of thumbnails for given asset
-      const keys = Object.keys(thumbnails);
-      thumbnail = thumbnails[keys[keys.length - 1]];
-    }
-    return thumbnail?.url;
-  }
-
-  private _tryPreviewUrl(
-    id: string,
-    {
-      previewType,
-      intent,
-    }: { previewType: Media.DownloadType; intent: Media.DownloadIntent }
-  ) {
-    const { eid, filename, fileType, ...size } = JSON.parse(id) as AssetId;
-    let endpoint =
-      this.ensureTrailingSlash(
-        this.runtime.options['PREVIEW_BASE_URL'] as string
-      ) +
-      'content/' +
-      eid;
-
-    switch (previewType) {
-      case 'thumbnail': {
-        endpoint += '/jpeg' + '/' + filename + this._getPreviewSize(size, 125);
-        break;
-      }
-      case 'mediumres': {
-        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 400);
-        break;
-      }
-      case 'highres':
-        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 1024);
-        break;
-      case 'fullres':
-        if (
-          intent === 'print' &&
-          (fileType === 'image' || fileType === 'pdf')
-        ) {
-          // TODO: Uncomment after https://chilipublishintranet.atlassian.net/browse/GRAFX-3314
-          // endpoint += '/original' + '/' + filename + '?download=true';
-          endpoint += '/png' + '/' + filename;
-        } else {
-          endpoint += '/png' + '/' + filename;
-        }
-        break;
-      case 'original':
-        endpoint += '/original' + '/' + filename + '?download=true';
-        break;
-      default:
-        endpoint += '/png' + '/' + filename + this._getPreviewSize(size, 400);
-    }
-    return endpoint;
-  }
-
-  private _getPreviewSize(
-    original: { width?: number; height?: number },
-    max: 125 | 400 | 1024
-  ) {
-    const { width, height } = original;
-
-    // For landscape images, to keep aspect ratio, only specify width
-    if (width > height) {
-      const targetWidth = width < max ? width : max;
-      return `?w=${targetWidth}`;
-    }
-
-    // For portrait images, to keep aspect ratio, only specify height
-    if (height > width) {
-      const targetHeight = height < max ? height : max;
-      return `?h=${targetHeight}`;
-    }
-
-    return `?w=${max}&h=${max}`;
   }
 }

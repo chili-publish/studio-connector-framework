@@ -1,8 +1,19 @@
-import * as ts from 'typescript';
+import * as esbuild from 'esbuild';
 import * as fs from 'fs';
-import * as path from 'path';
 import * as os from 'os';
-import { verbose } from '../core';
+import * as path from 'path';
+import * as ts from 'typescript';
+import { verbose, verboseWarning, warn } from '../core';
+import { isPathInsideDir, outputDirectory } from '../utils/connector-project';
+import {
+  CONNECTOR_JS_TARGET,
+  formatTsConfigMismatchWarning,
+  formatTsConfigMissingWarning,
+  getBuiltInConnectorTsCompilerOptions,
+  validateProjectTsConfig,
+} from './connectorTsConfig';
+
+const STUDIO_CONNECTORS_PACKAGE = '@chili-publish/studio-connectors';
 
 export async function compileToTempFile(
   connectorFile: string,
@@ -32,9 +43,28 @@ export async function compileToTempFile(
   }
 
   const tempFileUsed = path.resolve(tempFile);
+  const stagingFile = `${tempFileUsed}.${process.pid}.${Date.now()}.tmp`;
+  let stagingCreated = false;
 
   verbose(`Write compiled results to ${tempFileUsed}`);
-  fs.writeFileSync(tempFileUsed, compileResult.script);
+  try {
+    // Exclusive create avoids following a pre-planted symlink in os.tmpdir().
+    fs.writeFileSync(stagingFile, compileResult.script, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+    stagingCreated = true;
+    fs.renameSync(stagingFile, tempFileUsed);
+  } catch (err) {
+    if (stagingCreated) {
+      try {
+        fs.unlinkSync(stagingFile);
+      } catch {
+        // Staging file may already be gone (e.g. after a successful rename).
+      }
+    }
+    throw err;
+  }
 
   return {
     tempFile: tempFileUsed,
@@ -46,55 +76,47 @@ export async function compileToTempFile(
 export async function compile(
   connectorFile: string
 ): Promise<InMemoryCompilationResult> {
-  const fileName = connectorFile;
-  const compilerOptions: ts.CompilerOptions = {
-    libs: ['es2020'],
-    noEmitHelpers: true,
-    module: ts.ModuleKind.ES2020,
-    target: ts.ScriptTarget.ES2020,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-    preserveConstEnums: false,
-    esModuleInterop: false,
-    removeComments: true,
-    declaration: false,
-  };
+  const absoluteEntry = path.resolve(connectorFile);
+  const projectDir = path.dirname(absoluteEntry);
 
-  // build to in-memory
-  const program = ts.createProgram([fileName], compilerOptions);
-  var output = '';
-
-  const emitResult = program.emit(undefined, (fileName, txt) => {
-    output += txt;
-  });
-  if (emitResult.emitSkipped) {
+  const tsDiagnostics = getTypeScriptDiagnostics(absoluteEntry, projectDir);
+  if (tsDiagnostics.errors.length > 0) {
     return {
       script: '',
-      errors: [
-        {
-          line: '',
-          error: 'Compile failed',
-        },
-      ],
-      formattedDiagnostics: '',
+      errors: tsDiagnostics.errors,
+      formattedDiagnostics: tsDiagnostics.formattedDiagnostics,
     };
   }
 
-  // output to console
-  const diagnostics = ts.getPreEmitDiagnostics(program);
+  try {
+    const result = await esbuild.build({
+      entryPoints: [absoluteEntry],
+      bundle: true,
+      write: false,
+      format: 'esm',
+      platform: 'neutral',
+      target: CONNECTOR_JS_TARGET.toLowerCase(),
+      logLevel: 'silent',
+      plugins: [createImportAllowlistPlugin(projectDir)],
+    });
 
-  return {
-    script: output,
-    errors: diagnostics.map((d) => ({
-      line:
-        d.file?.getLineAndCharacterOfPosition(d.start!).line.toString() ?? '',
-      error: d.messageText.toString(),
-    })),
-    formattedDiagnostics: ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-      getCurrentDirectory: () => process.cwd(),
-      getCanonicalFileName: (fileName) => fileName,
-      getNewLine: () => ts.sys.newLine,
-    }),
-  };
+    const script = result.outputFiles?.[0]?.text;
+    if (script === undefined) {
+      const message = 'esbuild produced no output for the connector bundle.';
+      return {
+        script: '',
+        errors: [{ line: '', error: message }],
+        formattedDiagnostics: message,
+      };
+    }
+    return {
+      script,
+      errors: [],
+      formattedDiagnostics: '',
+    };
+  } catch (err) {
+    return mapEsbuildFailure(err);
+  }
 }
 
 export async function introspectTsFile(connectorFile: string): Promise<string> {
@@ -117,6 +139,255 @@ export async function introspectTsFile(connectorFile: string): Promise<string> {
     });
 
   return iface;
+}
+
+function getTypeScriptDiagnostics(
+  connectorFile: string,
+  projectDir: string
+): CompilationResult {
+  const { rootNames, options } = resolveTypeScriptProgramInput(
+    connectorFile,
+    projectDir
+  );
+  const program = ts.createProgram(rootNames, options);
+  const diagnostics = ts
+    .getPreEmitDiagnostics(program)
+    .filter((d) => d.category === ts.DiagnosticCategory.Error);
+
+  return {
+    errors: diagnostics.map((d) => ({
+      line:
+        d.file?.getLineAndCharacterOfPosition(d.start!).line.toString() ?? '',
+      error: ts.flattenDiagnosticMessageText(d.messageText, ts.sys.newLine),
+    })),
+    formattedDiagnostics: ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+      getCurrentDirectory: () => process.cwd(),
+      getCanonicalFileName: (fileName) => fileName,
+      getNewLine: () => ts.sys.newLine,
+    }),
+  };
+}
+
+function resolveTypeScriptProgramInput(
+  connectorFile: string,
+  projectDir: string
+): { rootNames: string[]; options: ts.CompilerOptions } {
+  const builtInOptions = getBuiltInConnectorTsCompilerOptions();
+  const validation = validateProjectTsConfig(projectDir);
+
+  if (validation.status === 'mismatch') {
+    verboseWarning(formatTsConfigMismatchWarning(validation));
+    return { rootNames: [connectorFile], options: builtInOptions };
+  }
+
+  if (validation.status === 'unreadable') {
+    warn(
+      `Could not read project tsconfig.json at "${validation.tsconfigPath}" (${validation.detail}). Skipping project tsconfig.json and using built-in connector-cli compiler options instead.`
+    );
+    return { rootNames: [connectorFile], options: builtInOptions };
+  }
+
+  if (validation.status === 'missing') {
+    verboseWarning(formatTsConfigMissingWarning(validation.tsconfigPath));
+    return { rootNames: [connectorFile], options: builtInOptions };
+  }
+
+  // Aligned with built-in profile — use the project tsconfig for typechecking.
+  const parsed = ts.parseJsonConfigFileContent(
+    validation.rawConfig,
+    ts.sys,
+    projectDir,
+    undefined,
+    validation.tsconfigPath
+  );
+
+  if (parsed.errors.length > 0) {
+    warn(
+      `Project tsconfig.json at "${validation.tsconfigPath}" matched built-in options but failed to parse. Skipping project tsconfig.json and using built-in connector-cli compiler options instead.\n${ts.formatDiagnostics(
+        parsed.errors,
+        {
+          getCurrentDirectory: () => process.cwd(),
+          getCanonicalFileName: (fileName) => fileName,
+          getNewLine: () => ts.sys.newLine,
+        }
+      )}`
+    );
+    return { rootNames: [connectorFile], options: builtInOptions };
+  }
+
+  verbose(
+    `Using project tsconfig.json at "${validation.tsconfigPath}" (compilerOptions match connector-cli built-in settings).`
+  );
+
+  const rootNames =
+    parsed.fileNames.length > 0 ? parsed.fileNames : [connectorFile];
+
+  return {
+    rootNames,
+    options: parsed.options,
+  };
+}
+
+function createImportAllowlistPlugin(projectDir: string): esbuild.Plugin {
+  const absoluteProjectDir = realpathSafe(path.resolve(projectDir));
+  const outDir = realpathSafe(path.resolve(absoluteProjectDir, outputDirectory));
+  const nodeModulesDir = realpathSafe(
+    path.join(absoluteProjectDir, 'node_modules')
+  );
+
+  return {
+    name: 'connector-import-allowlist',
+    setup(build) {
+      build.onResolve({ filter: /.*/ }, (args) => {
+        // Let esbuild resolve entry points and already-resolved paths
+        if (args.kind === 'entry-point') {
+          return undefined;
+        }
+
+        const specifier = args.path;
+
+        if (
+          specifier === STUDIO_CONNECTORS_PACKAGE ||
+          specifier.startsWith(`${STUDIO_CONNECTORS_PACKAGE}/`)
+        ) {
+          return {
+            path: specifier,
+            namespace: 'studio-connectors-stub',
+          };
+        }
+
+        const isRelative =
+          specifier.startsWith('./') ||
+          specifier.startsWith('../') ||
+          path.isAbsolute(specifier);
+
+        if (!isRelative) {
+          return {
+            errors: [
+              {
+                text: `Import "${specifier}" is not allowed. Connector projects may only import relative local .ts modules or "${STUDIO_CONNECTORS_PACKAGE}".`,
+              },
+            ],
+          };
+        }
+
+        const resolved = resolveRelativeImport(args.resolveDir, specifier);
+        if (!resolved) {
+          return {
+            errors: [
+              {
+                text: `Cannot resolve import "${specifier}" from "${args.resolveDir}".`,
+              },
+            ],
+          };
+        }
+
+        const normalized = realpathSafe(path.resolve(resolved));
+        if (
+          !isPathInsideDir(normalized, absoluteProjectDir) ||
+          isPathInsideDir(normalized, outDir) ||
+          isPathInsideDir(normalized, nodeModulesDir)
+        ) {
+          return {
+            errors: [
+              {
+                text: `Import "${specifier}" resolves outside the connector project. Only local project .ts files are allowed.`,
+              },
+            ],
+          };
+        }
+
+        if (!normalized.endsWith('.ts') && !normalized.endsWith('.tsx')) {
+          return {
+            errors: [
+              {
+                text: `Import "${specifier}" must resolve to a .ts file within the connector project.`,
+              },
+            ],
+          };
+        }
+
+        return { path: normalized };
+      });
+
+      build.onLoad({ filter: /.*/, namespace: 'studio-connectors-stub' }, () => ({
+        contents: 'export {}',
+        loader: 'js',
+      }));
+    },
+  };
+}
+
+function resolveRelativeImport(
+  resolveDir: string,
+  specifier: string
+): string | undefined {
+  const base = path.isAbsolute(specifier)
+    ? specifier
+    : path.resolve(resolveDir, specifier);
+
+  const candidates = [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    path.join(base, 'index.ts'),
+    path.join(base, 'index.tsx'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return candidate;
+    }
+  }
+
+  return undefined;
+}
+
+function realpathSafe(filePath: string): string {
+  try {
+    return fs.realpathSync(filePath);
+  } catch {
+    return path.resolve(filePath);
+  }
+}
+
+function mapEsbuildFailure(err: unknown): InMemoryCompilationResult {
+  if (isEsbuildBuildFailure(err)) {
+    const messages = [...err.errors];
+    const formatted = messages
+      .map((m) => {
+        const location = m.location
+          ? `${m.location.file}:${m.location.line}: `
+          : '';
+        return `${location}${m.text}`;
+      })
+      .join('\n');
+
+    return {
+      script: '',
+      errors: messages.map((m) => ({
+        line: m.location?.line?.toString() ?? '',
+        error: m.text,
+      })),
+      formattedDiagnostics: formatted,
+    };
+  }
+
+  const message = err instanceof Error ? err.message : String(err);
+  return {
+    script: '',
+    errors: [{ line: '', error: message }],
+    formattedDiagnostics: message,
+  };
+}
+
+function isEsbuildBuildFailure(err: unknown): err is esbuild.BuildFailure {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'errors' in err &&
+    Array.isArray((err as esbuild.BuildFailure).errors)
+  );
 }
 
 export type AnyCompilationResult =

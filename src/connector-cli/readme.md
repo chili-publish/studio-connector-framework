@@ -69,11 +69,13 @@ connector-cli new YourProjectName -t data -n YourConnectorName
 
 ### Build a connector
 
+Connector projects can span multiple local `.ts` files. The entry point remains `connector.ts`; the CLI bundles local modules into a single `out/connector.js`. Only relative project imports and `@chili-publish/studio-connectors` are allowed. See the [GraFx Developers: Connector project structure](https://docs.chiligrafx.com/GraFx-Developers/connectors/connector-cli/project-structure/) docs for details.
+
 ```sh
 connector-cli build
 ```
 
-With watch mode:
+With watch mode (recompiles when any project `.ts` file changes):
 
 ```sh
 connector-cli build -w
@@ -133,7 +135,7 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
-The CLI recompiles `connector.ts` on change and reloads the browser tab.
+The CLI recompiles when any project `.ts` file changes and reloads the browser tab.
 
 ```sh
 connector-cli debug -p 3300

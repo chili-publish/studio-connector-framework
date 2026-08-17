@@ -39,6 +39,13 @@ export function warn(arg0: string) {
   console.warn(chalk.yellow(formatMessage(arg0)));
 }
 
+/** Yellow warning that only prints when verbose logging is enabled. */
+export function verboseWarning(arg0: string) {
+  if (verboseEnabled) {
+    warn(arg0);
+  }
+}
+
 export function error(arg0: string) {
   console.error(chalk.red(formatMessage(arg0)));
 }
