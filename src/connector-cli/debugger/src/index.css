@@ -90,6 +90,7 @@
   .dbg-input:focus,
   .dbg-input:focus-visible {
     @apply outline-none border-input-focus;
+
     box-shadow: 0 0 0 1px theme('colors.input.focus');
   }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type ClipboardEvent } from 'react';
+import { useCallback, useEffect, useId, type ClipboardEvent } from 'react';
 import { NumberParameter, Parameter } from '../Helpers/DataModel';
 import { normalizeConnectorId } from '../Helpers/connectorId';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
@@ -13,6 +13,8 @@ export const ParameterInput = ({
   parameter: Parameter;
   onChange: (name: string, parameter: Parameter, value: any) => void;
 }) => {
+  const inputId = useId();
+
   const handleInputChange = useCallback(
     (value: string | number | boolean) => {
       if (parentParameter !== undefined) {
@@ -71,11 +73,11 @@ export const ParameterInput = ({
     case 'text':
       return (
         <div className="w-full">
-          <label htmlFor="name" className="dbg-label">
+          <label htmlFor={inputId} className="dbg-label">
             {parameter.name}
           </label>
           <input
-            id="name"
+            id={inputId}
             className="dbg-input"
             name={parameter.name}
             type="text"
@@ -88,11 +90,11 @@ export const ParameterInput = ({
     case 'id':
       return (
         <div className="w-full">
-          <label htmlFor="name" className="dbg-label">
+          <label htmlFor={inputId} className="dbg-label">
             {parameter.name}
           </label>
           <input
-            id="name"
+            id={inputId}
             className="dbg-input"
             name={parameter.name}
             type="text"
@@ -112,11 +114,11 @@ export const ParameterInput = ({
     case 'boolean':
       return (
         <div className="w-full">
-          <label htmlFor="name" className="dbg-label">
+          <label htmlFor={inputId} className="dbg-label">
             {parameter.name}
           </label>
           <input
-            id="name"
+            id={inputId}
             className="dbg-checkbox"
             name={parameter.name}
             type="checkbox"
@@ -128,11 +130,11 @@ export const ParameterInput = ({
     case 'number':
       return (
         <div className="w-full">
-          <label htmlFor="name" className="dbg-label">
+          <label htmlFor={inputId} className="dbg-label">
             {parameter.name}
           </label>
           <input
-            id="name"
+            id={inputId}
             className="dbg-input"
             name={parameter.name}
             type="number"
@@ -146,11 +148,11 @@ export const ParameterInput = ({
     case 'select':
       return (
         <div className="w-full">
-          <label htmlFor="name" className="dbg-label">
+          <label htmlFor={inputId} className="dbg-label">
             {parameter.name}
           </label>
           <select
-            id="name"
+            id={inputId}
             className="dbg-input"
             name={parameter.name}
             onChange={(e) => handleInputChange(e.target.value)}
