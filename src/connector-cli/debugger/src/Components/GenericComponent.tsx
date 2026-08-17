@@ -126,12 +126,9 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
 
   const inputRender = (
     <form onSubmit={(event) => event.preventDefault()}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
         {dataModel.parameters.map((parameter) => (
-          <div
-            key={parameter.name}
-            className="w-full border flex-grow px-5 py-5"
-          >
+          <div key={parameter.name} className="dbg-param-card">
             <ParameterInput
               parameter={parameter}
               onChange={handleInputChange}
@@ -141,9 +138,10 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
         ))}
       </div>
       {!(dataModel as InvokableDataModel).invoke ? null : (
-        <div className="flex flex-row py-8">
+        <div className="flex flex-row py-xl">
           <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            className="dbg-btn-primary"
             onClick={handleInvoke}
             disabled={isInvoking}
           >
@@ -152,11 +150,8 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
         </div>
       )}
       {!(dataModel as SettableDataModel).set ? null : (
-        <div className="flex flex-row py-8">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
-            onClick={handleSet}
-          >
+        <div className="flex flex-row py-xl">
+          <button type="button" className="dbg-btn-primary" onClick={handleSet}>
             Set
           </button>
         </div>
@@ -175,7 +170,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
         resultRender = <JsonObjectRenderer data={result} />;
       } else if (invokableDataModel.returnsImage) {
         resultRender = (
-          <div className="flex justify-center rounded-lg bg-slate-50 border border-slate-100 p-4">
+          <div className="dbg-image-frame">
             <ArrayBufferImage
               buffer={result.id}
               width={'100%'}
@@ -189,9 +184,9 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto">
-      <div className="bg-white p-0 flex flex-col flex-1 overflow-y-auto">
-        <div className="mb-4 border-b pb-4">
-          <h1 className="capitalize text-xl font-semibold text-slate-900">
+      <div className="bg-surface-card p-0 flex flex-col flex-1 overflow-y-auto">
+        <div className="mb-md border-b border-border-subtle pb-md">
+          <h1 className="capitalize text-header text-text-primary">
             {dataModel.displayName ?? dataModel.name}
           </h1>
         </div>
