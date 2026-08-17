@@ -1,13 +1,15 @@
 import { useCallback, useState } from 'react';
 import { Header } from '../Helpers/ConnectorRuntime';
 
+export type HttpParamsValues = [
+  string | undefined,
+  Record<string, string> | undefined,
+  Record<string, string> | undefined,
+];
+
 export type UpdateHttpParamsSettings = (
   name: 'http-params',
-  values: [
-    string | undefined,
-    Record<string, string> | undefined,
-    Record<string, string> | undefined,
-  ]
+  values: HttpParamsValues
 ) => void;
 export type UpdateRuntimeOptionsSettings = (
   name: 'runtime-options',
@@ -17,59 +19,9 @@ export type UpdateRuntimeOptionsSettings = (
 export type UpdateSettingsFn = UpdateHttpParamsSettings &
   UpdateRuntimeOptionsSettings;
 
-const httpParamsStorageKey = 'connector-cli-http-params';
+/** New key — ignores legacy `connector-cli-http-params` shape. */
+const httpParamsStorageKey = 'connector-cli-http-params-v2';
 const runtimeOptionsStorageKey = 'connector-cli-runtime-options';
-
-function authorizationFromStored(value: unknown): string {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (value && typeof value === 'object') {
-    const values = Object.values(value as Record<string, unknown>);
-    const first = values[0];
-    return typeof first === 'string' ? first : '';
-  }
-  return '';
-}
-
-/** Migrate legacy `[ { authorization, other }, query ]` to flat tuple. */
-function normalizeHttpParamsStorage(
-  stored: unknown
-): [
-  string | undefined,
-  Record<string, string> | undefined,
-  Record<string, string> | undefined,
-] {
-  if (!Array.isArray(stored) || stored.length === 0) {
-    return [undefined, undefined, undefined];
-  }
-
-  const [first, second, third] = stored;
-
-  // Legacy: [{ authorization, other }, query]
-  if (
-    first &&
-    typeof first === 'object' &&
-    !Array.isArray(first) &&
-    ('authorization' in first || 'other' in first)
-  ) {
-    const legacy = first as {
-      authorization?: unknown;
-      other?: Record<string, string>;
-    };
-    return [
-      authorizationFromStored(legacy.authorization),
-      legacy.other,
-      second as Record<string, string> | undefined,
-    ];
-  }
-
-  return [
-    authorizationFromStored(first),
-    second as Record<string, string> | undefined,
-    third as Record<string, string> | undefined,
-  ];
-}
 
 // Responsible to store, update and read data of "Configuration" section items
 export function useConnectorSettings() {
@@ -85,8 +37,7 @@ export function useConnectorSettings() {
   const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
     switch (name) {
       case 'http-params': {
-        const [auth, httpHeaders, httpQuery] =
-          normalizeHttpParamsStorage(values);
+        const [auth, httpHeaders, httpQuery] = values;
         setAuthorization(auth ?? '');
         setGlobalHeaders(
           Object.entries(httpHeaders ?? {}).map(([headerName, value]) => ({
@@ -123,12 +74,10 @@ export function useConnectorSettings() {
     if (!!sessionStorage.getItem(httpParamsStorageKey)) {
       updateSettings(
         'http-params',
-        normalizeHttpParamsStorage(
-          JSON.parse(sessionStorage.getItem(httpParamsStorageKey)!)
-        )
+        JSON.parse(sessionStorage.getItem(httpParamsStorageKey)!) as HttpParamsValues
       );
     }
-  }, []);
+  }, [updateSettings]);
 
   return {
     globalHeaders,
