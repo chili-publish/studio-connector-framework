@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DictionaryParameter, Parameter } from '../Helpers/DataModel';
+import { TrashIcon } from './TrashIcon';
 
 export const ParameterDictionaryInput = ({
   parameter,
@@ -80,43 +81,33 @@ export const ParameterDictionaryInput = ({
 
   return (
     <>
-      <div className="overflow-hidden ">
-        <div className="relative overflow-x-auto border">
-          <table className="table-fixed w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+      <div className="overflow-hidden">
+        <div className="dbg-table-wrap">
+          <table className="dbg-table">
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-2">
-                  Key
-                </th>
-                <th scope="col" className="px-4 py-2">
-                  Value
-                </th>
+                <th scope="col">Key</th>
+                <th scope="col">Value</th>
                 {parameter.rectrictModification ? null : (
-                  <th scope="col" className="px-4 py-2"></th>
+                  <th scope="col" className="w-14"></th>
                 )}
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr
-                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
-                  key={index}
-                >
-                  <td
-                    scope="row"
-                    className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-                  >
+                <tr key={index}>
+                  <td>
                     <input
-                      className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="dbg-input"
                       type="text"
                       value={item.key}
                       placeholder="Enter key"
                       onChange={(event) => handleKeyChange(index, event)}
                     />
                   </td>
-                  <td className="px-2 pr-4">
+                  <td>
                     <input
-                      className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
+                      className="dbg-input"
                       type="text"
                       value={item.value}
                       placeholder="Enter value"
@@ -124,12 +115,15 @@ export const ParameterDictionaryInput = ({
                     />
                   </td>
                   {parameter.rectrictModification ? null : (
-                    <td className="pl-2 pr-4 py-2">
+                    <td className="w-14 text-center">
                       <button
-                        className="text-xs w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 border border-red-700 rounded"
+                        type="button"
+                        className="dbg-btn-danger-icon"
+                        aria-label="Remove"
+                        title="Remove"
                         onClick={() => handleRemove(index)}
                       >
-                        Remove
+                        <TrashIcon />
                       </button>
                     </td>
                   )}
@@ -138,9 +132,10 @@ export const ParameterDictionaryInput = ({
             </tbody>
           </table>
           {parameter.rectrictModification ? null : (
-            <div className="px-6 py-4">
+            <div className="px-lg py-md">
               <button
-                className="text-xs bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
+                type="button"
+                className="dbg-btn-secondary"
                 onClick={handleAdd}
               >
                 Add

@@ -5,10 +5,10 @@ import { GenericComponent } from './GenericComponent';
 export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
   if (!dataModel) {
     return (
-      <div className="flex-1 p-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="text-gray-600">
-            Select a connector "method" of "configuration" from the sidebar
+      <div className="dbg-main">
+        <div className="dbg-card">
+          <div className="dbg-state-empty min-h-0 justify-start p-0 bg-transparent">
+            Select a connector method or configuration from the sidebar
           </div>
         </div>
       </div>
@@ -16,13 +16,13 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
   }
 
   return (
-    <div className="flex-1 p-8 flex flex-col overflow-y-auto">
-      <div className="bg-white shadow rounded-lg p-6 flex flex-col flex-1 overflow-y-auto">
-        <div className="mb-4 border-b pb-4">
-          <h1 className="text-xl font-semibold">
+    <div className="dbg-main">
+      <div className="dbg-card flex-1 overflow-y-auto">
+        <div className="mb-md border-b border-border-subtle pb-md">
+          <h1 className="text-header text-text-primary">
             {Models.ConnectorMetadata?.name}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-regular text-text-secondary mt-xxs">
             {Models.ConnectorMetadata?.getDisplayType()}
           </p>
         </div>

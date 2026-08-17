@@ -3,11 +3,9 @@ import { Header } from '../Helpers/ConnectorRuntime';
 
 export type UpdateHttpParamsSettings = (
   name: 'http-params',
-  [headers, queryParams]: [
-    (
-      | { authorization: unknown | undefined; other: unknown | undefined }
-      | undefined
-    ),
+  values: [
+    string | undefined,
+    Record<string, string> | undefined,
     Record<string, string> | undefined,
   ]
 ) => void;
@@ -22,10 +20,61 @@ export type UpdateSettingsFn = UpdateHttpParamsSettings &
 const httpParamsStorageKey = 'connector-cli-http-params';
 const runtimeOptionsStorageKey = 'connector-cli-runtime-options';
 
+function authorizationFromStored(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value && typeof value === 'object') {
+    const values = Object.values(value as Record<string, unknown>);
+    const first = values[0];
+    return typeof first === 'string' ? first : '';
+  }
+  return '';
+}
+
+/** Migrate legacy `[ { authorization, other }, query ]` to flat tuple. */
+function normalizeHttpParamsStorage(
+  stored: unknown
+): [
+  string | undefined,
+  Record<string, string> | undefined,
+  Record<string, string> | undefined,
+] {
+  if (!Array.isArray(stored) || stored.length === 0) {
+    return [undefined, undefined, undefined];
+  }
+
+  const [first, second, third] = stored;
+
+  // Legacy: [{ authorization, other }, query]
+  if (
+    first &&
+    typeof first === 'object' &&
+    !Array.isArray(first) &&
+    ('authorization' in first || 'other' in first)
+  ) {
+    const legacy = first as {
+      authorization?: unknown;
+      other?: Record<string, string>;
+    };
+    return [
+      authorizationFromStored(legacy.authorization),
+      legacy.other,
+      second as Record<string, string> | undefined,
+    ];
+  }
+
+  return [
+    authorizationFromStored(first),
+    second as Record<string, string> | undefined,
+    third as Record<string, string> | undefined,
+  ];
+}
+
 // Responsible to store, update and read data of "Configuration" section items
 export function useConnectorSettings() {
   const [globalHeaders, setGlobalHeaders] = useState<Header[]>([]);
-  const [authorization, setAuthorization] = useState<Header>({} as any);
+  const [authorization, setAuthorization] = useState('');
   const [runtimeOptions, setRuntimeOptions] = useState<Record<string, unknown>>(
     {}
   );
@@ -35,22 +84,24 @@ export function useConnectorSettings() {
 
   const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
     switch (name) {
-      case 'http-params':
-        const [headers, queryParams] = values;
-        setAuthorization({
-          name: Object.keys(headers?.authorization ?? {})[0],
-          value: Object.values(headers?.authorization ?? {})[0],
-        });
+      case 'http-params': {
+        const [auth, httpHeaders, httpQuery] =
+          normalizeHttpParamsStorage(values);
+        setAuthorization(auth ?? '');
         setGlobalHeaders(
-          Object.entries(headers?.other ?? {}).map((h) => ({
-            name: h[0],
-            value: h[1],
+          Object.entries(httpHeaders ?? {}).map(([headerName, value]) => ({
+            name: headerName,
+            value,
           }))
         );
-        setGlobalQueryParams(new URLSearchParams(queryParams));
+        setGlobalQueryParams(new URLSearchParams(httpQuery));
 
-        sessionStorage.setItem(httpParamsStorageKey, JSON.stringify(values));
+        sessionStorage.setItem(
+          httpParamsStorageKey,
+          JSON.stringify([auth ?? '', httpHeaders ?? {}, httpQuery ?? {}])
+        );
         break;
+      }
       case 'runtime-options': {
         const val = values;
         setRuntimeOptions(val[0] ?? {});
@@ -72,7 +123,9 @@ export function useConnectorSettings() {
     if (!!sessionStorage.getItem(httpParamsStorageKey)) {
       updateSettings(
         'http-params',
-        JSON.parse(sessionStorage.getItem(httpParamsStorageKey)!)
+        normalizeHttpParamsStorage(
+          JSON.parse(sessionStorage.getItem(httpParamsStorageKey)!)
+        )
       );
     }
   }, []);

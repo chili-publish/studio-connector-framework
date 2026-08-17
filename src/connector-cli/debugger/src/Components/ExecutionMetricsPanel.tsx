@@ -10,18 +10,18 @@ function truncateUrl(url: string, maxLength = 72): string {
 
 function statusBadgeClass(status?: number, success?: boolean): string {
   if (!success) {
-    return 'bg-red-100 text-red-800';
+    return 'dbg-badge-error';
   }
   if (status === undefined) {
-    return 'bg-slate-100 text-slate-700';
+    return 'dbg-badge-neutral';
   }
   if (status >= 200 && status < 300) {
-    return 'bg-emerald-100 text-emerald-800';
+    return 'dbg-badge-success';
   }
   if (status >= 400) {
-    return 'bg-red-100 text-red-800';
+    return 'dbg-badge-error';
   }
-  return 'bg-amber-100 text-amber-800';
+  return 'dbg-badge-warning';
 }
 
 export const ExecutionMetricsPanel = ({
@@ -34,84 +34,77 @@ export const ExecutionMetricsPanel = ({
     : `failed after ${formatDuration(metrics.durationMs)}`;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-          Execution metrics
-        </h2>
+    <div className="rounded-lg border border-border-subtle bg-surface-card shadow-sm overflow-hidden">
+      <div className="dbg-card-header">
+        <h2 className="dbg-section-label">Execution metrics</h2>
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            metrics.success
-              ? 'bg-emerald-100 text-emerald-800'
-              : 'bg-red-100 text-red-800'
-          }`}
+          className={
+            metrics.success ? 'dbg-badge-success' : 'dbg-badge-error'
+          }
         >
           {metrics.success ? 'Success' : 'Failed'}
         </span>
       </div>
 
-      <div className="px-4 py-3 border-b border-slate-100">
-        <p className="text-sm text-slate-800">
+      <div className="px-md py-sm border-b border-border-subtle">
+        <p className="text-regular text-text-primary">
           <span className="font-semibold capitalize">{metrics.methodName}</span>{' '}
           <span
-            className={metrics.success ? 'text-emerald-700' : 'text-red-700'}
+            className={
+              metrics.success ? 'text-text-success' : 'text-text-error'
+            }
           >
             {methodStatus}
           </span>
         </p>
         {metrics.error ? (
-          <p className="mt-2 text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
-            {metrics.error}
-          </p>
+          <p className="dbg-callout-error">{metrics.error}</p>
         ) : null}
       </div>
 
       {metrics.fetchCalls.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="dbg-table">
             <thead>
-              <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-4 py-2 font-semibold w-20">Method</th>
-                <th className="px-4 py-2 font-semibold">URL</th>
-                <th className="px-4 py-2 font-semibold w-24">Status</th>
-                <th className="px-4 py-2 font-semibold w-28 text-right">
-                  Duration
-                </th>
+              <tr>
+                <th className="w-20">Method</th>
+                <th>URL</th>
+                <th className="w-24">Status</th>
+                <th className="w-28 text-right">Duration</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {metrics.fetchCalls.map((fetchCall, index) => (
                 <tr
                   key={`${fetchCall.method}-${fetchCall.url}-${index}`}
                   className={
-                    fetchCall.success ? 'text-slate-700' : 'text-red-800'
+                    fetchCall.success
+                      ? 'text-text-secondary'
+                      : 'text-text-error'
                   }
                 >
-                  <td className="px-4 py-2 font-mono text-xs font-semibold">
+                  <td className="font-mono text-label font-semibold">
                     {fetchCall.method}
                   </td>
-                  <td
-                    className="px-4 py-2 font-mono text-xs"
-                    title={fetchCall.url}
-                  >
+                  <td className="font-mono text-label" title={fetchCall.url}>
                     {truncateUrl(fetchCall.url)}
                     {!fetchCall.success && fetchCall.error ? (
-                      <span className="block text-red-600 mt-0.5 normal-case font-sans">
+                      <span className="block text-text-error mt-xxs normal-case font-sans">
                         {fetchCall.error}
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2">
+                  <td>
                     <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(
+                      className={statusBadgeClass(
                         fetchCall.status,
                         fetchCall.success
-                      )}`}
+                      )}
                     >
                       {fetchCall.status ?? '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-right font-mono text-xs text-slate-600">
+                  <td className="text-right font-mono text-label text-text-muted">
                     {formatDuration(fetchCall.durationMs)}
                   </td>
                 </tr>
@@ -120,7 +113,7 @@ export const ExecutionMetricsPanel = ({
           </table>
         </div>
       ) : (
-        <p className="px-4 py-3 text-sm text-slate-500">
+        <p className="px-md py-sm text-regular text-text-muted">
           No fetch calls recorded.
         </p>
       )}

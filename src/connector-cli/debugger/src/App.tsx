@@ -6,7 +6,7 @@ import { useConnectorSettings } from './core/useConnectorSettings';
 import { initRuntime } from './Helpers/ConnectorRuntime';
 import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
 import { initRuntimeSleep } from './Helpers/ConnectorRuntime/sleep';
-import { ComplexParameter, DataModel } from './Helpers/DataModel';
+import { DataModel } from './Helpers/DataModel';
 import { Models } from './Helpers/Models';
 
 function App() {
@@ -74,30 +74,24 @@ function App() {
     ) {
       model.parameters[0].value = runtimeOptions;
     }
-    if (
-      model.name === 'http-params' &&
-      (authorization.name || authorization.value)
-    ) {
-      (model.parameters[0] as ComplexParameter).complex[0].value = {
-        [authorization.name]: authorization.value,
-      };
+    if (model.name === 'http-params' && authorization) {
+      model.parameters[0].value = authorization;
     }
     if (
       model.name === 'http-params' &&
       Object.keys(globalHeaders).length !== 0
     ) {
-      (model.parameters[0] as ComplexParameter).complex[1].value =
-        globalHeaders.reduce(
-          (val, gh) => {
-            val[gh.name] = gh.value;
-            return val;
-          },
-          {} as Record<string, string>
-        );
+      model.parameters[1].value = globalHeaders.reduce(
+        (val, gh) => {
+          val[gh.name] = gh.value;
+          return val;
+        },
+        {} as Record<string, string>
+      );
     }
 
     if (model.name === 'http-params' && globalQueryParams.size !== 0) {
-      model.parameters[1].value = Array.from(
+      model.parameters[2].value = Array.from(
         globalQueryParams.entries()
       ).reduce(
         (val, gqp) => {
@@ -111,11 +105,11 @@ function App() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="dbg-state-loading">Loading...</div>;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="dbg-state-error">Error: {error}</div>;
   }
 
   Models.ConnectorMetadata = {
@@ -134,8 +128,11 @@ function App() {
   };
 
   return (
-    <div className="h-screen flex">
-      <Sidebar onModelChanged={modelChangeHandler} />
+    <div className="dbg-app">
+      <Sidebar
+        onModelChanged={modelChangeHandler}
+        activeModelName={dataModel?.name}
+      />
       {/* we specify key as dataModel.name to rerender the same components once model changed */}
       <MainContent key={dataModel?.name} dataModel={dataModel} />
     </div>

@@ -26,31 +26,34 @@ export const Models: {
       displayName: 'HTTP Params',
       parameters: [
         {
-          name: 'headers',
-          componentType: 'complex',
-          complex: [
-            {
-              name: 'authorization',
-              componentType: 'dictionary',
-              rectrictModification: true,
-            },
-            {
-              name: 'other',
-              componentType: 'dictionary',
-            },
-          ],
+          name: 'Authorization Header',
+          componentType: 'text',
         },
         {
-          name: 'query',
+          name: 'Headers',
+          componentType: 'dictionary',
+        },
+        {
+          name: 'Query',
           componentType: 'dictionary',
         },
       ],
       set: ([
-        headers,
-        queryParams,
+        authorization,
+        httpHeaders,
+        httpQuery,
       ]: Parameters<UpdateHttpParamsSettings>[1]) => {
-        console.debug('Set "http-params"', headers, queryParams);
-        Models.updateSettings('http-params', [headers, queryParams]);
+        console.debug(
+          'Set "http-params"',
+          authorization,
+          httpHeaders,
+          httpQuery
+        );
+        Models.updateSettings('http-params', [
+          authorization,
+          httpHeaders,
+          httpQuery,
+        ]);
         window.alert('Settings were applied');
       },
     },

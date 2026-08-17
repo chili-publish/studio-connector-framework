@@ -26,12 +26,14 @@ const ArrayBufferImage: React.FC<Props> = ({ buffer, width, height }) => {
   }, [buffer]);
 
   return (
-    <div className="not-prose relative bg-slate-50 rounded-xl overflow-hidden dark:bg-slate-800/25 w-1/2">
-      <div className="relative rounded-xl overflow-auto p-8">
+    <div className="dbg-image-preview">
+      <div className="relative rounded-lg overflow-auto p-xl">
         <div className="text-center rounded-lg overflow-hidden w-56 sm:w-96 mx-auto">
           <img
-            className="object-contain h-128 w-full "
+            className="object-contain h-128 w-full"
             src={imageSrc?.toString()}
+            style={{ width, height }}
+            alt="Connector result"
           />
         </div>
       </div>
