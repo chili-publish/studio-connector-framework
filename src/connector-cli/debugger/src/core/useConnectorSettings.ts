@@ -37,7 +37,8 @@ export function useConnectorSettings() {
   const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
     switch (name) {
       case 'http-params': {
-        const [auth, httpHeaders, httpQuery] = values;
+        // Switch on `name` does not narrow sibling `values` (correlated params).
+        const [auth, httpHeaders, httpQuery] = values as HttpParamsValues;
         setAuthorization(auth ?? '');
         setGlobalHeaders(
           Object.entries(httpHeaders ?? {}).map(([headerName, value]) => ({
@@ -54,8 +55,8 @@ export function useConnectorSettings() {
         break;
       }
       case 'runtime-options': {
-        const val = values;
-        setRuntimeOptions(val[0] ?? {});
+        const [options] = values as [Record<string, unknown> | undefined];
+        setRuntimeOptions(options ?? {});
         sessionStorage.setItem(
           runtimeOptionsStorageKey,
           JSON.stringify(values)
