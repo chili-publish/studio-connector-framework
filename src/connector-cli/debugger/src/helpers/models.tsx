@@ -3,7 +3,12 @@ import {
   UpdateRuntimeOptionsSettings,
   UpdateSettingsFn,
 } from '../core/connectorSettingsStorage';
-import { InvokableDataModel, SettableDataModel } from './dataModel';
+import {
+  ConnectorMetadata,
+  DataModel,
+  InvokableDataModel,
+  SettableDataModel,
+} from './dataModel';
 
 export const Models: {
   Settings: SettableDataModel[];
@@ -292,3 +297,41 @@ export const Models: {
     },
   ],
 };
+
+export function getMethodModelsForType(
+  type: ConnectorMetadata['type']
+): DataModel[] {
+  switch (type) {
+    case 'dataconnector':
+      return Models.Data;
+    case 'fontconnector':
+      return [];
+    case 'mediaconnector':
+    default:
+      return Models.Media;
+  }
+}
+
+export function getSelectableModels(
+  type: ConnectorMetadata['type']
+): DataModel[] {
+  return [...Models.Settings, ...getMethodModelsForType(type)];
+}
+
+export function findSelectableModel(
+  type: ConnectorMetadata['type'],
+  name: string | null | undefined
+): DataModel | undefined {
+  if (!name) {
+    return undefined;
+  }
+
+  return getSelectableModels(type).find((model) => model.name === name);
+}
+
+export function resolveSelectableModel(
+  type: ConnectorMetadata['type'],
+  name: string | null | undefined
+): DataModel | undefined {
+  return findSelectableModel(type, name) ?? getSelectableModels(type)[0];
+}
