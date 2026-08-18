@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../core/AppContext';
 import { useToast } from '../core/ToastContext';
-import { settingsStorage } from '../core/connectorSettingsStorage';
+import {
+  methodParamsKey,
+  methodParamsStorage,
+} from '../core/methodParamsStorage';
 import {
   DataModel,
   InvokableDataModel,
   Parameter,
   SettableDataModel,
 } from '../helpers/dataModel';
-import { normalizeConnectorId } from '../helpers/connectorId';
+import { normalizeMediaId } from '../helpers/mediaId';
 import {
   metricsCollector,
   type MethodExecutionMetrics,
@@ -18,7 +21,6 @@ import {
   cloneParameters,
   denormalizeParameters,
   isSettingsModel,
-  methodParamsKey,
 } from '../helpers/parameterForm';
 import ArrayBufferImage from './ArrayBufferImage';
 import JsonObjectRenderer from './JsonObjectRenderer';
@@ -28,6 +30,7 @@ import { ParameterInput } from './inputs';
 export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
   const {
     connector,
+    metadata,
     updateSettings,
     authorization,
     globalHeaders,
@@ -82,8 +85,8 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     if (isSettingsModel(dataModel.name) && settingsValues) {
       applyValuesToParameters(next, settingsValues);
     } else {
-      const stored = settingsStorage.getItem<Record<string, unknown>>(
-        methodParamsKey(dataModel.name)
+      const stored = methodParamsStorage.getItem<Record<string, unknown>>(
+        methodParamsKey(metadata.name, dataModel.name)
       );
       if (stored) {
         applyValuesToParameters(next, stored);
@@ -99,7 +102,6 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     undefined
   );
   const [isInvoking, setIsInvoking] = useState(false);
-  const [formEpoch, setFormEpoch] = useState(0);
 
   const workingModel = useMemo(
     () => ({ ...dataModel, parameters }),
@@ -116,12 +118,15 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
           [changedName]: newValue,
         };
         if (!isSettingsModel(dataModel.name)) {
-          settingsStorage.setItem(methodParamsKey(dataModel.name), next);
+          methodParamsStorage.setItem(
+            methodParamsKey(metadata.name, dataModel.name),
+            next
+          );
         }
         return next;
       });
     },
-    [dataModel.name]
+    [dataModel.name, metadata.name]
   );
 
   const normalizeValues = () => {
@@ -144,7 +149,7 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     return workingModel.parameters.reduce<unknown[]>((v, param, index) => {
       let value = flattenedValues[param.name];
       if (param.componentType === 'id' && typeof value === 'string') {
-        value = normalizeConnectorId(value);
+        value = normalizeMediaId(value);
       }
       v[index] = value;
       return v;
@@ -186,16 +191,6 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     showToast('Settings were applied');
   };
 
-  const handleResetDefaults = () => {
-    const next = cloneParameters(catalogParameters);
-    setParameters(next);
-    setValues(denormalizeParameters(next));
-    if (!isSettingsModel(dataModel.name)) {
-      settingsStorage.removeItem(methodParamsKey(dataModel.name));
-    }
-    setFormEpoch((epoch) => epoch + 1);
-  };
-
   useEffect(() => {
     if (!settingsValues) {
       return;
@@ -210,7 +205,7 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     <form onSubmit={(event) => event.preventDefault()}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-xl">
         {parameters.map((parameter) => (
-          <div key={`${parameter.name}-${formEpoch}`} className="dbg-param-card">
+          <div key={parameter.name} className="dbg-param-card">
             <ParameterInput
               parameter={parameter}
               onChange={handleInputChange}
@@ -235,13 +230,6 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
             Set
           </button>
         )}
-        <button
-          type="button"
-          className="dbg-btn-secondary"
-          onClick={handleResetDefaults}
-        >
-          Reset defaults
-        </button>
       </div>
     </form>
   );
