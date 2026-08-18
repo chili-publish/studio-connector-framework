@@ -1,9 +1,5 @@
 import { Parameter } from './dataModel';
 
-export function methodParamsKey(methodName: string) {
-  return Symbol.for(`connector-cli-method-params:${methodName}`);
-}
-
 export function isSettingsModel(name: string) {
   return name === 'http-params' || name === 'Runtime options';
 }

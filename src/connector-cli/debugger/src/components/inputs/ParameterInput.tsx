@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, type ClipboardEvent } from 'react';
 import { NumberParameter, Parameter } from '../../helpers/dataModel';
-import { normalizeConnectorId } from '../../helpers/connectorId';
+import { normalizeMediaId } from '../../helpers/mediaId';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { ParameterListInput } from './ParameterListInput';
 
@@ -62,7 +62,7 @@ export const ParameterInput = ({
       return;
     }
 
-    const normalized = normalizeConnectorId(pasted);
+    const normalized = normalizeMediaId(pasted);
     if (normalized !== pasted.trim()) {
       event.preventDefault();
       handleInputChange(normalized);
@@ -101,7 +101,7 @@ export const ParameterInput = ({
             placeholder={parameter.name}
             onChange={(e) => handleInputChange(e.target.value)}
             onBlur={(e) => {
-              const normalized = normalizeConnectorId(e.target.value);
+              const normalized = normalizeMediaId(e.target.value);
               if (normalized !== e.target.value) {
                 handleInputChange(normalized);
               }

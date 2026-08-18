@@ -196,7 +196,7 @@ export const Models: {
               name: 'pageSize',
               componentType: 'number',
               min: 0,
-              value: 0,
+              value: 15,
             },
             {
               name: 'pageToken',

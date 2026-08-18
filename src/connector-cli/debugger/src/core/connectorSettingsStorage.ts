@@ -19,6 +19,7 @@ export type UpdateRuntimeOptionsSettings = (
 export type UpdateSettingsFn = UpdateHttpParamsSettings &
   UpdateRuntimeOptionsSettings;
 
+/** Session-backed — HTTP params and runtime options only. */
 export const settingsStorage = new SessionStorage();
 
 export const httpParamsStorageKey = Symbol.for('connector-cli-http-params-v2');
