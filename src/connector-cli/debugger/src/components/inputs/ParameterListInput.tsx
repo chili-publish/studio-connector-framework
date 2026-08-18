@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Parameter } from '../Helpers/DataModel';
-import { TrashIcon } from './TrashIcon';
+import { Parameter } from '../../helpers/dataModel';
+import { TrashIcon } from '../icons';
 
 export const ParameterListInput = ({
   parameter,

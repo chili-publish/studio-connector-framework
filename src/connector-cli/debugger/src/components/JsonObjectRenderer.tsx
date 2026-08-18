@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckIcon, CopyIcon } from './CopyIcon';
+import { CheckIcon, CopyIcon } from './icons';
 
 interface Props {
   data: unknown;

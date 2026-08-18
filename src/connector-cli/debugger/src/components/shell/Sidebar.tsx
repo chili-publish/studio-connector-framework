@@ -1,6 +1,7 @@
-import { DataModel } from '../Helpers/DataModel';
-import { Models } from '../Helpers/Models';
-import { useDebugger } from '../core/DebuggerContext';
+import { DataModel } from '../../helpers/dataModel';
+import { Models } from '../../helpers/models';
+import { useApp } from '../../core/AppContext';
+import { BoltIcon } from '../icons';
 
 export const Sidebar = ({
   onModelChanged,
@@ -9,7 +10,7 @@ export const Sidebar = ({
   onModelChanged: (model: DataModel) => void;
   activeModelName?: string;
 }) => {
-  const { metadata } = useDebugger();
+  const { metadata } = useApp();
   let models: DataModel[] = [];
   const configurationModels = Models.Settings;
 
@@ -47,19 +48,7 @@ export const Sidebar = ({
                 }
                 onClick={() => onModelChanged(model)}
               >
-                <svg
-                  className="h-5 w-5 mr-sm shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+                <BoltIcon className="h-5 w-5 mr-sm shrink-0" />
                 {model.displayName ?? model.name}
               </button>
             ))}
@@ -76,19 +65,7 @@ export const Sidebar = ({
                 }
                 onClick={() => onModelChanged(model)}
               >
-                <svg
-                  className="h-5 w-5 mr-sm shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+                <BoltIcon className="h-5 w-5 mr-sm shrink-0" />
                 {model.displayName ?? model.name}
               </button>
             ))}

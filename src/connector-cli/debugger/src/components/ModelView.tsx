@@ -1,79 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDebugger } from '../core/DebuggerContext';
-import { getJson, removeItem, setJson } from '../core/debuggerStorage';
+import { useApp } from '../core/AppContext';
+import { settingsStorage } from '../core/connectorSettingsStorage';
 import {
   DataModel,
   InvokableDataModel,
   Parameter,
   SettableDataModel,
-} from '../Helpers/DataModel';
-import { normalizeConnectorId } from '../Helpers/connectorId';
+} from '../helpers/dataModel';
+import { normalizeConnectorId } from '../helpers/connectorId';
 import {
   metricsCollector,
   type MethodExecutionMetrics,
-} from '../Helpers/MetricsCollector';
-import ArrayBufferImage from './ImageFromBuffer';
+} from '../helpers/metricsCollector';
+import {
+  applyValuesToParameters,
+  cloneParameters,
+  denormalizeParameters,
+  isSettingsModel,
+  methodParamsKey,
+} from '../helpers/parameterForm';
+import ArrayBufferImage from './ArrayBufferImage';
 import JsonObjectRenderer from './JsonObjectRenderer';
 import { ResultsSection } from './ResultsSection';
-import { ParameterInput } from './ParameterInput';
+import { ParameterInput } from './inputs';
 
-function methodParamsKey(methodName: string) {
-  return Symbol.for(`connector-cli-method-params:${methodName}`);
-}
-
-function isSettingsModel(name: string) {
-  return name === 'http-params' || name === 'Runtime options';
-}
-
-function cloneParameters(parameters: Parameter[]): Parameter[] {
-  return parameters.map((parameter) => {
-    if (parameter.componentType === 'complex') {
-      return {
-        ...parameter,
-        complex: parameter.complex.map((child) => ({ ...child })),
-      };
-    }
-    return { ...parameter };
-  });
-}
-
-function applyValuesToParameters(
-  parameters: Parameter[],
-  values: Record<string, unknown>
-) {
-  for (const parameter of parameters) {
-    if (parameter.componentType === 'complex') {
-      for (const child of parameter.complex) {
-        const key = `${parameter.name}.${child.name}`;
-        if (key in values) {
-          child.value = values[key];
-        }
-      }
-    } else if (parameter.name in values) {
-      parameter.value = values[parameter.name];
-    }
-  }
-}
-
-function denormalizeParameters(parameters: Parameter[]) {
-  return parameters.reduce(
-    (val, p) => {
-      if (p.componentType === 'complex') {
-        p.complex
-          .filter((cp) => cp.value !== undefined)
-          .forEach((cp) => {
-            val[`${p.name}.${cp.name}`] = cp.value;
-          });
-      } else if (p.value !== undefined && p.value !== null && p.value !== '') {
-        val[p.name] = p.value;
-      }
-      return val;
-    },
-    {} as Record<string, unknown>
-  );
-}
-
-export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
+export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
   const {
     connector,
     updateSettings,
@@ -82,7 +33,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     runtimeOptions,
     globalQueryParams,
     showToast,
-  } = useDebugger();
+  } = useApp();
 
   const catalogParameters = useMemo(
     () => cloneParameters(dataModel.parameters),
@@ -130,7 +81,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     if (isSettingsModel(dataModel.name) && settingsValues) {
       applyValuesToParameters(next, settingsValues);
     } else {
-      const stored = getJson<Record<string, unknown>>(
+      const stored = settingsStorage.getItem<Record<string, unknown>>(
         methodParamsKey(dataModel.name)
       );
       if (stored) {
@@ -164,7 +115,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
           [changedName]: newValue,
         };
         if (!isSettingsModel(dataModel.name)) {
-          setJson(methodParamsKey(dataModel.name), next);
+          settingsStorage.setItem(methodParamsKey(dataModel.name), next);
         }
         return next;
       });
@@ -239,7 +190,7 @@ export const GenericComponent = ({ dataModel }: { dataModel: DataModel }) => {
     setParameters(next);
     setValues(denormalizeParameters(next));
     if (!isSettingsModel(dataModel.name)) {
-      removeItem(methodParamsKey(dataModel.name));
+      settingsStorage.removeItem(methodParamsKey(dataModel.name));
     }
     setFormEpoch((epoch) => epoch + 1);
   };

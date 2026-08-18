@@ -1,51 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import './App.css';
-import { MainContent } from './Components/MainContent';
-import { Sidebar } from './Components/Sidebar';
-import { DebuggerProvider, useDebugger } from './core/DebuggerContext';
+import { AppShell } from './components/shell/AppShell';
+import { AppProvider } from './core/AppContext';
 import { useConnectorSettings } from './core/useConnectorSettings';
 import {
   initRuntime,
-  updateRuntimeConfig,
-} from './Helpers/ConnectorRuntime';
-import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
-import { initRuntimeSleep } from './Helpers/ConnectorRuntime/sleep';
-import { ConnectorMetadata, DataModel } from './Helpers/DataModel';
-
-function DebuggerToast() {
-  const { toast } = useDebugger();
-  if (!toast) {
-    return null;
-  }
-
-  const toneClass =
-    toast.tone === 'error' ? 'dbg-badge-error' : 'dbg-badge-success';
-
-  return (
-    <div className="dbg-toast-region" role="status">
-      <div className={`dbg-toast ${toneClass}`}>{toast.message}</div>
-    </div>
-  );
-}
-
-function DebuggerShell({
-  dataModel,
-  onModelChanged,
-}: {
-  dataModel: DataModel | undefined;
-  onModelChanged: (model: DataModel) => void;
-}) {
-  return (
-    <div className="dbg-app">
-      <Sidebar
-        onModelChanged={onModelChanged}
-        activeModelName={dataModel?.name}
-      />
-      <MainContent key={dataModel?.name} dataModel={dataModel} />
-      <DebuggerToast />
-    </div>
-  );
-}
+  updateConnectorSettings,
+} from './helpers/connectorRuntime';
+import { initRuntimeErrors } from './helpers/connectorRuntime/connectorHttpError';
+import { initRuntimeSleep } from './helpers/connectorRuntime/sleep';
+import { ConnectorMetadata, DataModel } from './helpers/dataModel';
 
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
@@ -77,11 +40,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    updateRuntimeConfig({
-      globalHeaders,
+    updateConnectorSettings({
+      httpParams: {
+        authorization,
+        globalHeaders,
+        globalQueryParams,
+      },
       runtimeOptions,
-      authorization,
-      globalQueryParams,
     });
   }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
 
@@ -131,7 +96,7 @@ function App() {
   }
 
   return (
-    <DebuggerProvider
+    <AppProvider
       connector={connector}
       metadata={metadata}
       globalHeaders={globalHeaders}
@@ -140,8 +105,8 @@ function App() {
       globalQueryParams={globalQueryParams}
       updateSettings={updateSettings}
     >
-      <DebuggerShell dataModel={dataModel} onModelChanged={setDataModel} />
-    </DebuggerProvider>
+      <AppShell dataModel={dataModel} onModelChanged={setDataModel} />
+    </AppProvider>
   );
 }
 

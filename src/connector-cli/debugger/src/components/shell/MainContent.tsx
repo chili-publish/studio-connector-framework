@@ -1,9 +1,9 @@
-import { DataModel } from '../Helpers/DataModel';
-import { useDebugger } from '../core/DebuggerContext';
-import { GenericComponent } from './GenericComponent';
+import { DataModel } from '../../helpers/dataModel';
+import { useApp } from '../../core/AppContext';
+import { ModelView } from '../ModelView';
 
 export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
-  const { metadata } = useDebugger();
+  const { metadata } = useApp();
 
   if (!dataModel) {
     return (
@@ -26,7 +26,7 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
             {metadata.getDisplayType()}
           </p>
         </div>
-        <GenericComponent dataModel={dataModel} />
+        <ModelView dataModel={dataModel} />
       </div>
     </div>
   );
