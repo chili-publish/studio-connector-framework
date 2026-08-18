@@ -12,18 +12,9 @@ import { initRuntimeSleep } from './helpers/connectorRuntime/sleep';
 import { ConnectorMetadata, DataModel } from './helpers/dataModel';
 
 function App() {
-  const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [connector, setConnector] = useState<any>(null);
   const [error, setError] = useState<string | undefined>(undefined);
-
-  const {
-    globalHeaders,
-    runtimeOptions,
-    authorization,
-    globalQueryParams,
-    updateSettings,
-  } = useConnectorSettings();
 
   const connectorType = useMemo(() => {
     const queryParamConnectorType = new URLSearchParams(window.location.search)
@@ -39,17 +30,6 @@ function App() {
     }
     return queryParamConnectorType;
   }, []);
-
-  useEffect(() => {
-    updateConnectorSettings({
-      httpParams: {
-        authorization,
-        globalHeaders,
-        globalQueryParams,
-      },
-      runtimeOptions,
-    });
-  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
 
   useEffect(() => {
     initRuntimeErrors();
@@ -95,6 +75,38 @@ function App() {
   if (error || !connector || !metadata) {
     return <div className="dbg-state-error">Error: {error}</div>;
   }
+
+  return (
+    <DebuggerSession connector={connector} metadata={metadata} />
+  );
+}
+
+function DebuggerSession({
+  connector,
+  metadata,
+}: {
+  connector: any;
+  metadata: ConnectorMetadata;
+}) {
+  const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
+  const {
+    globalHeaders,
+    runtimeOptions,
+    authorization,
+    globalQueryParams,
+    updateSettings,
+  } = useConnectorSettings(metadata.name);
+
+  useEffect(() => {
+    updateConnectorSettings({
+      httpParams: {
+        authorization,
+        globalHeaders,
+        globalQueryParams,
+      },
+      runtimeOptions,
+    });
+  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
 
   return (
     <ToastProvider>
