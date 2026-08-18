@@ -6,18 +6,18 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Header } from '../Helpers/ConnectorRuntime';
-import type { ConnectorMetadata } from '../Helpers/DataModel';
-import type { UpdateSettingsFn } from './useConnectorSettings';
+import type { Header } from '../helpers/connectorRuntime';
+import type { ConnectorMetadata } from '../helpers/dataModel';
+import type { UpdateSettingsFn } from './connectorSettingsStorage';
 
 export type ToastTone = 'success' | 'error';
 
-export type DebuggerToast = {
+export type ToastMessage = {
   message: string;
   tone: ToastTone;
 };
 
-type DebuggerContextValue = {
+type AppContextValue = {
   connector: any;
   metadata: ConnectorMetadata;
   globalHeaders: Header[];
@@ -25,13 +25,13 @@ type DebuggerContextValue = {
   runtimeOptions: Record<string, unknown>;
   globalQueryParams: URLSearchParams;
   updateSettings: UpdateSettingsFn;
-  toast: DebuggerToast | null;
+  toast: ToastMessage | null;
   showToast: (message: string, tone?: ToastTone) => void;
 };
 
-const DebuggerContext = createContext<DebuggerContextValue | null>(null);
+const AppContext = createContext<AppContextValue | null>(null);
 
-export function DebuggerProvider({
+export function AppProvider({
   connector,
   metadata,
   globalHeaders,
@@ -50,7 +50,7 @@ export function DebuggerProvider({
   updateSettings: UpdateSettingsFn;
   children: ReactNode;
 }) {
-  const [toast, setToast] = useState<DebuggerToast | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   const showToast = useCallback((message: string, tone: ToastTone = 'success') => {
     setToast({ message, tone });
@@ -86,17 +86,13 @@ export function DebuggerProvider({
     ]
   );
 
-  return (
-    <DebuggerContext.Provider value={value}>
-      {children}
-    </DebuggerContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-export function useDebugger() {
-  const context = useContext(DebuggerContext);
+export function useApp() {
+  const context = useContext(AppContext);
   if (!context) {
-    throw new Error('useDebugger must be used within DebuggerProvider');
+    throw new Error('useApp must be used within AppProvider');
   }
   return context;
 }

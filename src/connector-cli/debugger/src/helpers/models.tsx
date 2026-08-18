@@ -2,8 +2,8 @@ import {
   UpdateHttpParamsSettings,
   UpdateRuntimeOptionsSettings,
   UpdateSettingsFn,
-} from '../core/useConnectorSettings';
-import { InvokableDataModel, SettableDataModel } from './DataModel';
+} from '../core/connectorSettingsStorage';
+import { InvokableDataModel, SettableDataModel } from './dataModel';
 
 export const Models: {
   Settings: SettableDataModel[];

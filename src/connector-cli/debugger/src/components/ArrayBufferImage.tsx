@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getImageFromCache } from '../Helpers/ConnectorRuntime';
+import { getImageFromCache } from '../helpers/connectorRuntime';
 
 type Props = {
   id: string;

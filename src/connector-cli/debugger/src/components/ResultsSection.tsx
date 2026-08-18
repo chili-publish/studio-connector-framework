@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { MethodExecutionMetrics } from '../Helpers/MetricsCollector';
+import type { MethodExecutionMetrics } from '../helpers/metricsCollector';
 import { ExecutionMetricsPanel } from './ExecutionMetricsPanel';
 
 export const ResultsSection = ({

@@ -1,51 +1,56 @@
-import { metricsCollector } from '../MetricsCollector';
+import { MemoryStorage } from '../../core/storage';
+import { metricsCollector } from '../metricsCollector';
 
 export type CachedBinary = {
   data: ArrayBuffer;
   contentType: string;
 };
 
-export const cache = new Map<string, CachedBinary>();
+const imageCache = new MemoryStorage();
 
 export interface Header {
   name: string;
   value: string;
 }
 
-export type RuntimeConfig = {
-  globalHeaders: Header[];
-  runtimeOptions: Record<string, unknown>;
+export type HttpParams = {
   authorization: string;
+  globalHeaders: Header[];
   globalQueryParams: URLSearchParams;
+};
+
+export type ConnectorSettings = {
+  httpParams: HttpParams;
+  runtimeOptions: Record<string, unknown>;
 };
 
 const IMAGE_CACHE_TIMEOUT_MS = 10_000;
 
-const runtimeConfig: RuntimeConfig = {
-  globalHeaders: [],
+const connectorSettings: ConnectorSettings = {
+  httpParams: {
+    authorization: '',
+    globalHeaders: [],
+    globalQueryParams: new URLSearchParams(),
+  },
   runtimeOptions: {},
-  authorization: '',
-  globalQueryParams: new URLSearchParams(),
 };
 
 let connectorLoad: Promise<any> | null = null;
 
-export function updateRuntimeConfig(next: RuntimeConfig) {
-  runtimeConfig.globalHeaders = next.globalHeaders;
-  runtimeConfig.authorization = next.authorization;
-  runtimeConfig.globalQueryParams = next.globalQueryParams;
+export function updateConnectorSettings(next: ConnectorSettings) {
+  connectorSettings.httpParams = next.httpParams;
 
-  for (const key of Object.keys(runtimeConfig.runtimeOptions)) {
-    delete runtimeConfig.runtimeOptions[key];
+  for (const key of Object.keys(connectorSettings.runtimeOptions)) {
+    delete connectorSettings.runtimeOptions[key];
   }
-  Object.assign(runtimeConfig.runtimeOptions, next.runtimeOptions);
+  Object.assign(connectorSettings.runtimeOptions, next.runtimeOptions);
 }
 
 export async function getImageFromCache(
   id: string,
   timeoutMs = IMAGE_CACHE_TIMEOUT_MS
 ): Promise<CachedBinary> {
-  const existing = cache.get(id);
+  const existing = imageCache.getItem<CachedBinary>(id);
   if (existing) {
     return existing;
   }
@@ -53,7 +58,7 @@ export async function getImageFromCache(
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
     const interval = setInterval(() => {
-      const entry = cache.get(id);
+      const entry = imageCache.getItem<CachedBinary>(id);
       if (entry) {
         clearInterval(interval);
         resolve(entry);
@@ -87,7 +92,8 @@ export async function initRuntime() {
 
 async function loadConnector() {
   const fetch = async (url: string, options: any) => {
-    const { authorization, globalHeaders, globalQueryParams } = runtimeConfig;
+    const { authorization, globalHeaders, globalQueryParams } =
+      connectorSettings.httpParams;
     const method = options?.method ?? 'GET';
     const authHeader = authorization ? { Authorization: authorization } : {};
     const headers = {
@@ -117,7 +123,7 @@ async function loadConnector() {
       if (isBinaryType(contentType)) {
         const arrayBuffer = await response.arrayBuffer();
         const id = Math.random().toString(36).substring(7);
-        cache.set(id, {
+        imageCache.setItem(id, {
           data: arrayBuffer,
           contentType: contentType ?? 'application/octet-stream',
         });
@@ -160,7 +166,7 @@ async function loadConnector() {
   };
 
   const runtime = {
-    options: runtimeConfig.runtimeOptions,
+    options: connectorSettings.runtimeOptions,
     logError: console.error,
     platform: {},
     sdkVersion: '1.0.0',

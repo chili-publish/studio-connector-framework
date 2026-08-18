@@ -1,5 +1,7 @@
+import type { IconProps } from './types';
+
 /** Inline trash icon — keeps debugger free of icon-library deps. */
-export const TrashIcon = ({ className }: { className?: string }) => (
+export const TrashIcon = ({ className }: IconProps) => (
   <svg
     className={className}
     width="16"

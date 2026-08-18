@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, type ClipboardEvent } from 'react';
-import { NumberParameter, Parameter } from '../Helpers/DataModel';
-import { normalizeConnectorId } from '../Helpers/connectorId';
+import { NumberParameter, Parameter } from '../../helpers/dataModel';
+import { normalizeConnectorId } from '../../helpers/connectorId';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { ParameterListInput } from './ParameterListInput';
 

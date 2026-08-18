@@ -1,86 +1,27 @@
 import { useCallback, useState } from 'react';
-import { Header } from '../Helpers/ConnectorRuntime';
-import { getJson, setJson } from './debuggerStorage';
+import { Header } from '../helpers/connectorRuntime';
+import {
+  HttpParamsValues,
+  readInitialSettings,
+  httpParamsStorageKey,
+  runtimeOptionsStorageKey,
+  settingsStorage,
+  UpdateSettingsFn,
+} from './connectorSettingsStorage';
 
-export type HttpParamsValues = [
-  string | undefined,
-  Record<string, string> | undefined,
-  Record<string, string> | undefined,
-];
-
-export type UpdateHttpParamsSettings = (
-  name: 'http-params',
-  values: HttpParamsValues
-) => void;
-export type UpdateRuntimeOptionsSettings = (
-  name: 'runtime-options',
-  values: [Record<string, unknown> | undefined]
-) => void;
-
-export type UpdateSettingsFn = UpdateHttpParamsSettings &
-  UpdateRuntimeOptionsSettings;
-
-export const httpParamsStorageKey = Symbol.for('connector-cli-http-params-v2');
-export const runtimeOptionsStorageKey = Symbol.for(
-  'connector-cli-runtime-options'
-);
-
-function readStoredHttpParams(): {
-  authorization: string;
-  globalHeaders: Header[];
-  globalQueryParams: URLSearchParams;
-} {
-  const stored = getJson<HttpParamsValues>(httpParamsStorageKey);
-  if (!stored) {
-    return {
-      authorization: '',
-      globalHeaders: [],
-      globalQueryParams: new URLSearchParams(),
-    };
-  }
-
-  const [auth, httpHeaders, httpQuery] = stored;
-  return {
-    authorization: auth ?? '',
-    globalHeaders: Object.entries(httpHeaders ?? {}).map(
-      ([headerName, value]) => ({
-        name: headerName,
-        value,
-      })
-    ),
-    globalQueryParams: new URLSearchParams(httpQuery),
-  };
-}
-
-function readStoredRuntimeOptions(): Record<string, unknown> {
-  const stored = getJson<[Record<string, unknown> | undefined]>(
-    runtimeOptionsStorageKey
-  );
-  return stored?.[0] ?? {};
-}
-
-function readInitialSettings() {
-  const httpParams = readStoredHttpParams();
-  return {
-    ...httpParams,
-    runtimeOptions: readStoredRuntimeOptions(),
-  };
-}
-
-// Responsible to store, update and read data of "Configuration" section items
 export function useConnectorSettings() {
   const [initialSettings] = useState(readInitialSettings);
   const [globalHeaders, setGlobalHeaders] = useState<Header[]>(
-    initialSettings.globalHeaders
+    initialSettings.httpParams.globalHeaders
   );
   const [authorization, setAuthorization] = useState(
-    initialSettings.authorization
+    initialSettings.httpParams.authorization
   );
   const [runtimeOptions, setRuntimeOptions] = useState<Record<string, unknown>>(
     initialSettings.runtimeOptions
   );
   const [globalQueryParams, setGlobalQueryParams] = useState<URLSearchParams>(
-    initialSettings.globalQueryParams
+    initialSettings.httpParams.globalQueryParams
   );
 
   const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
@@ -97,7 +38,7 @@ export function useConnectorSettings() {
         );
         setGlobalQueryParams(new URLSearchParams(httpQuery));
 
-        setJson(httpParamsStorageKey, [
+        settingsStorage.setItem(httpParamsStorageKey, [
           auth ?? '',
           httpHeaders ?? {},
           httpQuery ?? {},
@@ -107,7 +48,7 @@ export function useConnectorSettings() {
       case 'runtime-options': {
         const [options] = values as [Record<string, unknown> | undefined];
         setRuntimeOptions(options ?? {});
-        setJson(runtimeOptionsStorageKey, values);
+        settingsStorage.setItem(runtimeOptionsStorageKey, values);
       }
     }
   }, []);
