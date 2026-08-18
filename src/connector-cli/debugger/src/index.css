@@ -211,12 +211,33 @@
     @apply relative bg-surface-header rounded-lg overflow-hidden w-1/2;
   }
 
-  /* Toast */
+  /* Toast — GSC platform Toast (grafx-shared-components) */
   .dbg-toast-region {
-    @apply fixed bottom-xl right-xl z-50 flex flex-col gap-sm;
+    @apply pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center;
   }
 
   .dbg-toast {
-    @apply shadow-sm;
+    @apply pointer-events-auto fixed flex items-center justify-between h-14 px-5 rounded-lg text-[0.875rem] leading-[1.5] text-text-inverse;
+    transform: translateY(100vh);
+  }
+
+  .dbg-toast-success {
+    @apply bg-status-success;
+  }
+
+  .dbg-toast-error {
+    @apply bg-status-error;
+  }
+
+  .dbg-toast-content {
+    @apply flex items-center;
+  }
+
+  .dbg-toast-icon {
+    @apply me-4 inline-flex items-center;
+  }
+
+  .dbg-toast-close {
+    @apply flex cursor-pointer border-0 bg-transparent p-[0.6875rem] -me-[0.6875rem] text-text-inverse;
   }
 }
