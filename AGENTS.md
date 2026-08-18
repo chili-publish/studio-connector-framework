@@ -79,7 +79,7 @@ Use **Yarn Classic (v1)** — not npm, not pnpm, not Yarn Berry for workspace in
 | Requirement | Value |
 | ----------- | ----- |
 | Yarn        | `1.22.x` (lockfile is Yarn v1) |
-| Node        | CLI requires `>=20`; CI uses `22.x` |
+| Node        | CLI requires `>=22`; CI uses `24.x` |
 
 ```bash
 yarn install
