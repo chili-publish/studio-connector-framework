@@ -22,13 +22,18 @@ export type UpdateSettingsFn = UpdateHttpParamsSettings &
 /** Session-backed — HTTP params and runtime options only. */
 export const settingsStorage = new SessionStorage();
 
-export const httpParamsStorageKey = Symbol.for('connector-cli-http-params-v2');
-export const runtimeOptionsStorageKey = Symbol.for(
-  'connector-cli-runtime-options'
-);
+export function httpParamsStorageKey(connectorName: string) {
+  return Symbol.for(`connector-cli-http-params:${connectorName}`);
+}
 
-export function readStoredHttpParams(): HttpParams {
-  const stored = settingsStorage.getItem<HttpParamsValues>(httpParamsStorageKey);
+export function runtimeOptionsStorageKey(connectorName: string) {
+  return Symbol.for(`connector-cli-runtime-options:${connectorName}`);
+}
+
+export function readStoredHttpParams(connectorName: string): HttpParams {
+  const stored = settingsStorage.getItem<HttpParamsValues>(
+    httpParamsStorageKey(connectorName)
+  );
   if (!stored) {
     return {
       authorization: '',
@@ -50,16 +55,18 @@ export function readStoredHttpParams(): HttpParams {
   };
 }
 
-export function readStoredRuntimeOptions(): Record<string, unknown> {
+export function readStoredRuntimeOptions(
+  connectorName: string
+): Record<string, unknown> {
   const stored = settingsStorage.getItem<[Record<string, unknown> | undefined]>(
-    runtimeOptionsStorageKey
+    runtimeOptionsStorageKey(connectorName)
   );
   return stored?.[0] ?? {};
 }
 
-export function readInitialSettings() {
+export function readInitialSettings(connectorName: string) {
   return {
-    httpParams: readStoredHttpParams(),
-    runtimeOptions: readStoredRuntimeOptions(),
+    httpParams: readStoredHttpParams(connectorName),
+    runtimeOptions: readStoredRuntimeOptions(connectorName),
   };
 }

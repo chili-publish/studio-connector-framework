@@ -9,8 +9,8 @@ import {
   UpdateSettingsFn,
 } from './connectorSettingsStorage';
 
-export function useConnectorSettings() {
-  const [initialSettings] = useState(readInitialSettings);
+export function useConnectorSettings(connectorName: string) {
+  const [initialSettings] = useState(() => readInitialSettings(connectorName));
   const [globalHeaders, setGlobalHeaders] = useState<Header[]>(
     initialSettings.httpParams.globalHeaders
   );
@@ -24,34 +24,40 @@ export function useConnectorSettings() {
     initialSettings.httpParams.globalQueryParams
   );
 
-  const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
-    switch (name) {
-      case 'http-params': {
-        // Switch on `name` does not narrow sibling `values` (correlated params).
-        const [auth, httpHeaders, httpQuery] = values as HttpParamsValues;
-        setAuthorization(auth ?? '');
-        setGlobalHeaders(
-          Object.entries(httpHeaders ?? {}).map(([headerName, value]) => ({
-            name: headerName,
-            value,
-          }))
-        );
-        setGlobalQueryParams(new URLSearchParams(httpQuery));
+  const updateSettings: UpdateSettingsFn = useCallback(
+    (name, values) => {
+      switch (name) {
+        case 'http-params': {
+          // Switch on `name` does not narrow sibling `values` (correlated params).
+          const [auth, httpHeaders, httpQuery] = values as HttpParamsValues;
+          setAuthorization(auth ?? '');
+          setGlobalHeaders(
+            Object.entries(httpHeaders ?? {}).map(([headerName, value]) => ({
+              name: headerName,
+              value,
+            }))
+          );
+          setGlobalQueryParams(new URLSearchParams(httpQuery));
 
-        settingsStorage.setItem(httpParamsStorageKey, [
-          auth ?? '',
-          httpHeaders ?? {},
-          httpQuery ?? {},
-        ]);
-        break;
+          settingsStorage.setItem(httpParamsStorageKey(connectorName), [
+            auth ?? '',
+            httpHeaders ?? {},
+            httpQuery ?? {},
+          ]);
+          break;
+        }
+        case 'runtime-options': {
+          const [options] = values as [Record<string, unknown> | undefined];
+          setRuntimeOptions(options ?? {});
+          settingsStorage.setItem(
+            runtimeOptionsStorageKey(connectorName),
+            values
+          );
+        }
       }
-      case 'runtime-options': {
-        const [options] = values as [Record<string, unknown> | undefined];
-        setRuntimeOptions(options ?? {});
-        settingsStorage.setItem(runtimeOptionsStorageKey, values);
-      }
-    }
-  }, []);
+    },
+    [connectorName]
+  );
 
   return {
     globalHeaders,
