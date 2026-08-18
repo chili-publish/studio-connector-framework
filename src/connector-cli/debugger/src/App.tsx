@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell } from './components/shell/AppShell';
 import { AppProvider } from './core/AppContext';
 import { ToastProvider } from './core/ToastContext';
@@ -10,6 +10,19 @@ import {
 import { initRuntimeErrors } from './helpers/connectorRuntime/connectorHttpError';
 import { initRuntimeSleep } from './helpers/connectorRuntime/sleep';
 import { ConnectorMetadata, DataModel } from './helpers/dataModel';
+import { resolveSelectableModel } from './helpers/models';
+
+const MODEL_VIEW_QUERY_PARAM = 'modelView';
+
+function readModelViewQueryParam(): string | null {
+  return new URLSearchParams(window.location.search).get(MODEL_VIEW_QUERY_PARAM);
+}
+
+function writeModelViewQueryParam(modelName: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(MODEL_VIEW_QUERY_PARAM, modelName);
+  window.history.replaceState(null, '', url);
+}
 
 function App() {
   const [loading, setLoading] = useState<boolean>(true);
@@ -88,7 +101,16 @@ function DebuggerSession({
   connector: any;
   metadata: ConnectorMetadata;
 }) {
-  const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
+  const [dataModel, setDataModel] = useState<DataModel | undefined>(() => {
+    const initialModel = resolveSelectableModel(
+      metadata.type,
+      readModelViewQueryParam()
+    );
+    if (initialModel) {
+      writeModelViewQueryParam(initialModel.name);
+    }
+    return initialModel;
+  });
   const {
     globalHeaders,
     runtimeOptions,
@@ -96,6 +118,11 @@ function DebuggerSession({
     globalQueryParams,
     updateSettings,
   } = useConnectorSettings(metadata.name);
+
+  const handleModelChanged = useCallback((model: DataModel) => {
+    setDataModel(model);
+    writeModelViewQueryParam(model.name);
+  }, []);
 
   useEffect(() => {
     updateConnectorSettings({
@@ -119,7 +146,7 @@ function DebuggerSession({
         globalQueryParams={globalQueryParams}
         updateSettings={updateSettings}
       >
-        <AppShell dataModel={dataModel} onModelChanged={setDataModel} />
+        <AppShell dataModel={dataModel} onModelChanged={handleModelChanged} />
       </AppProvider>
     </ToastProvider>
   );

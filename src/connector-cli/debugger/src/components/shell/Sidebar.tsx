@@ -1,5 +1,5 @@
 import { DataModel } from '../../helpers/dataModel';
-import { Models } from '../../helpers/models';
+import { getMethodModelsForType, Models } from '../../helpers/models';
 import { useApp } from '../../core/AppContext';
 import { BoltIcon } from '../icons';
 
@@ -11,22 +11,8 @@ export const Sidebar = ({
   activeModelName?: string;
 }) => {
   const { metadata } = useApp();
-  let models: DataModel[] = [];
+  const models = getMethodModelsForType(metadata.type);
   const configurationModels = Models.Settings;
-
-  switch (metadata.type) {
-    case 'mediaconnector':
-      Models.Media.forEach((model: DataModel) => models.push(model));
-      break;
-    case 'fontconnector':
-      break;
-    case 'dataconnector':
-      Models.Data.forEach((model: DataModel) => models.push(model));
-      break;
-    default:
-      Models.Media.forEach((model: DataModel) => models.push(model));
-      break;
-  }
 
   const navItemClass = (modelName: string) =>
     `dbg-nav-item${activeModelName === modelName ? ' dbg-nav-item-active' : ''}`;
