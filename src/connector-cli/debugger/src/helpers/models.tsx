@@ -9,6 +9,10 @@ import {
   InvokableDataModel,
   SettableDataModel,
 } from './dataModel';
+import {
+  HTTP_PARAMS_MODEL,
+  RUNTIME_OPTIONS_MODEL,
+} from './parameterForm';
 
 export const Models: {
   Settings: SettableDataModel[];
@@ -17,7 +21,7 @@ export const Models: {
 } = {
   Settings: [
     {
-      name: 'http-params',
+      name: HTTP_PARAMS_MODEL,
       displayName: 'HTTP Params',
       parameters: [
         {
@@ -51,7 +55,7 @@ export const Models: {
       },
     },
     {
-      name: 'Runtime options',
+      name: RUNTIME_OPTIONS_MODEL,
       parameters: [
         {
           name: 'runtime-options',

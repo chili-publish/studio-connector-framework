@@ -1,3 +1,5 @@
+import type { UpdateSettingsFn } from '../core/connectorSettingsStorage';
+
 export type DataModel = {
   name: string;
   displayName?: string;
@@ -12,7 +14,7 @@ export type InvokableDataModel = DataModel & {
 };
 
 export type SettableDataModel = DataModel & {
-  set: (values: any, updateSettings: (...args: any[]) => void) => void;
+  set: (values: any, updateSettings: UpdateSettingsFn) => void;
 };
 
 export type ConnectorMetadata = {

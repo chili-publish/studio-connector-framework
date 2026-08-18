@@ -86,7 +86,11 @@ function App() {
   }
 
   if (error || !connector || !metadata) {
-    return <div className="dbg-state-error">Error: {error}</div>;
+    return (
+      <div className="dbg-state-error">
+        Error: {error ?? 'Could not initialize connector'}
+      </div>
+    );
   }
 
   return (
