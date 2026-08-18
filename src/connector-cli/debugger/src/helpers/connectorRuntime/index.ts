@@ -1,3 +1,4 @@
+import { readInitialSettings } from '../../core/connectorSettingsStorage';
 import { MemoryStorage } from '../../core/storage';
 import { metricsCollector } from '../metricsCollector';
 
@@ -86,8 +87,16 @@ export async function initRuntime() {
     return connectorLoad;
   }
 
-  connectorLoad = loadConnector();
-  return connectorLoad;
+  const load = loadConnector();
+  connectorLoad = load;
+  try {
+    return await load;
+  } catch (error) {
+    if (connectorLoad === load) {
+      connectorLoad = null;
+    }
+    throw error;
+  }
 }
 
 async function loadConnector() {
@@ -165,6 +174,15 @@ async function loadConnector() {
     }
   };
 
+  // get the current base url and append connector.js to it
+  // When in dev mode use GraFx connector
+  const url = import.meta.env.DEV
+    ? 'https://stgrafxstudiodevpublic.blob.core.windows.net/editor/1.4.1/web/assets/packages/runtime_assets/assets/connectors/grafx_media/code.js'
+    : `${window.location.origin}/connector.js`;
+  // fetch the connector js code as a module
+  const ConnectorClass = (await import(/* @vite-ignore */ url)).default;
+  updateConnectorSettings(readInitialSettings(ConnectorClass.name));
+
   const runtime = {
     options: connectorSettings.runtimeOptions,
     logError: console.error,
@@ -173,13 +191,5 @@ async function loadConnector() {
     fetch: fetch,
   };
 
-  // get the current base url and append connector.js to it
-  // When in dev mode use GraFx connector
-  const url = import.meta.env.DEV
-    ? 'https://stgrafxstudiodevpublic.blob.core.windows.net/editor/1.4.1/web/assets/packages/runtime_assets/assets/connectors/grafx_media/code.js'
-    : `${window.location.origin}/connector.js`;
-  // fetch the connector js code as a module
-  const mod = await import(/* @vite-ignore */ url);
-  // get the default export from the module
-  return new mod.default(runtime);
+  return new ConnectorClass(runtime);
 }

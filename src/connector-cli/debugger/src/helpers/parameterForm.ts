@@ -1,7 +1,10 @@
 import { Parameter } from './dataModel';
 
+export const HTTP_PARAMS_MODEL = 'http-params';
+export const RUNTIME_OPTIONS_MODEL = 'Runtime options';
+
 export function isSettingsModel(name: string) {
-  return name === 'http-params' || name === 'Runtime options';
+  return name === HTTP_PARAMS_MODEL || name === RUNTIME_OPTIONS_MODEL;
 }
 
 export function cloneParameters(parameters: Parameter[]): Parameter[] {

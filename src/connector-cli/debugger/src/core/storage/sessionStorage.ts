@@ -9,17 +9,12 @@ function storageKeyToString(key: StorageKey): string {
 
   const registeredKey = Symbol.keyFor(key);
   if (registeredKey !== undefined) {
-    return registeredKey;
+    return `${SYMBOL_KEY_PREFIX}global:${registeredKey}`;
   }
 
-  const description = key.description;
-  if (!description) {
-    throw new Error(
-      'Anonymous symbols without a description cannot be used as storage keys'
-    );
-  }
-
-  return `${SYMBOL_KEY_PREFIX}${description}`;
+  throw new Error(
+    'Only symbols created with Symbol.for can be used as session storage keys'
+  );
 }
 
 export class SessionStorage implements Storage {

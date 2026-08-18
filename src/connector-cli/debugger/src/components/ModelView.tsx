@@ -20,7 +20,9 @@ import {
   applyValuesToParameters,
   cloneParameters,
   denormalizeParameters,
+  HTTP_PARAMS_MODEL,
   isSettingsModel,
+  RUNTIME_OPTIONS_MODEL,
 } from '../helpers/parameterForm';
 import ArrayBufferImage from './ArrayBufferImage';
 import JsonObjectRenderer from './JsonObjectRenderer';
@@ -45,7 +47,7 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
   );
 
   const settingsValues = useMemo(() => {
-    if (dataModel.name === 'http-params') {
+    if (dataModel.name === HTTP_PARAMS_MODEL) {
       return {
         'Authorization Header': authorization,
         Headers: globalHeaders.reduce(
@@ -65,7 +67,7 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
       } as Record<string, unknown>;
     }
 
-    if (dataModel.name === 'Runtime options') {
+    if (dataModel.name === RUNTIME_OPTIONS_MODEL) {
       return {
         'runtime-options': runtimeOptions,
       } as Record<string, unknown>;
@@ -109,8 +111,18 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
   );
 
   const handleInputChange = useCallback(
-    (changedName: string, parameter: Parameter, newValue: any) => {
-      parameter.value = newValue;
+    (changedName: string, _parameter: Parameter, newValue: any) => {
+      setParameters((prev) => {
+        const next = cloneParameters(prev);
+        applyValuesToParameters(next, { [changedName]: newValue });
+        if (
+          JSON.stringify(denormalizeParameters(prev)) ===
+          JSON.stringify(denormalizeParameters(next))
+        ) {
+          return prev;
+        }
+        return next;
+      });
 
       setValues((val) => {
         const next = {
@@ -187,8 +199,12 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
 
   const handleSet = () => {
     const normalizedValues = normalizeValues();
-    (workingModel as SettableDataModel).set(normalizedValues, updateSettings);
-    showToast('Settings were applied');
+    try {
+      (workingModel as SettableDataModel).set(normalizedValues, updateSettings);
+      showToast('Settings were applied');
+    } catch (err) {
+      showToast(`Failed to apply settings: ${err}`, 'error');
+    }
   };
 
   useEffect(() => {

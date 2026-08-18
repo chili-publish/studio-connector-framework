@@ -77,13 +77,12 @@ function ToastItem({
 
 export function Toast() {
   const { toast, hideToast } = useToast();
-  if (!toast) {
-    return null;
-  }
 
   return (
     <div className="dbg-toast-region" role="status">
-      <ToastItem key={toast.id} toast={toast} onClose={hideToast} />
+      {toast ? (
+        <ToastItem key={toast.id} toast={toast} onClose={hideToast} />
+      ) : null}
     </div>
   );
 }
