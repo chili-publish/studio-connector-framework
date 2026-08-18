@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Header } from '../Helpers/ConnectorRuntime';
+import { getJson, setJson } from './debuggerStorage';
 
 export type HttpParamsValues = [
   string | undefined,
@@ -19,19 +20,67 @@ export type UpdateRuntimeOptionsSettings = (
 export type UpdateSettingsFn = UpdateHttpParamsSettings &
   UpdateRuntimeOptionsSettings;
 
-/** New key — ignores legacy `connector-cli-http-params` shape. */
-const httpParamsStorageKey = 'connector-cli-http-params-v2';
-const runtimeOptionsStorageKey = 'connector-cli-runtime-options';
+export const httpParamsStorageKey = Symbol.for('connector-cli-http-params-v2');
+export const runtimeOptionsStorageKey = Symbol.for(
+  'connector-cli-runtime-options'
+);
+
+function readStoredHttpParams(): {
+  authorization: string;
+  globalHeaders: Header[];
+  globalQueryParams: URLSearchParams;
+} {
+  const stored = getJson<HttpParamsValues>(httpParamsStorageKey);
+  if (!stored) {
+    return {
+      authorization: '',
+      globalHeaders: [],
+      globalQueryParams: new URLSearchParams(),
+    };
+  }
+
+  const [auth, httpHeaders, httpQuery] = stored;
+  return {
+    authorization: auth ?? '',
+    globalHeaders: Object.entries(httpHeaders ?? {}).map(
+      ([headerName, value]) => ({
+        name: headerName,
+        value,
+      })
+    ),
+    globalQueryParams: new URLSearchParams(httpQuery),
+  };
+}
+
+function readStoredRuntimeOptions(): Record<string, unknown> {
+  const stored = getJson<[Record<string, unknown> | undefined]>(
+    runtimeOptionsStorageKey
+  );
+  return stored?.[0] ?? {};
+}
+
+function readInitialSettings() {
+  const httpParams = readStoredHttpParams();
+  return {
+    ...httpParams,
+    runtimeOptions: readStoredRuntimeOptions(),
+  };
+}
 
 // Responsible to store, update and read data of "Configuration" section items
 export function useConnectorSettings() {
-  const [globalHeaders, setGlobalHeaders] = useState<Header[]>([]);
-  const [authorization, setAuthorization] = useState('');
+  const [initialSettings] = useState(readInitialSettings);
+  const [globalHeaders, setGlobalHeaders] = useState<Header[]>(
+    initialSettings.globalHeaders
+  );
+  const [authorization, setAuthorization] = useState(
+    initialSettings.authorization
+  );
   const [runtimeOptions, setRuntimeOptions] = useState<Record<string, unknown>>(
-    {}
+    initialSettings.runtimeOptions
   );
   const [globalQueryParams, setGlobalQueryParams] = useState<URLSearchParams>(
-    new URLSearchParams()
+    initialSettings.globalQueryParams
   );
 
   const updateSettings: UpdateSettingsFn = useCallback((name, values) => {
@@ -48,37 +97,20 @@ export function useConnectorSettings() {
         );
         setGlobalQueryParams(new URLSearchParams(httpQuery));
 
-        sessionStorage.setItem(
-          httpParamsStorageKey,
-          JSON.stringify([auth ?? '', httpHeaders ?? {}, httpQuery ?? {}])
-        );
+        setJson(httpParamsStorageKey, [
+          auth ?? '',
+          httpHeaders ?? {},
+          httpQuery ?? {},
+        ]);
         break;
       }
       case 'runtime-options': {
         const [options] = values as [Record<string, unknown> | undefined];
         setRuntimeOptions(options ?? {});
-        sessionStorage.setItem(
-          runtimeOptionsStorageKey,
-          JSON.stringify(values)
-        );
+        setJson(runtimeOptionsStorageKey, values);
       }
     }
   }, []);
-
-  const initSettings = useCallback(() => {
-    if (!!sessionStorage.getItem(runtimeOptionsStorageKey)) {
-      updateSettings(
-        'runtime-options',
-        JSON.parse(sessionStorage.getItem(runtimeOptionsStorageKey)!)
-      );
-    }
-    if (!!sessionStorage.getItem(httpParamsStorageKey)) {
-      updateSettings(
-        'http-params',
-        JSON.parse(sessionStorage.getItem(httpParamsStorageKey)!) as HttpParamsValues
-      );
-    }
-  }, [updateSettings]);
 
   return {
     globalHeaders,
@@ -86,6 +118,5 @@ export function useConnectorSettings() {
     runtimeOptions,
     globalQueryParams,
     updateSettings,
-    initSettings,
   };
 }

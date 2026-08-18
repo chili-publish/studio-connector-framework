@@ -2,16 +2,53 @@ import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import { MainContent } from './Components/MainContent';
 import { Sidebar } from './Components/Sidebar';
+import { DebuggerProvider, useDebugger } from './core/DebuggerContext';
 import { useConnectorSettings } from './core/useConnectorSettings';
-import { initRuntime } from './Helpers/ConnectorRuntime';
+import {
+  initRuntime,
+  updateRuntimeConfig,
+} from './Helpers/ConnectorRuntime';
 import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
 import { initRuntimeSleep } from './Helpers/ConnectorRuntime/sleep';
-import { DataModel } from './Helpers/DataModel';
-import { Models } from './Helpers/Models';
+import { ConnectorMetadata, DataModel } from './Helpers/DataModel';
+
+function DebuggerToast() {
+  const { toast } = useDebugger();
+  if (!toast) {
+    return null;
+  }
+
+  const toneClass =
+    toast.tone === 'error' ? 'dbg-badge-error' : 'dbg-badge-success';
+
+  return (
+    <div className="dbg-toast-region" role="status">
+      <div className={`dbg-toast ${toneClass}`}>{toast.message}</div>
+    </div>
+  );
+}
+
+function DebuggerShell({
+  dataModel,
+  onModelChanged,
+}: {
+  dataModel: DataModel | undefined;
+  onModelChanged: (model: DataModel) => void;
+}) {
+  return (
+    <div className="dbg-app">
+      <Sidebar
+        onModelChanged={onModelChanged}
+        activeModelName={dataModel?.name}
+      />
+      <MainContent key={dataModel?.name} dataModel={dataModel} />
+      <DebuggerToast />
+    </div>
+  );
+}
 
 function App() {
   const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
-
   const [loading, setLoading] = useState<boolean>(true);
   const [connector, setConnector] = useState<any>(null);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -22,7 +59,6 @@ function App() {
     authorization,
     globalQueryParams,
     updateSettings,
-    initSettings,
   } = useConnectorSettings();
 
   const connectorType = useMemo(() => {
@@ -41,93 +77,71 @@ function App() {
   }, []);
 
   useEffect(() => {
-    initRuntime(globalHeaders, runtimeOptions, authorization, globalQueryParams)
-      .then((connector) => {
-        Models.ConnectorInstance = connector;
-        setConnector(connector);
+    updateRuntimeConfig({
+      globalHeaders,
+      runtimeOptions,
+      authorization,
+      globalQueryParams,
+    });
+  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
+
+  useEffect(() => {
+    initRuntimeErrors();
+    initRuntimeSleep();
+    initRuntime()
+      .then((loadedConnector) => {
+        setConnector(loadedConnector);
         setLoading(false);
-        console.log('connector', connector);
+        console.log('connector', loadedConnector);
       })
       .catch((err) => {
         setError('Could not fetch connector');
         setLoading(false);
         console.error('error', err);
       });
-  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
-
-  useEffect(() => {
-    initRuntimeErrors();
-    initRuntimeSleep();
   }, []);
 
-  useEffect(() => {
-    Models.updateSettings = updateSettings;
-    initSettings();
-  }, [updateSettings, initSettings]);
+  const metadata: ConnectorMetadata | null = useMemo(() => {
+    if (!connector) {
+      return null;
+    }
 
-  const modelChangeHandler = (model: DataModel) => {
-    console.debug('Model "Change"', model);
-    // TODO: Implement better way of propagation stored values to the component params
-    if (
-      model.name === 'Runtime options' &&
-      Object.keys(runtimeOptions).length !== 0
-    ) {
-      model.parameters[0].value = runtimeOptions;
-    }
-    if (model.name === 'http-params') {
-      model.parameters[0].value = authorization;
-      model.parameters[1].value = globalHeaders.reduce(
-        (val, gh) => {
-          val[gh.name] = gh.value;
-          return val;
-        },
-        {} as Record<string, string>
-      );
-      model.parameters[2].value = Array.from(
-        globalQueryParams.entries()
-      ).reduce(
-        (val, gqp) => {
-          val[gqp[0]] = gqp[1];
-          return val;
-        },
-        {} as Record<string, string>
-      );
-    }
-    setDataModel(model);
-  };
+    return {
+      name: connector.constructor.name,
+      type: connectorType,
+      getDisplayType: function () {
+        switch (this.type) {
+          case 'mediaconnector':
+            return 'Media Connector';
+          case 'fontconnector':
+            return 'Font Connector';
+          case 'dataconnector':
+            return 'Data Connector';
+        }
+      },
+    };
+  }, [connector, connectorType]);
 
   if (loading) {
     return <div className="dbg-state-loading">Loading...</div>;
   }
 
-  if (error) {
+  if (error || !connector || !metadata) {
     return <div className="dbg-state-error">Error: {error}</div>;
   }
 
-  Models.ConnectorMetadata = {
-    name: connector.constructor.name,
-    type: connectorType,
-    getDisplayType: function () {
-      switch (this.type) {
-        case 'mediaconnector':
-          return 'Media Connector';
-        case 'fontconnector':
-          return 'Font Connector';
-        case 'dataconnector':
-          return 'Data Connector';
-      }
-    },
-  };
-
   return (
-    <div className="dbg-app">
-      <Sidebar
-        onModelChanged={modelChangeHandler}
-        activeModelName={dataModel?.name}
-      />
-      {/* we specify key as dataModel.name to rerender the same components once model changed */}
-      <MainContent key={dataModel?.name} dataModel={dataModel} />
-    </div>
+    <DebuggerProvider
+      connector={connector}
+      metadata={metadata}
+      globalHeaders={globalHeaders}
+      authorization={authorization}
+      runtimeOptions={runtimeOptions}
+      globalQueryParams={globalQueryParams}
+      updateSettings={updateSettings}
+    >
+      <DebuggerShell dataModel={dataModel} onModelChanged={setDataModel} />
+    </DebuggerProvider>
   );
 }
 

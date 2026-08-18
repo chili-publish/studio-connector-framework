@@ -1,8 +1,10 @@
 import { DataModel } from '../Helpers/DataModel';
-import { Models } from '../Helpers/Models';
+import { useDebugger } from '../core/DebuggerContext';
 import { GenericComponent } from './GenericComponent';
 
 export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
+  const { metadata } = useDebugger();
+
   if (!dataModel) {
     return (
       <div className="dbg-main">
@@ -19,11 +21,9 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
     <div className="dbg-main">
       <div className="dbg-card flex-1 overflow-y-auto">
         <div className="mb-md border-b border-border-subtle pb-md">
-          <h1 className="text-header text-text-primary">
-            {Models.ConnectorMetadata?.name}
-          </h1>
+          <h1 className="text-header text-text-primary">{metadata.name}</h1>
           <p className="text-regular text-text-secondary mt-xxs">
-            {Models.ConnectorMetadata?.getDisplayType()}
+            {metadata.getDisplayType()}
           </p>
         </div>
         <GenericComponent dataModel={dataModel} />

@@ -1,19 +1,68 @@
 import { metricsCollector } from '../MetricsCollector';
 
-export const cache = new Map<string, ArrayBuffer>();
+export type CachedBinary = {
+  data: ArrayBuffer;
+  contentType: string;
+};
+
+export const cache = new Map<string, CachedBinary>();
 
 export interface Header {
   name: string;
   value: string;
 }
 
-export async function getImageFromCache(id: string): Promise<ArrayBuffer> {
+export type RuntimeConfig = {
+  globalHeaders: Header[];
+  runtimeOptions: Record<string, unknown>;
+  authorization: string;
+  globalQueryParams: URLSearchParams;
+};
+
+const IMAGE_CACHE_TIMEOUT_MS = 10_000;
+
+const runtimeConfig: RuntimeConfig = {
+  globalHeaders: [],
+  runtimeOptions: {},
+  authorization: '',
+  globalQueryParams: new URLSearchParams(),
+};
+
+let connectorLoad: Promise<any> | null = null;
+
+export function updateRuntimeConfig(next: RuntimeConfig) {
+  runtimeConfig.globalHeaders = next.globalHeaders;
+  runtimeConfig.authorization = next.authorization;
+  runtimeConfig.globalQueryParams = next.globalQueryParams;
+
+  for (const key of Object.keys(runtimeConfig.runtimeOptions)) {
+    delete runtimeConfig.runtimeOptions[key];
+  }
+  Object.assign(runtimeConfig.runtimeOptions, next.runtimeOptions);
+}
+
+export async function getImageFromCache(
+  id: string,
+  timeoutMs = IMAGE_CACHE_TIMEOUT_MS
+): Promise<CachedBinary> {
+  const existing = cache.get(id);
+  if (existing) {
+    return existing;
+  }
+
   return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
     const interval = setInterval(() => {
-      const arrayBuffer = cache.get(id);
-      if (arrayBuffer) {
+      const entry = cache.get(id);
+      if (entry) {
         clearInterval(interval);
-        resolve(arrayBuffer);
+        resolve(entry);
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        clearInterval(interval);
+        reject(new Error(`Timed out waiting for cache entry "${id}"`));
       }
     }, 100);
   });
@@ -27,18 +76,20 @@ function isBinaryType(contentType?: string | null) {
   );
 }
 
-export async function initRuntime(
-  globalHeaders: Header[],
-  runtimeOptions: Record<string, unknown>,
-  authorization: string,
-  globalQueryParams: URLSearchParams
-) {
-  // proxy the fetch function to be able to inject headers
+export async function initRuntime() {
+  if (connectorLoad) {
+    return connectorLoad;
+  }
+
+  connectorLoad = loadConnector();
+  return connectorLoad;
+}
+
+async function loadConnector() {
   const fetch = async (url: string, options: any) => {
+    const { authorization, globalHeaders, globalQueryParams } = runtimeConfig;
     const method = options?.method ?? 'GET';
-    const authHeader = authorization
-      ? { Authorization: authorization }
-      : {};
+    const authHeader = authorization ? { Authorization: authorization } : {};
     const headers = {
       ...options.headers,
       ...globalHeaders.reduce(
@@ -66,7 +117,10 @@ export async function initRuntime(
       if (isBinaryType(contentType)) {
         const arrayBuffer = await response.arrayBuffer();
         const id = Math.random().toString(36).substring(7);
-        cache.set(id, arrayBuffer);
+        cache.set(id, {
+          data: arrayBuffer,
+          contentType: contentType ?? 'application/octet-stream',
+        });
         // We couldn't make a ... copy of response object as it is not iterable
         (response as any)['arrayBuffer'] = {
           id: id,
@@ -106,7 +160,7 @@ export async function initRuntime(
   };
 
   const runtime = {
-    options: runtimeOptions,
+    options: runtimeConfig.runtimeOptions,
     logError: console.error,
     platform: {},
     sdkVersion: '1.0.0',
@@ -121,7 +175,5 @@ export async function initRuntime(
   // fetch the connector js code as a module
   const mod = await import(/* @vite-ignore */ url);
   // get the default export from the module
-  const connector = new mod.default(runtime);
-
-  return connector;
+  return new mod.default(runtime);
 }

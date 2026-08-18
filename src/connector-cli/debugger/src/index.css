@@ -32,7 +32,7 @@
   }
 
   .dbg-nav-item {
-    @apply capitalize flex items-center py-sm px-md rounded-md mb-xs text-regular text-text-secondary hover:bg-surface-highlighted hover:text-text-primary transition-colors;
+    @apply capitalize flex items-center py-sm px-md rounded-md mb-xs text-regular text-text-secondary hover:bg-surface-highlighted hover:text-text-primary transition-colors w-full text-left bg-transparent border-0 cursor-pointer;
   }
 
   .dbg-nav-item-active {
@@ -209,5 +209,14 @@
 
   .dbg-image-preview {
     @apply relative bg-surface-header rounded-lg overflow-hidden w-1/2;
+  }
+
+  /* Toast */
+  .dbg-toast-region {
+    @apply fixed bottom-xl right-xl z-50 flex flex-col gap-sm;
+  }
+
+  .dbg-toast {
+    @apply shadow-sm;
   }
 }

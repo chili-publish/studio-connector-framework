@@ -8,11 +8,11 @@ export type InvokableDataModel = DataModel & {
   returnsImage: boolean;
   returnJson: boolean;
   returnJsonArray: boolean;
-  invoke: (values: any[]) => Promise<any>;
+  invoke: (values: any[], connector: any) => Promise<any>;
 };
 
 export type SettableDataModel = DataModel & {
-  set: (values: any) => void;
+  set: (values: any, updateSettings: (...args: any[]) => void) => void;
 };
 
 export type ConnectorMetadata = {
@@ -52,7 +52,7 @@ export type DictionaryParameter = {
   value?: any;
   name: string;
   componentType: 'dictionary';
-  rectrictModification?: boolean;
+  restrictModification?: boolean;
 };
 
 export type Parameter =

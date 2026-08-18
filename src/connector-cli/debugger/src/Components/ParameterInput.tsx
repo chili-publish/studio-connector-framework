@@ -123,7 +123,7 @@ export const ParameterInput = ({
             name={parameter.name}
             type="checkbox"
             onChange={(e) => handleInputChange(e.target.checked)}
-            value={parameter.value ?? false}
+            checked={Boolean(parameter.value)}
           />
         </div>
       );
@@ -139,7 +139,7 @@ export const ParameterInput = ({
             name={parameter.name}
             type="number"
             onChange={(e) => handleInputChange(Number(e.target.value))}
-            defaultValue={parameter.value}
+            value={parameter.value ?? ''}
             min={(parameter as NumberParameter).min}
             max={(parameter as NumberParameter).max}
           />
@@ -156,9 +156,9 @@ export const ParameterInput = ({
             className="dbg-input"
             name={parameter.name}
             onChange={(e) => handleInputChange(e.target.value)}
-            defaultValue={parameter.value}
+            value={parameter.value ?? ''}
           >
-            <option value="" selected disabled>
+            <option value="" disabled>
               [Select]
             </option>
             {parameter.options?.map((item) => (
