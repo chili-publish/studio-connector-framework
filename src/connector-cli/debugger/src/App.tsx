@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from './components/shell/AppShell';
 import { AppProvider } from './core/AppContext';
+import { ToastProvider } from './core/ToastContext';
 import { useConnectorSettings } from './core/useConnectorSettings';
 import {
   initRuntime,
@@ -96,17 +97,19 @@ function App() {
   }
 
   return (
-    <AppProvider
-      connector={connector}
-      metadata={metadata}
-      globalHeaders={globalHeaders}
-      authorization={authorization}
-      runtimeOptions={runtimeOptions}
-      globalQueryParams={globalQueryParams}
-      updateSettings={updateSettings}
-    >
-      <AppShell dataModel={dataModel} onModelChanged={setDataModel} />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider
+        connector={connector}
+        metadata={metadata}
+        globalHeaders={globalHeaders}
+        authorization={authorization}
+        runtimeOptions={runtimeOptions}
+        globalQueryParams={globalQueryParams}
+        updateSettings={updateSettings}
+      >
+        <AppShell dataModel={dataModel} onModelChanged={setDataModel} />
+      </AppProvider>
+    </ToastProvider>
   );
 }
 

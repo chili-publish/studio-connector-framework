@@ -1,21 +1,12 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useMemo,
-  useState,
   type ReactNode,
 } from 'react';
 import type { Header } from '../helpers/connectorRuntime';
 import type { ConnectorMetadata } from '../helpers/dataModel';
 import type { UpdateSettingsFn } from './connectorSettingsStorage';
-
-export type ToastTone = 'success' | 'error';
-
-export type ToastMessage = {
-  message: string;
-  tone: ToastTone;
-};
 
 type AppContextValue = {
   connector: any;
@@ -25,8 +16,6 @@ type AppContextValue = {
   runtimeOptions: Record<string, unknown>;
   globalQueryParams: URLSearchParams;
   updateSettings: UpdateSettingsFn;
-  toast: ToastMessage | null;
-  showToast: (message: string, tone?: ToastTone) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -50,17 +39,6 @@ export function AppProvider({
   updateSettings: UpdateSettingsFn;
   children: ReactNode;
 }) {
-  const [toast, setToast] = useState<ToastMessage | null>(null);
-
-  const showToast = useCallback((message: string, tone: ToastTone = 'success') => {
-    setToast({ message, tone });
-    window.setTimeout(() => {
-      setToast((current) =>
-        current?.message === message ? null : current
-      );
-    }, 3000);
-  }, []);
-
   const value = useMemo(
     () => ({
       connector,
@@ -70,8 +48,6 @@ export function AppProvider({
       runtimeOptions,
       globalQueryParams,
       updateSettings,
-      toast,
-      showToast,
     }),
     [
       connector,
@@ -81,8 +57,6 @@ export function AppProvider({
       runtimeOptions,
       globalQueryParams,
       updateSettings,
-      toast,
-      showToast,
     ]
   );
 

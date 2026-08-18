@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../core/AppContext';
+import { useToast } from '../core/ToastContext';
 import { settingsStorage } from '../core/connectorSettingsStorage';
 import {
   DataModel,
@@ -32,8 +33,8 @@ export const ModelView = ({ dataModel }: { dataModel: DataModel }) => {
     globalHeaders,
     runtimeOptions,
     globalQueryParams,
-    showToast,
   } = useApp();
+  const { showToast } = useToast();
 
   const catalogParameters = useMemo(
     () => cloneParameters(dataModel.parameters),
