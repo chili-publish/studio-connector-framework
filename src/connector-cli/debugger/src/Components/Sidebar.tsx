@@ -1,11 +1,6 @@
 import { DataModel } from '../Helpers/DataModel';
 import { Models } from '../Helpers/Models';
-
-declare global {
-  interface Window {
-    Models: typeof Models;
-  }
-}
+import { useDebugger } from '../core/DebuggerContext';
 
 export const Sidebar = ({
   onModelChanged,
@@ -14,11 +9,11 @@ export const Sidebar = ({
   onModelChanged: (model: DataModel) => void;
   activeModelName?: string;
 }) => {
-  // get url parameter for connector type (media/font/data)
+  const { metadata } = useDebugger();
   let models: DataModel[] = [];
   const configurationModels = Models.Settings;
 
-  switch (Models.ConnectorMetadata?.type) {
+  switch (metadata.type) {
     case 'mediaconnector':
       Models.Media.forEach((model: DataModel) => models.push(model));
       break;
@@ -32,8 +27,6 @@ export const Sidebar = ({
       break;
   }
 
-  window.Models = Models;
-
   const navItemClass = (modelName: string) =>
     `dbg-nav-item${activeModelName === modelName ? ' dbg-nav-item-active' : ''}`;
 
@@ -45,14 +38,14 @@ export const Sidebar = ({
           <li>
             <div className="dbg-sidebar-section">Settings</div>
             {configurationModels.map((model) => (
-              <a
+              <button
                 key={model.name}
-                href="#"
+                type="button"
                 className={navItemClass(model.name)}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onModelChanged(model);
-                }}
+                aria-current={
+                  activeModelName === model.name ? 'page' : undefined
+                }
+                onClick={() => onModelChanged(model)}
               >
                 <svg
                   className="h-5 w-5 mr-sm shrink-0"
@@ -68,20 +61,20 @@ export const Sidebar = ({
                   />
                 </svg>
                 {model.displayName ?? model.name}
-              </a>
+              </button>
             ))}
           </li>
           <li>
             <div className="dbg-sidebar-section">Methods</div>
             {models.map((model) => (
-              <a
+              <button
                 key={model.name}
-                href="#"
+                type="button"
                 className={navItemClass(model.name)}
-                onClick={(event) => {
-                  event.preventDefault();
-                  onModelChanged(model);
-                }}
+                aria-current={
+                  activeModelName === model.name ? 'page' : undefined
+                }
+                onClick={() => onModelChanged(model)}
               >
                 <svg
                   className="h-5 w-5 mr-sm shrink-0"
@@ -97,7 +90,7 @@ export const Sidebar = ({
                   />
                 </svg>
                 {model.displayName ?? model.name}
-              </a>
+              </button>
             ))}
           </li>
         </ul>

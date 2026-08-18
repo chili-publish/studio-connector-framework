@@ -88,7 +88,7 @@ export const ParameterDictionaryInput = ({
               <tr>
                 <th scope="col">Key</th>
                 <th scope="col">Value</th>
-                {parameter.rectrictModification ? null : (
+                {parameter.restrictModification ? null : (
                   <th scope="col" className="w-14"></th>
                 )}
               </tr>
@@ -114,7 +114,7 @@ export const ParameterDictionaryInput = ({
                       onChange={(event) => handleValueChange(index, event)}
                     />
                   </td>
-                  {parameter.rectrictModification ? null : (
+                  {parameter.restrictModification ? null : (
                     <td className="w-14 text-center">
                       <button
                         type="button"
@@ -131,7 +131,7 @@ export const ParameterDictionaryInput = ({
               ))}
             </tbody>
           </table>
-          {parameter.rectrictModification ? null : (
+          {parameter.restrictModification ? null : (
             <div className="px-lg py-md">
               <button
                 type="button"

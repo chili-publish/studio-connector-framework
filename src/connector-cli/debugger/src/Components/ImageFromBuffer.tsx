@@ -2,28 +2,53 @@ import React, { useEffect, useState } from 'react';
 import { getImageFromCache } from '../Helpers/ConnectorRuntime';
 
 type Props = {
-  buffer: ArrayBuffer;
+  id: string;
   width: string;
   height: string;
 };
 
-const ArrayBufferImage: React.FC<Props> = ({ buffer, width, height }) => {
-  const [imageSrc, setImageSrc] = useState<String | null>(null);
+const ArrayBufferImage: React.FC<Props> = ({ id, width, height }) => {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (buffer) {
-      getImageFromCache(buffer).then((image) => {
-        const blob = new Blob([image], { type: 'image/jpeg' }); // change the type if you're dealing with different image format
-        const url = URL.createObjectURL(blob);
-        setImageSrc(url);
-
-        // Clean up function to revoke the object URL
-        return () => {
-          URL.revokeObjectURL(url);
-        };
-      });
+    if (!id) {
+      return;
     }
-  }, [buffer]);
+
+    let cancelled = false;
+    let objectUrl: string | undefined;
+
+    getImageFromCache(id)
+      .then((entry) => {
+        if (cancelled) {
+          return;
+        }
+
+        const blob = new Blob([entry.data], {
+          type: entry.contentType || 'application/octet-stream',
+        });
+        objectUrl = URL.createObjectURL(blob);
+        setImageSrc(objectUrl);
+        setError(undefined);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(`${err}`);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [id]);
+
+  if (error) {
+    return <div className="dbg-callout-error">{error}</div>;
+  }
 
   return (
     <div className="dbg-image-preview">
@@ -31,7 +56,7 @@ const ArrayBufferImage: React.FC<Props> = ({ buffer, width, height }) => {
         <div className="text-center rounded-lg overflow-hidden w-56 sm:w-96 mx-auto">
           <img
             className="object-contain h-128 w-full"
-            src={imageSrc?.toString()}
+            src={imageSrc ?? undefined}
             style={{ width, height }}
             alt="Connector result"
           />
