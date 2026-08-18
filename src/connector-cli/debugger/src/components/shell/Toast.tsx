@@ -1,7 +1,7 @@
-import { useApp } from '../../core/AppContext';
+import { useToast } from '../../core/ToastContext';
 
 export function Toast() {
-  const { toast } = useApp();
+  const { toast } = useToast();
   if (!toast) {
     return null;
   }
