@@ -1,8 +1,10 @@
-import { DataModel } from '../Helpers/DataModel';
-import { Models } from '../Helpers/Models';
-import { GenericComponent } from './GenericComponent';
+import { DataModel } from '../../helpers/dataModel';
+import { useApp } from '../../core/AppContext';
+import { ModelView } from '../ModelView';
 
 export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
+  const { metadata } = useApp();
+
   if (!dataModel) {
     return (
       <div className="dbg-main">
@@ -19,14 +21,12 @@ export const MainContent = ({ dataModel }: { dataModel?: DataModel }) => {
     <div className="dbg-main">
       <div className="dbg-card flex-1 overflow-y-auto">
         <div className="mb-md border-b border-border-subtle pb-md">
-          <h1 className="text-header text-text-primary">
-            {Models.ConnectorMetadata?.name}
-          </h1>
+          <h1 className="text-header text-text-primary">{metadata.name}</h1>
           <p className="text-regular text-text-secondary mt-xxs">
-            {Models.ConnectorMetadata?.getDisplayType()}
+            {metadata.getDisplayType()}
           </p>
         </div>
-        <GenericComponent dataModel={dataModel} />
+        <ModelView dataModel={dataModel} />
       </div>
     </div>
   );

@@ -1,6 +1,38 @@
 import React, { useState } from 'react';
-import { DictionaryParameter, Parameter } from '../Helpers/DataModel';
-import { TrashIcon } from './TrashIcon';
+import { DictionaryParameter, Parameter } from '../../helpers/dataModel';
+import { TrashIcon } from '../icons';
+
+type DictionaryItem = { key: string; value: string };
+
+const emptyRow = (): DictionaryItem => ({ key: '', value: '' });
+
+function itemsFromValue(
+  value: Record<string, string> | undefined
+): DictionaryItem[] {
+  if (value === undefined) {
+    return [emptyRow()];
+  }
+
+  const entries = Object.entries(value).map(([key, entryValue]) => ({
+    key,
+    value: entryValue,
+  }));
+
+  // Show one placeholder row when the dictionary starts empty
+  // (e.g. HTTP headers, query params, or runtime options with no value).
+  return entries.length > 0 ? entries : [emptyRow()];
+}
+
+function toRecord(items: DictionaryItem[]): Record<string, string> {
+  const record: Record<string, string> = {};
+  for (const item of items) {
+    if (item.key === '' && item.value === '') {
+      continue;
+    }
+    record[item.key] = item.value;
+  }
+  return record;
+}
 
 export const ParameterDictionaryInput = ({
   parameter,
@@ -10,21 +42,13 @@ export const ParameterDictionaryInput = ({
   parameter: DictionaryParameter;
   onChange: (value: Record<string, string>) => void;
 }) => {
-  let initialList = [{ key: '', value: '' }];
-
-  if (parameter.value !== undefined) {
-    initialList = [];
-    for (const key in parameter.value) {
-      const value = parameter.value[key];
-      initialList.push({ key, value });
-    }
-  }
-
   // this will be a table with two columns, one for the key and one for the value
   // we can add items and remove items from the list
   // use tailwindcss for the table
   // first we define the state, which is a list of key value pairs
-  const [items, setItems] = useState<any[]>(initialList);
+  const [items, setItems] = useState<DictionaryItem[]>(() =>
+    itemsFromValue(parameter.value)
+  );
 
   // items will be passed to the onChange function
   const handleAdd = (
@@ -32,19 +56,14 @@ export const ParameterDictionaryInput = ({
   ) => {
     event.preventDefault();
     // add a new item to the list
-    setItems([...items, { key: '', value: '' }]);
+    setItems([...items, emptyRow()]);
   };
 
   const handleRemove = (index: number) => {
     // remove the item from the list
-    const newItems = items.filter((item, i) => i !== index);
+    const newItems = items.filter((_, i) => i !== index);
     setItems(newItems);
-    // convert newItems to an object
-    const newItemsObject: { [key: string]: any } = {};
-    newItems.forEach((item) => {
-      newItemsObject[item.key] = item.value;
-    });
-    onChange(newItemsObject);
+    onChange(toRecord(newItems));
   };
 
   const handleKeyChange = (
@@ -53,14 +72,9 @@ export const ParameterDictionaryInput = ({
   ) => {
     // update the key of the item
     const newItems = [...items];
-    newItems[index].key = event.target.value;
+    newItems[index] = { ...newItems[index], key: event.target.value };
     setItems(newItems);
-    // convert newItems to an object
-    const newItemsObject: { [key: string]: any } = {};
-    newItems.forEach((item) => {
-      newItemsObject[item.key] = item.value;
-    });
-    onChange(newItemsObject);
+    onChange(toRecord(newItems));
   };
 
   const handleValueChange = (
@@ -69,14 +83,9 @@ export const ParameterDictionaryInput = ({
   ) => {
     // update the value of the item
     const newItems = [...items];
-    newItems[index].value = event.target.value;
+    newItems[index] = { ...newItems[index], value: event.target.value };
     setItems(newItems);
-    // convert newItems to an object
-    const newItemsObject: { [key: string]: any } = {};
-    newItems.forEach((item) => {
-      newItemsObject[item.key] = item.value;
-    });
-    onChange(newItemsObject);
+    onChange(toRecord(newItems));
   };
 
   return (
@@ -88,7 +97,7 @@ export const ParameterDictionaryInput = ({
               <tr>
                 <th scope="col">Key</th>
                 <th scope="col">Value</th>
-                {parameter.rectrictModification ? null : (
+                {parameter.restrictModification ? null : (
                   <th scope="col" className="w-14"></th>
                 )}
               </tr>
@@ -114,7 +123,7 @@ export const ParameterDictionaryInput = ({
                       onChange={(event) => handleValueChange(index, event)}
                     />
                   </td>
-                  {parameter.rectrictModification ? null : (
+                  {parameter.restrictModification ? null : (
                     <td className="w-14 text-center">
                       <button
                         type="button"
@@ -131,7 +140,7 @@ export const ParameterDictionaryInput = ({
               ))}
             </tbody>
           </table>
-          {parameter.rectrictModification ? null : (
+          {parameter.restrictModification ? null : (
             <div className="px-lg py-md">
               <button
                 type="button"

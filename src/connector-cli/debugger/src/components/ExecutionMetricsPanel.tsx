@@ -1,5 +1,5 @@
-import { formatDuration } from '../Helpers/MetricsCollector';
-import type { MethodExecutionMetrics } from '../Helpers/MetricsCollector';
+import { formatDuration } from '../helpers/metricsCollector';
+import type { MethodExecutionMetrics } from '../helpers/metricsCollector';
 
 function truncateUrl(url: string, maxLength = 72): string {
   if (url.length <= maxLength) {
