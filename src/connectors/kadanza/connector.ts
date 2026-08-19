@@ -66,6 +66,27 @@ interface DAMCustomMetadataPage {
   'hydra:member': Array<DAMCustomMetadata>;
 }
 
+interface DamCategory {
+  id: number;
+  name: string;
+  parent: number | null;
+  categories_count?: number;
+  assets_count?: number;
+}
+
+interface DamCategoryPage {
+  'hydra:totalItems': number;
+  'hydra:itemsPerPage': number;
+  'hydra:currentPage': number;
+  'hydra:totalPages': number;
+  'hydra:member': Array<DamCategory>;
+}
+
+type CollectionResolution =
+  | { kind: 'notFound' }
+  | { kind: 'groupRoot'; categories: Array<DamCategory> }
+  | { kind: 'category'; categoryId: string; segments: Array<string> };
+
 export default class DamConnector implements Media.MediaConnector {
   runtime: Connector.ConnectorRuntimeContext;
 
@@ -96,61 +117,32 @@ export default class DamConnector implements Media.MediaConnector {
       `context: categoryGroup ${context?.categoryGroup} category ${context?.category} searchQuery ${context?.searchQuery}`
     );
 
-    const currentPage = Number(options.pageToken) || 1;
     const pageSize = Number(options.pageSize) || 15;
+
+    // Category (folder) browsing only kicks in when an entry point is
+    // configured. Without it, fall back to the original flat behavior.
+    if (context?.categoryGroup || context?.category) {
+      return this._queryCategorized(options, context, pageSize);
+    }
+
+    return this._queryLegacy(options, context, pageSize);
+  }
+
+  private async _queryLegacy(
+    options: Connector.QueryOptions,
+    context: Connector.Dictionary,
+    pageSize: number
+  ): Promise<Media.MediaPage> {
+    const currentPage = Number(options.pageToken) || 1;
     this._logError(
       `currentPage: ${currentPage} pageSize: ${pageSize}`
     );
     let queryEndpoint = `${this._getBaseMediaUrl()}/api/assets?page=${currentPage}&pageSize=${pageSize}`;
+    queryEndpoint += this._buildSearchQuery(options, context);
 
-    // Check if a specific categoryGroup is provided in the settings (context)
-    if (context?.categoryGroup) {
-      queryEndpoint += `&categoryGroup=${context.categoryGroup}`;
-    }
+    this._logError(`Query: endpoint ${queryEndpoint}`);
 
-    // Check if a specific category is provided in the settings (context)
-    if (context?.category) {
-      queryEndpoint += `&category=${context.category}`;
-    }
-
-    const filter = options?.filter
-      ? options?.filter
-      : undefined;
-
-    let searchQuery = '&search=format:(eps OR jpeg OR jpg OR pdf OR png OR psd OR tif OR tiff OR ai)';
-    if (filter && filter.length > 0) {
-      const stringifiedFilter = filter.toString().trim();
-
-      let id;
-      try {
-        id = JSON.parse(stringifiedFilter).id;
-        this._logError(
-          `ID ${id}`
-        );
-      } catch (e) {
-        // filter is not JSON
-      }
-
-      if (id) {
-        this._logError(
-          `Filtering query by _id: ${id}`
-        );
-
-        searchQuery += `AND _id: ${id}`;
-      } else if (stringifiedFilter && context?.searchQuery) {
-        this._logError(
-          `Filtering query by ${stringifiedFilter} in ${context.searchQuery}`
-        );
-
-        const searchInput = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
-        searchQuery += `AND ${searchInput}`;
-      }
-    }
-    queryEndpoint += searchQuery;
-
-    this._logError(`Query: endpoint ${encodeURI(queryEndpoint)}`);
-
-    const result = await this.runtime.fetch(encodeURI(queryEndpoint), {
+    const result = await this.runtime.fetch(queryEndpoint, {
       method: 'GET',
       headers: this._getHeaders(),
     });
@@ -161,10 +153,7 @@ export default class DamConnector implements Media.MediaConnector {
     }
 
     const assetsPage: DamMediaPage = JSON.parse(result.text);
-    const page = assetsPage['hydra:currentPage'];
-
     const metadata = await this._getCustomMetadata();
-
     const nextPage = Number(assetsPage['hydra:currentPage']) < Number(assetsPage['hydra:totalPages']) ? Number(assetsPage['hydra:currentPage']) + 1 : '';
     this._logError(`nextPage: ${nextPage}`);
 
@@ -173,6 +162,104 @@ export default class DamConnector implements Media.MediaConnector {
       data: assetsPage['hydra:member'].map((a: DamMedia) =>
         this._getMediaDetailFromDamMedia(a, metadata)
       ),
+      links: {
+        nextPage: nextPage.toString(),
+      },
+    };
+  }
+
+  private async _queryCategorized(
+    options: Connector.QueryOptions,
+    context: Connector.Dictionary,
+    pageSize: number
+  ): Promise<Media.MediaPage> {
+    const resolution = await this._resolveCollection(options, context);
+
+    if (resolution.kind === 'notFound') {
+      this._logError(`Query: collection "${options?.collection}" could not be resolved to a category.`);
+      return {
+        pageSize,
+        data: [],
+        links: { nextPage: '' },
+      };
+    }
+
+    if (resolution.kind === 'groupRoot') {
+      // Multiple root categories configured on the categoryGroup: show them
+      // as folders only, with no loose assets pool at this level.
+      const relativePath = this._toRelativePath([]);
+
+      return {
+        pageSize,
+        data: resolution.categories.map((category) =>
+          this._categoryToFolderMedia(category, relativePath)
+        ),
+        links: { nextPage: '' },
+      };
+    }
+
+    return this._queryAssetsAndFolders(
+      options,
+      context,
+      pageSize,
+      resolution.categoryId,
+      resolution.segments
+    );
+  }
+
+  private async _queryAssetsAndFolders(
+    options: Connector.QueryOptions,
+    context: Connector.Dictionary,
+    pageSize: number,
+    categoryId: string,
+    segments: Array<string>
+  ): Promise<Media.MediaPage> {
+    const currentPage = Number(options.pageToken) || 1;
+    const searching = this._isSearching(options);
+
+    this._logError(
+      `currentPage: ${currentPage} pageSize: ${pageSize} categoryId: ${categoryId} searching: ${searching}`
+    );
+
+    let folders: Array<Media.Media> = [];
+
+    if (!searching && currentPage === 1) {
+      const childCategories = await this._getChildCategories(categoryId);
+      const relativePath = this._toRelativePath(segments);
+      folders = childCategories.map((category) =>
+        this._categoryToFolderMedia(category, relativePath)
+      );
+    }
+
+    let queryEndpoint = `${this._getBaseMediaUrl()}/api/assets?page=${currentPage}&pageSize=${pageSize}&category=${categoryId}&includeChildren=false`;
+    queryEndpoint += this._buildSearchQuery(options, context);
+
+    this._logError(`Query: endpoint ${queryEndpoint}`);
+
+    const result = await this.runtime.fetch(queryEndpoint, {
+      method: 'GET',
+      headers: this._getHeaders(),
+    });
+
+    if (result.status / 200 != 1) {
+      this._logError(`Query fetch failed.`);
+      throw new Error(`Query failed ${result.status} ${result.statusText}`);
+    }
+
+    const assetsPage: DamMediaPage = JSON.parse(result.text);
+
+    const metadata = await this._getCustomMetadata();
+
+    const nextPage = Number(assetsPage['hydra:currentPage']) < Number(assetsPage['hydra:totalPages']) ? Number(assetsPage['hydra:currentPage']) + 1 : '';
+    this._logError(`nextPage: ${nextPage}`);
+
+    const assets = assetsPage['hydra:member'].map((a: DamMedia) =>
+      this._getMediaDetailFromDamMedia(a, metadata)
+    );
+
+    return {
+      pageSize,
+      data: [...folders, ...assets],
       links: {
         nextPage: nextPage.toString(),
       },
@@ -327,6 +414,177 @@ export default class DamConnector implements Media.MediaConnector {
     if (this._getDebug()) {
       this.runtime.logError(err);
     }
+  }
+
+  private _getFilterText(options: Connector.QueryOptions): string {
+    const filter = options?.filter;
+    if (!filter || filter.length === 0) {
+      return '';
+    }
+
+    return filter.toString().trim();
+  }
+
+  private _isSearching(options: Connector.QueryOptions): boolean {
+    return this._getFilterText(options).length > 0;
+  }
+
+  private _buildSearchQuery(options: Connector.QueryOptions, context: Connector.Dictionary): string {
+    const stringifiedFilter = this._getFilterText(options);
+    let searchValue = 'format:(eps OR jpeg OR jpg OR pdf OR png OR psd OR tif OR tiff OR ai)';
+
+    if (stringifiedFilter) {
+      let id;
+
+      try {
+        id = JSON.parse(stringifiedFilter).id;
+        this._logError(
+          `ID ${id}`
+        );
+      } catch (e) {
+        // filter is not JSON
+      }
+
+      if (id) {
+        this._logError(
+          `Filtering query by _id: ${id}`
+        );
+
+        searchValue += `AND _id: ${id}`;
+      } else if (context?.searchQuery) {
+        this._logError(
+          `Filtering query by ${stringifiedFilter} in ${context.searchQuery}`
+        );
+
+        const searchInput = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
+        searchValue += `AND ${searchInput}`;
+      }
+    }
+
+    return `&search=${encodeURIComponent(searchValue)}`;
+  }
+
+  private _toPathSegments(collection?: string): Array<string> {
+    if (!collection) {
+      return [];
+    }
+
+    return collection.split('/').filter((segment) => segment.length > 0);
+  }
+
+  private _toRelativePath(segments: Array<string>): string {
+    return segments.length === 0 ? '/' : `/${segments.join('/')}/`;
+  }
+
+  private _categoryToFolderMedia(category: DamCategory, relativePath: string): Media.Media {
+    return {
+      id: String(category.id),
+      name: category.name,
+      relativePath,
+      type: 1,
+      metaData: {},
+      extension: '',
+    };
+  }
+
+  private async _resolveCollection(
+    options: Connector.QueryOptions,
+    context: Connector.Dictionary
+  ): Promise<CollectionResolution> {
+    const segments = this._toPathSegments(options?.collection);
+
+    if (context?.categoryGroup) {
+      const rootCategories = await this._getCategoryGroupRoots(String(context.categoryGroup));
+
+      if (segments.length === 0) {
+        return { kind: 'groupRoot', categories: rootCategories };
+      }
+
+      const [firstSegment, ...remainingSegments] = segments;
+      const matchedRoot = rootCategories.find((category) => category.name === firstSegment);
+
+      if (!matchedRoot) {
+        return { kind: 'notFound' };
+      }
+
+      return this._walkFromCategory(matchedRoot, remainingSegments, [firstSegment]);
+    }
+
+    const startCategory = await this._getCategoryById(String(context.category));
+
+    return this._walkFromCategory(startCategory, segments, []);
+  }
+
+  private async _walkFromCategory(
+    startCategory: DamCategory,
+    remainingSegments: Array<string>,
+    startSegments: Array<string>
+  ): Promise<CollectionResolution> {
+    let current = startCategory;
+    const segments = [...startSegments];
+
+    for (const segment of remainingSegments) {
+      const children = await this._getChildCategories(String(current.id));
+      const match = children.find((category) => category.name === segment);
+      if (!match) {
+        return { kind: 'notFound' };
+      }
+
+      current = match;
+      segments.push(segment);
+    }
+
+    return { kind: 'category', categoryId: String(current.id), segments };
+  }
+
+  private async _getCategoryGroupRoots(groupId: string): Promise<Array<DamCategory>> {
+    const endpoint = `${this._getBaseMediaUrl()}/api/categories?categoryGroup=${groupId}&includeChildren=false&pageSize=9999&excludePermissions=true`;
+
+    const result = await this.runtime.fetch(encodeURI(endpoint), {
+      method: 'GET',
+      headers: this._getHeaders(),
+    });
+
+    if (result.status / 200 != 1) {
+      this._logError(`Category group fetch failed for id ${groupId}`);
+      throw new Error(`Category group fetch failed ${result.status} ${result.statusText}`);
+    }
+
+    const page: DamCategoryPage = JSON.parse(result.text);
+    return page['hydra:member'];
+  }
+
+  private async _getCategoryById(id: string): Promise<DamCategory> {
+    const endpoint = `${this._getBaseMediaUrl()}/api/categories/${id}`;
+
+    const result = await this.runtime.fetch(endpoint, {
+      method: 'GET',
+      headers: this._getHeaders(),
+    });
+
+    if (result.status / 200 != 1) {
+      this._logError(`Category fetch failed for id ${id}`);
+      throw new Error(`Category fetch failed ${result.status} ${result.statusText}`);
+    }
+
+    return JSON.parse(result.text);
+  }
+
+  private async _getChildCategories(parentId: string): Promise<Array<DamCategory>> {
+    const endpoint = `${this._getBaseMediaUrl()}/api/categories?parentCategory=${parentId}&includeChildren=false&pageSize=9999&excludePermissions=true`;
+
+    const result = await this.runtime.fetch(encodeURI(endpoint), {
+      method: 'GET',
+      headers: this._getHeaders(),
+    });
+
+    if (result.status / 200 != 1) {
+      this._logError(`Child categories fetch failed for parent ${parentId}`);
+      throw new Error(`Child categories fetch failed ${result.status} ${result.statusText}`);
+    }
+
+    const page: DamCategoryPage = JSON.parse(result.text);
+    return page['hydra:member'];
   }
 
   private async _getDamMediaById(id: string) {
