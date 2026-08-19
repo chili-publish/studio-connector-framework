@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { CheckIcon, CopyIcon } from './CopyIcon';
 
 interface Props {
   data: unknown;
@@ -33,20 +34,14 @@ const JsonObjectRenderer = ({ data, isError = false }: Props) => {
 
   return (
     <div
-      className={`rounded-lg border overflow-hidden ${
-        isError ? 'border-red-200' : 'border-slate-200'
-      }`}
+      className={`dbg-code-panel${isError ? ' dbg-code-panel-error' : ''}`}
     >
       <div
-        className={`flex items-center justify-between px-4 py-2 border-b ${
-          isError
-            ? 'bg-red-50 border-red-200'
-            : 'bg-slate-100 border-slate-200'
-        }`}
+        className={`dbg-code-header${isError ? ' dbg-code-header-error' : ''}`}
       >
         <span
-          className={`text-xs font-semibold uppercase tracking-wide ${
-            isError ? 'text-red-700' : 'text-slate-600'
+          className={`dbg-section-label${
+            isError ? ' text-text-error' : ''
           }`}
         >
           {isError ? 'Error response' : 'JSON response'}
@@ -54,15 +49,15 @@ const JsonObjectRenderer = ({ data, isError = false }: Props) => {
         <button
           type="button"
           onClick={handleCopy}
-          className="text-xs font-medium text-slate-600 hover:text-slate-900 px-2 py-1 rounded hover:bg-white/80 transition-colors"
+          className="dbg-btn-ghost"
+          aria-label={copied ? 'Copied' : 'Copy'}
+          title={copied ? 'Copied' : 'Copy'}
         >
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? <CheckIcon /> : <CopyIcon />}
         </button>
       </div>
-      <div className="bg-slate-900 overflow-auto max-h-[28rem]">
-        <pre className="p-4 text-sm leading-relaxed font-mono text-slate-100 whitespace-pre-wrap break-words">
-          {formatted}
-        </pre>
+      <div className="dbg-code">
+        <pre>{formatted}</pre>
       </div>
     </div>
   );

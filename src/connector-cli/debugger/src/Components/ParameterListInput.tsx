@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Parameter } from '../Helpers/DataModel';
+import { TrashIcon } from './TrashIcon';
 
 export const ParameterListInput = ({
   parameter,
@@ -48,39 +49,40 @@ export const ParameterListInput = ({
 
   return (
     <>
-      <div className="overflow-hidden ">
-        <div className="relative overflow-x-auto border">
-          <table className="table-fixed w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+      <div className="overflow-hidden">
+        <div className="dbg-table-wrap">
+          <table className="dbg-table">
             <tbody>
               {items.map((item, index) => (
-                <tr
-                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
-                  key={index}
-                >
-                  <td className="pl-4 py-4">
+                <tr key={index}>
+                  <td>
                     <input
-                      className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 "
+                      className="dbg-input"
                       type="text"
                       value={item}
                       placeholder={`Enter ${parameter.name}`}
                       onChange={(event) => handleValueChange(index, event)}
                     />
                   </td>
-                  <td className="px-6 pr-4 py-2">
+                  <td className="w-14 text-center">
                     <button
-                      className="text-xs w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 border border-red-700 rounded"
+                      type="button"
+                      className="dbg-btn-danger-icon"
+                      aria-label="Remove"
+                      title="Remove"
                       onClick={() => handleRemove(index)}
                     >
-                      Remove
+                      <TrashIcon />
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="px-6 py-4">
+          <div className="px-lg py-md">
             <button
-              className="text-xs bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 border border-blue-700 rounded"
+              type="button"
+              className="dbg-btn-secondary"
               onClick={handleAdd}
             >
               Add

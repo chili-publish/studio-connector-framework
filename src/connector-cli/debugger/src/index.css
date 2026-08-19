@@ -2,6 +2,212 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Open Sans', sans-serif;
+@layer base {
+  body {
+    @apply font-sans text-text-primary bg-surface-page antialiased;
+  }
+}
+
+@layer components {
+  /* App shell */
+  .dbg-app {
+    @apply h-screen flex bg-surface-page;
+  }
+
+  .dbg-main {
+    @apply flex-1 p-xl flex flex-col overflow-y-auto;
+  }
+
+  /* Sidebar / nav — light panelBackground, not brandBackground (primary button) */
+  .dbg-sidebar {
+    @apply w-64 shrink-0 bg-surface-panel text-text-primary border-r border-border-subtle p-lg flex flex-col;
+  }
+
+  .dbg-sidebar-title {
+    @apply font-semibold text-header mb-lg text-text-primary;
+  }
+
+  .dbg-sidebar-section {
+    @apply text-label uppercase tracking-wide text-text-muted mb-sm mt-md first:mt-0;
+  }
+
+  .dbg-nav-item {
+    @apply capitalize flex items-center py-sm px-md rounded-md mb-xs text-regular text-text-secondary hover:bg-surface-highlighted hover:text-text-primary transition-colors;
+  }
+
+  .dbg-nav-item-active {
+    @apply bg-surface-highlighted text-brand-primary font-semibold;
+  }
+
+  /* Cards */
+  .dbg-card {
+    @apply bg-surface-card border border-border-subtle rounded-lg shadow-sm p-lg flex flex-col;
+  }
+
+  .dbg-card-header {
+    @apply px-md py-sm bg-surface-header border-b border-border-subtle flex flex-wrap items-center justify-between gap-sm;
+  }
+
+  .dbg-param-card {
+    @apply w-full border border-border-subtle rounded-md bg-surface-card px-lg py-lg flex-grow;
+  }
+
+  /* Buttons */
+  .dbg-btn-primary {
+    @apply inline-flex items-center justify-center font-semibold py-sm px-md rounded-md text-regular text-text-inverse bg-brand-primary hover:bg-brand-primary-hover border border-brand-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .dbg-btn-secondary {
+    @apply inline-flex items-center justify-center font-semibold py-sm px-md rounded-md text-label text-text-secondary bg-surface-card hover:text-text-primary hover:border-text-primary border border-text-secondary transition-colors;
+  }
+
+  .dbg-btn-danger {
+    @apply inline-flex items-center justify-center font-semibold py-sm px-md rounded-md text-label text-text-inverse bg-status-error hover:opacity-90 border border-status-error transition-colors;
+  }
+
+  .dbg-btn-danger-icon {
+    @apply inline-flex items-center justify-center shrink-0 h-10 w-10 p-0 rounded-md text-text-inverse bg-status-error hover:opacity-90 border border-status-error transition-colors;
+  }
+
+  .dbg-btn-ghost {
+    @apply inline-flex items-center justify-center text-label font-medium text-text-secondary hover:text-text-primary px-sm py-xxs rounded-md hover:bg-surface-highlighted transition-colors;
+  }
+
+  /* Inputs */
+  .dbg-label {
+    @apply capitalize block mb-xs text-regular font-medium text-text-primary;
+  }
+
+  /* Matches GSC platform input: GRAY_100 fill, transparent border, GRAY_900 on hover/focus */
+  .dbg-input {
+    @apply block w-full h-10 px-md text-regular rounded bg-input-bg border border-input-border text-text-primary placeholder:text-text-placeholder outline-none shadow-none transition-colors;
+  }
+
+  .dbg-input:hover {
+    @apply border-input-focus;
+  }
+
+  .dbg-input:focus,
+  .dbg-input:focus-visible {
+    @apply outline-none border-input-focus;
+
+    box-shadow: 0 0 0 1px theme('colors.input.focus');
+  }
+
+  .dbg-checkbox {
+    @apply mt-xs h-4 w-4 rounded-sm border border-border text-brand-primary accent-brand-primary outline-none;
+  }
+
+  .dbg-checkbox:focus-visible {
+    box-shadow: 0 0 0 1px theme('colors.input.focus');
+  }
+
+  /* Tables */
+  .dbg-table-wrap {
+    @apply relative overflow-x-auto border border-border-subtle rounded-md;
+  }
+
+  .dbg-table {
+    @apply table-fixed w-full text-regular text-left text-text-secondary;
+  }
+
+  .dbg-table thead {
+    @apply text-label uppercase tracking-wide text-text-secondary bg-surface-header;
+  }
+
+  .dbg-table th {
+    @apply px-md py-sm font-semibold;
+  }
+
+  .dbg-table tbody tr {
+    @apply bg-surface-card border-b border-border-subtle;
+  }
+
+  .dbg-table td {
+    @apply px-md py-sm text-text-primary;
+  }
+
+  /* Badges — toast-style solid status fills; neutral matches platform Tag */
+  .dbg-badge-success {
+    @apply inline-flex items-center rounded-pill px-sm py-xxs text-label font-medium bg-status-success text-text-inverse;
+  }
+
+  .dbg-badge-error {
+    @apply inline-flex items-center rounded-pill px-sm py-xxs text-label font-medium bg-status-error text-text-inverse;
+  }
+
+  .dbg-badge-warning {
+    @apply inline-flex items-center rounded-pill px-sm py-xxs text-label font-medium bg-status-warning text-text-primary;
+  }
+
+  .dbg-badge-neutral {
+    @apply inline-flex items-center rounded-pill px-sm py-xxs text-label font-medium bg-surface-tag text-brand-primary;
+  }
+
+  /* Quiet callout: canvas GRAY_100 + status text (no invented soft fills) */
+  .dbg-callout-error {
+    @apply mt-sm text-regular text-text-error bg-surface-page rounded-md px-sm py-sm;
+  }
+
+  /* JSON / code */
+  .dbg-code-panel {
+    @apply rounded-lg border border-border-subtle overflow-hidden;
+  }
+
+  .dbg-code-panel-error {
+    @apply border-border-error;
+  }
+
+  .dbg-code-header {
+    @apply flex items-center justify-between px-md py-sm border-b border-border-subtle bg-surface-header;
+  }
+
+  .dbg-code-header-error {
+    @apply bg-surface-page border-border-error;
+  }
+
+  .dbg-code {
+    @apply bg-surface-code overflow-auto max-h-[28rem];
+  }
+
+  .dbg-code pre {
+    @apply p-md text-regular leading-relaxed font-mono text-text-code whitespace-pre-wrap break-words;
+  }
+
+  /* Section labels */
+  .dbg-section-label {
+    @apply text-label font-semibold text-text-muted uppercase tracking-wider;
+  }
+
+  .dbg-section-divider {
+    @apply flex-1 h-px bg-border-subtle;
+  }
+
+  /* States */
+  .dbg-state-loading,
+  .dbg-state-error,
+  .dbg-state-empty {
+    @apply flex items-center justify-center min-h-screen p-xl bg-surface-page text-regular;
+  }
+
+  .dbg-state-loading {
+    @apply text-text-secondary;
+  }
+
+  .dbg-state-error {
+    @apply text-text-error;
+  }
+
+  .dbg-state-empty {
+    @apply text-text-secondary;
+  }
+
+  /* Image frame */
+  .dbg-image-frame {
+    @apply flex justify-center rounded-lg bg-surface-header border border-border-subtle p-md;
+  }
+
+  .dbg-image-preview {
+    @apply relative bg-surface-header rounded-lg overflow-hidden w-1/2;
+  }
 }

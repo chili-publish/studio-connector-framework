@@ -30,16 +30,15 @@ function isBinaryType(contentType?: string | null) {
 export async function initRuntime(
   globalHeaders: Header[],
   runtimeOptions: Record<string, unknown>,
-  authorization: Header,
+  authorization: string,
   globalQueryParams: URLSearchParams
 ) {
   // proxy the fetch function to be able to inject headers
   const fetch = async (url: string, options: any) => {
     const method = options?.method ?? 'GET';
-    const authHeader =
-      authorization.name && authorization.value
-        ? { [authorization.name]: authorization.value }
-        : {};
+    const authHeader = authorization
+      ? { Authorization: authorization }
+      : {};
     const headers = {
       ...options.headers,
       ...globalHeaders.reduce(
