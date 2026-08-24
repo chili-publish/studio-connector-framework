@@ -24,7 +24,7 @@ export function resolveDownloadPath(
   if (
     previewType === 'original' ||
     previewType === 'fullres' ||
-    (previewType === 'highres' && ['png', 'jpeg'].includes(format))
+    (previewType === 'highres' && ['png', 'jpeg', 'jpg'].includes(format))
   ) {
     return original;
   }
