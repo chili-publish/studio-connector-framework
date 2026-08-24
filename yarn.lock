@@ -190,7 +190,7 @@
     "@babel/helper-validator-identifier" "^7.28.5"
 
 "@chili-publish/connector-cli@^1.0.50":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -208,7 +208,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.10.0":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -226,7 +226,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.12.1":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -244,7 +244,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -262,7 +262,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.6.2":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -280,7 +280,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.0":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -298,7 +298,7 @@
     typescript "^5.2.2"
 
 "@chili-publish/connector-cli@^1.9.6":
-  version "1.13.0"
+  version "1.13.1-0"
   dependencies:
     "@chili-publish/studio-connectors" "^1"
     "@inquirer/prompts" "^7.2.0"
@@ -996,10 +996,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.126.tgz#27875faa2926c0f475b39a8bb1e546c0176f8d4b"
   integrity sha512-OTcgaiwfGFBKacvfwuHzzn1KLxH/er8mluiy8/uM3sGXHaRe73RrSIj01jow9t4kJEW633Ov+cOexXeiApTyAw==
 
-"@types/node@^20.8.6":
-  version "20.19.43"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.19.43.tgz#fcecf580ba42a0db55cf404c372c97973c376c97"
-  integrity sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==
+"@types/node@^22.0.0":
+  version "22.20.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.20.1.tgz#84e7cdf63cdaa20c134aa317ccc901aa21e16f0e"
+  integrity sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==
   dependencies:
     undici-types "~6.21.0"
 

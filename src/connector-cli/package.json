@@ -1,6 +1,6 @@
 {
   "name": "@chili-publish/connector-cli",
-  "version": "1.13.0",
+  "version": "1.13.1-0",
   "main": "out/src/index.js",
   "license": "MIT",
   "bin": {
@@ -11,7 +11,7 @@
     "bin"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",
@@ -38,8 +38,8 @@
     "@types/dot-object": "^2.1.6",
     "@types/express": "^4.17.13",
     "@types/handlebars": "^4.1.0",
+    "@types/node": "^22.0.0",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.8.6",
     "copyfiles": "2.4.1",
     "prettier": "^3.0.3",
     "quicktype": "23.0.0",
