@@ -22,6 +22,213 @@
           }
         ]
       }
+    },
+    {
+      "name": "Query categoryGroup root shows folders only, no assets",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": [],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "categoryGroup": "1"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories?categoryGroup=1&includeChildren=false&pageSize=9999&excludePermissions=true",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 2,
+                "hydra:itemsPerPage": 9999,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  { "id": 2, "name": "Logos", "parent": 1 },
+                  { "id": 4, "name": "Photos", "parent": 1 }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query inside a configured category lists subfolders and assets on page 1",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": [],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "category": "2"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories/2",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": 2,
+                "name": "Logos",
+                "parent": 1
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/categories?parentCategory=2&includeChildren=false&pageSize=9999&excludePermissions=true",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 1,
+                "hydra:itemsPerPage": 9999,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  { "id": 5, "name": "Approved", "parent": 2 }
+                ]
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/assets?page=1&pageSize=15&category=2&includeChildren=false&search=format:(eps%20OR%20jpeg%20OR%20jpg%20OR%20pdf%20OR%20png%20OR%20psd%20OR%20tif%20OR%20tiff%20OR%20ai)",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 1,
+                "hydra:itemsPerPage": 15,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  {
+                    "id": 101,
+                    "name": "logo-final.png",
+                    "thumbnail": "/cdn/thumb/101.png",
+                    "format": "png",
+                    "width": 800,
+                    "height": 600,
+                    "size": 12345,
+                    "assetHash": "hash101",
+                    "tenantHash": "tenant1",
+                    "fileName": "logo-final.png",
+                    "title": "Logo Final"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/custom-metadata",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 0,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query while searching suppresses folders",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": ["shoe"],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "category": "2",
+          "searchQuery": "_all:<search_input>"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories/2",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": 2,
+                "name": "Logos",
+                "parent": 1
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/assets?page=1&pageSize=15&category=2&includeChildren=false&search=format:(eps%20OR%20jpeg%20OR%20jpg%20OR%20pdf%20OR%20png%20OR%20psd%20OR%20tif%20OR%20tiff%20OR%20ai)AND%20_all:shoe",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 15,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/custom-metadata",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 0,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }
