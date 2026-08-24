@@ -229,6 +229,150 @@
           }
         ]
       }
+    },
+    {
+      "name": "Download TIFF fullres output uses DAM preview, not the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "fullres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/55.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF highres output uses DAM preview, not the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tiff\"}",
+        "previewType": "highres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/55.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF with explicit 'original' previewType still returns the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "original",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashTiff/big-scan/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/tiff" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with print intent uses pdf-wrap (DAM-3300)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "fullres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/pdf-wrap",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/pdf" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with web intent is unchanged (raw original)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "fullres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/pdf" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PNG highres is unchanged (raw original)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"101\",\"name\":\"logo-final\",\"assetHash\":\"hash101\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/101.png\",\"extension\":\"png\"}",
+        "previewType": "highres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hash101/logo-final/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/png" },
+              "body": ""
+            }
+          }
+        ]
+      }
     }
   ]
 }

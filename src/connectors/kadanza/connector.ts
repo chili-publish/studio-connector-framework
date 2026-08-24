@@ -272,44 +272,16 @@ export default class DamConnector implements Media.MediaConnector {
     intent: Media.DownloadIntent,
     context: Connector.Dictionary
   ): Promise<Connector.ArrayBufferPointer> {
-    this._logError(`Download: id ${id}, previewType ${previewType}`);
+    this._logError(`Download: id ${id}, previewType ${previewType}, intent ${intent}`);
 
     // Temporary commented until issue with >= 1 await statements is resolved
     // const detail = await this._getDamMediaById(id);
 
     // Extract all details from stringified id
     const detail: AssetId = JSON.parse(id);
-
     const baseUrl = this._getBaseMediaUrl();
-    let downloadEndpoint = `${baseUrl}`;
-    const thumbnail = detail.thumbnail;
-    const original = `/cdn/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(detail.name)}/original`;
-    const format = detail.extension.toLowerCase();
-
-    switch (previewType) {
-      case 'fullres':
-      case 'original':
-        downloadEndpoint += original;
-        break;
-
-      case 'highres':
-        if (['png', 'jpeg'].includes(format)) {
-            downloadEndpoint += original;
-          } else {
-            downloadEndpoint += thumbnail;
-          }
-        break;
-
-      case 'thumbnail':
-      case 'mediumres':
-      default:
-        if (!thumbnail) {
-          throw new Error(`Thumbnail not available for asset with id ${detail.id}`);
-        }
-
-        downloadEndpoint += thumbnail;
-        break;
-    }
+    const downloadPath = this._resolveDownloadPath(detail, previewType, intent);
+    const downloadEndpoint = `${baseUrl}${downloadPath}`;
 
     this._logError(`Download: endpoint ${downloadEndpoint}`);
 
@@ -379,6 +351,45 @@ export default class DamConnector implements Media.MediaConnector {
     return {
       'Accept': 'application/json',
     };
+  }
+
+  private _resolveDownloadPath(
+    detail: AssetId,
+    previewType: Media.DownloadType,
+    intent: Media.DownloadIntent
+  ): string {
+    const format = detail.extension.toLowerCase();
+    const cdnBasePath = `/cdn/${detail.tenantHash}/${detail.assetHash}/${encodeURIComponent(detail.name)}`;
+    const original = `${cdnBasePath}/original`;
+    const isTiff = ['tif', 'tiff'].includes(format);
+    const isPdf = format === 'pdf';
+    const isOutputPreview = previewType === 'fullres' || previewType === 'highres';
+
+    if (isPdf && intent === 'print' && isOutputPreview) {
+      return `${cdnBasePath}/pdf-wrap`;
+    }
+
+    if (isTiff && isOutputPreview) {
+      return this._requireThumbnailPath(detail);
+    }
+
+    if (
+      previewType === 'original' ||
+      previewType === 'fullres' ||
+      (previewType === 'highres' && ['png', 'jpeg'].includes(format))
+    ) {
+      return original;
+    }
+
+    return this._requireThumbnailPath(detail);
+  }
+
+  private _requireThumbnailPath(detail: AssetId): string {
+    if (!detail.thumbnail) {
+      throw new Error(`Thumbnail not available for asset with id ${detail.id}`);
+    }
+
+    return detail.thumbnail;
   }
 
   _getMediaDetailFromDamMedia(damMedia: DamMedia, customMetadata: DAMCustomMetadataPage): Media.MediaDetail {
