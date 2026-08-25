@@ -135,10 +135,22 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
-The CLI recompiles when any project `.ts` file changes and reloads the browser tab.
+The CLI recompiles when any project `.ts` file changes and reloads the browser tab. Compile failures are shown in the browser overlay as well as the terminal.
 
 ```sh
 connector-cli debug -p 3300
+```
+
+The server prints the debug URL and does not open a browser by default. Open it explicitly when needed:
+
+```sh
+connector-cli debug --open
+```
+
+Bind the debug server to a specific host (e.g. for remote access):
+
+```sh
+connector-cli debug --host 0.0.0.0
 ```
 
 ### Get connector information

@@ -125,6 +125,11 @@ function main() {
     .description('Run connector project in debug mode for testing in browser')
     .addArgument(connectorProject)
     .option('-p, --port [port]', 'Port to run debug application', '3300')
+    .option('--open', 'Open the debug URL in the default browser')
+    .option(
+      '--host <host>',
+      'Host address to bind the debug server (e.g. 0.0.0.0)'
+    )
     .action(withErrorHandlerAction(runDebugger));
 
   program
