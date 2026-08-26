@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { MethodExecutionMetrics } from '../Helpers/MetricsCollector';
+import type { MethodExecutionMetrics } from '../helpers/metricsCollector';
 import { ExecutionMetricsPanel } from './ExecutionMetricsPanel';
 
 export const ResultsSection = ({
@@ -14,12 +14,10 @@ export const ResultsSection = ({
   }
 
   return (
-    <section className="mt-8 space-y-4">
-      <div className="flex items-center gap-3">
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-          Output
-        </h2>
-        <div className="flex-1 h-px bg-slate-200" />
+    <section className="mt-xl space-y-md">
+      <div className="flex items-center gap-sm">
+        <h2 className="dbg-section-label">Output</h2>
+        <div className="dbg-section-divider" />
       </div>
 
       {metrics ? <ExecutionMetricsPanel metrics={metrics} /> : null}
