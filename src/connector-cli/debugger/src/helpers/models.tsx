@@ -2,27 +2,26 @@ import {
   UpdateHttpParamsSettings,
   UpdateRuntimeOptionsSettings,
   UpdateSettingsFn,
-} from '../core/useConnectorSettings';
+} from '../core/connectorSettingsStorage';
 import {
   ConnectorMetadata,
+  DataModel,
   InvokableDataModel,
   SettableDataModel,
-} from './DataModel';
+} from './dataModel';
+import {
+  HTTP_PARAMS_MODEL,
+  RUNTIME_OPTIONS_MODEL,
+} from './parameterForm';
 
 export const Models: {
-  ConnectorMetadata: ConnectorMetadata | null;
-  ConnectorInstance: any;
   Settings: SettableDataModel[];
   Media: InvokableDataModel[];
   Data: InvokableDataModel[];
-  updateSettings: UpdateSettingsFn;
 } = {
-  ConnectorMetadata: null,
-  ConnectorInstance: null,
-  updateSettings: () => ({}),
   Settings: [
     {
-      name: 'http-params',
+      name: HTTP_PARAMS_MODEL,
       displayName: 'HTTP Params',
       parameters: [
         {
@@ -38,37 +37,37 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      set: ([
-        authorization,
-        httpHeaders,
-        httpQuery,
-      ]: Parameters<UpdateHttpParamsSettings>[1]) => {
+      set: (
+        [
+          authorization,
+          httpHeaders,
+          httpQuery,
+        ]: Parameters<UpdateHttpParamsSettings>[1],
+        updateSettings: UpdateSettingsFn
+      ) => {
         console.debug(
           'Set "http-params"',
           authorization,
           httpHeaders,
           httpQuery
         );
-        Models.updateSettings('http-params', [
-          authorization,
-          httpHeaders,
-          httpQuery,
-        ]);
-        window.alert('Settings were applied');
+        updateSettings('http-params', [authorization, httpHeaders, httpQuery]);
       },
     },
     {
-      name: 'Runtime options',
+      name: RUNTIME_OPTIONS_MODEL,
       parameters: [
         {
           name: 'runtime-options',
           componentType: 'dictionary',
         },
       ],
-      set: async (values: Parameters<UpdateRuntimeOptionsSettings>[1]) => {
+      set: (
+        values: Parameters<UpdateRuntimeOptionsSettings>[1],
+        updateSettings: UpdateSettingsFn
+      ) => {
         console.debug('Set "Runtime options"', values);
-        Models.updateSettings('runtime-options', values);
-        window.alert('Settings were applied');
+        updateSettings('runtime-options', values);
       },
     },
   ],
@@ -109,12 +108,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "GetPage"', values);
-        const result = await Models.ConnectorInstance.getPage(
-          values[0] || {},
-          values[1] || {}
-        );
+        const result = await connector.getPage(values[0] || {}, values[1] || {});
 
         console.table({ request: values, result });
 
@@ -132,9 +128,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "GetModel"', values);
-        const result = await Models.ConnectorInstance.getModel(values[0] || {});
+        const result = await connector.getModel(values[0] || {});
 
         console.table({ request: values, result });
 
@@ -172,9 +168,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "getPageItemById"', values);
-        const result = await Models.ConnectorInstance.getPageItemById(
+        const result = await connector.getPageItemById(
           values[0] ?? '',
           values[1] || {},
           values[2] || {}
@@ -209,7 +205,7 @@ export const Models: {
               name: 'pageSize',
               componentType: 'number',
               min: 0,
-              value: 0,
+              value: 15,
             },
             {
               name: 'pageToken',
@@ -230,12 +226,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "Media:Query"', values);
-        const result = await Models.ConnectorInstance.query(
-          values[0] || {},
-          values[1] || {}
-        );
+        const result = await connector.query(values[0] || {}, values[1] || {});
 
         console.table({ request: values, result });
 
@@ -257,12 +250,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "Media:Detail"', values);
-        const result = await Models.ConnectorInstance.detail(
-          values[0] || '',
-          values[1] || {}
-        );
+        const result = await connector.detail(values[0] || '', values[1] || {});
 
         console.table({ request: values, result });
 
@@ -294,9 +284,9 @@ export const Models: {
           componentType: 'dictionary',
         },
       ],
-      invoke: async (values: any[]) => {
+      invoke: async (values: any[], connector: any) => {
         console.debug('Invoke "Media:Download"', values);
-        const result = await Models.ConnectorInstance.download(
+        const result = await connector.download(
           values[0],
           values[1],
           values[2],
@@ -311,3 +301,41 @@ export const Models: {
     },
   ],
 };
+
+export function getMethodModelsForType(
+  type: ConnectorMetadata['type']
+): DataModel[] {
+  switch (type) {
+    case 'dataconnector':
+      return Models.Data;
+    case 'fontconnector':
+      return [];
+    case 'mediaconnector':
+    default:
+      return Models.Media;
+  }
+}
+
+export function getSelectableModels(
+  type: ConnectorMetadata['type']
+): DataModel[] {
+  return [...Models.Settings, ...getMethodModelsForType(type)];
+}
+
+export function findSelectableModel(
+  type: ConnectorMetadata['type'],
+  name: string | null | undefined
+): DataModel | undefined {
+  if (!name) {
+    return undefined;
+  }
+
+  return getSelectableModels(type).find((model) => model.name === name);
+}
+
+export function resolveSelectableModel(
+  type: ConnectorMetadata['type'],
+  name: string | null | undefined
+): DataModel | undefined {
+  return findSelectableModel(type, name) ?? getSelectableModels(type)[0];
+}

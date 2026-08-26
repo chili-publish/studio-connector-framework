@@ -1,29 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
-import './App.css';
-import { MainContent } from './Components/MainContent';
-import { Sidebar } from './Components/Sidebar';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppShell } from './components/shell/AppShell';
+import { AppProvider } from './core/AppContext';
+import { ToastProvider } from './core/ToastContext';
 import { useConnectorSettings } from './core/useConnectorSettings';
-import { initRuntime } from './Helpers/ConnectorRuntime';
-import { initRuntimeErrors } from './Helpers/ConnectorRuntime/ConnectorHttpError';
-import { initRuntimeSleep } from './Helpers/ConnectorRuntime/sleep';
-import { DataModel } from './Helpers/DataModel';
-import { Models } from './Helpers/Models';
+import {
+  initRuntime,
+  updateConnectorSettings,
+} from './helpers/connectorRuntime';
+import { initRuntimeErrors } from './helpers/connectorRuntime/connectorHttpError';
+import { initRuntimeSleep } from './helpers/connectorRuntime/sleep';
+import { ConnectorMetadata, DataModel } from './helpers/dataModel';
+import { resolveSelectableModel } from './helpers/models';
+
+const MODEL_VIEW_QUERY_PARAM = 'modelView';
+
+function readModelViewQueryParam(): string | null {
+  return new URLSearchParams(window.location.search).get(MODEL_VIEW_QUERY_PARAM);
+}
+
+function writeModelViewQueryParam(modelName: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(MODEL_VIEW_QUERY_PARAM, modelName);
+  window.history.replaceState(null, '', url);
+}
 
 function App() {
-  const [dataModel, setDataModel] = useState<DataModel | undefined>(undefined);
-
   const [loading, setLoading] = useState<boolean>(true);
   const [connector, setConnector] = useState<any>(null);
   const [error, setError] = useState<string | undefined>(undefined);
-
-  const {
-    globalHeaders,
-    runtimeOptions,
-    authorization,
-    globalQueryParams,
-    updateSettings,
-    initSettings,
-  } = useConnectorSettings();
 
   const connectorType = useMemo(() => {
     const queryParamConnectorType = new URLSearchParams(window.location.search)
@@ -41,93 +45,114 @@ function App() {
   }, []);
 
   useEffect(() => {
-    initRuntime(globalHeaders, runtimeOptions, authorization, globalQueryParams)
-      .then((connector) => {
-        Models.ConnectorInstance = connector;
-        setConnector(connector);
+    initRuntimeErrors();
+    initRuntimeSleep();
+    initRuntime()
+      .then((loadedConnector) => {
+        setConnector(loadedConnector);
         setLoading(false);
-        console.log('connector', connector);
+        console.log('connector', loadedConnector);
       })
       .catch((err) => {
         setError('Could not fetch connector');
         setLoading(false);
         console.error('error', err);
       });
-  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
-
-  useEffect(() => {
-    initRuntimeErrors();
-    initRuntimeSleep();
   }, []);
 
-  useEffect(() => {
-    Models.updateSettings = updateSettings;
-    initSettings();
-  }, [updateSettings, initSettings]);
+  const metadata: ConnectorMetadata | null = useMemo(() => {
+    if (!connector) {
+      return null;
+    }
 
-  const modelChangeHandler = (model: DataModel) => {
-    console.debug('Model "Change"', model);
-    // TODO: Implement better way of propagation stored values to the component params
-    if (
-      model.name === 'Runtime options' &&
-      Object.keys(runtimeOptions).length !== 0
-    ) {
-      model.parameters[0].value = runtimeOptions;
-    }
-    if (model.name === 'http-params') {
-      model.parameters[0].value = authorization;
-      model.parameters[1].value = globalHeaders.reduce(
-        (val, gh) => {
-          val[gh.name] = gh.value;
-          return val;
-        },
-        {} as Record<string, string>
-      );
-      model.parameters[2].value = Array.from(
-        globalQueryParams.entries()
-      ).reduce(
-        (val, gqp) => {
-          val[gqp[0]] = gqp[1];
-          return val;
-        },
-        {} as Record<string, string>
-      );
-    }
-    setDataModel(model);
-  };
+    return {
+      name: connector.constructor.name,
+      type: connectorType,
+      getDisplayType: function () {
+        switch (this.type) {
+          case 'mediaconnector':
+            return 'Media Connector';
+          case 'fontconnector':
+            return 'Font Connector';
+          case 'dataconnector':
+            return 'Data Connector';
+        }
+      },
+    };
+  }, [connector, connectorType]);
 
   if (loading) {
     return <div className="dbg-state-loading">Loading...</div>;
   }
 
-  if (error) {
-    return <div className="dbg-state-error">Error: {error}</div>;
+  if (error || !connector || !metadata) {
+    return (
+      <div className="dbg-state-error">
+        Error: {error ?? 'Could not initialize connector'}
+      </div>
+    );
   }
 
-  Models.ConnectorMetadata = {
-    name: connector.constructor.name,
-    type: connectorType,
-    getDisplayType: function () {
-      switch (this.type) {
-        case 'mediaconnector':
-          return 'Media Connector';
-        case 'fontconnector':
-          return 'Font Connector';
-        case 'dataconnector':
-          return 'Data Connector';
-      }
-    },
-  };
+  return (
+    <DebuggerSession connector={connector} metadata={metadata} />
+  );
+}
+
+function DebuggerSession({
+  connector,
+  metadata,
+}: {
+  connector: any;
+  metadata: ConnectorMetadata;
+}) {
+  const [dataModel, setDataModel] = useState<DataModel | undefined>(() => {
+    const initialModel = resolveSelectableModel(
+      metadata.type,
+      readModelViewQueryParam()
+    );
+    if (initialModel) {
+      writeModelViewQueryParam(initialModel.name);
+    }
+    return initialModel;
+  });
+  const {
+    globalHeaders,
+    runtimeOptions,
+    authorization,
+    globalQueryParams,
+    updateSettings,
+  } = useConnectorSettings(metadata.name);
+
+  const handleModelChanged = useCallback((model: DataModel) => {
+    setDataModel(model);
+    writeModelViewQueryParam(model.name);
+  }, []);
+
+  useEffect(() => {
+    updateConnectorSettings({
+      httpParams: {
+        authorization,
+        globalHeaders,
+        globalQueryParams,
+      },
+      runtimeOptions,
+    });
+  }, [globalHeaders, runtimeOptions, authorization, globalQueryParams]);
 
   return (
-    <div className="dbg-app">
-      <Sidebar
-        onModelChanged={modelChangeHandler}
-        activeModelName={dataModel?.name}
-      />
-      {/* we specify key as dataModel.name to rerender the same components once model changed */}
-      <MainContent key={dataModel?.name} dataModel={dataModel} />
-    </div>
+    <ToastProvider>
+      <AppProvider
+        connector={connector}
+        metadata={metadata}
+        globalHeaders={globalHeaders}
+        authorization={authorization}
+        runtimeOptions={runtimeOptions}
+        globalQueryParams={globalQueryParams}
+        updateSettings={updateSettings}
+      >
+        <AppShell dataModel={dataModel} onModelChanged={handleModelChanged} />
+      </AppProvider>
+    </ToastProvider>
   );
 }
 

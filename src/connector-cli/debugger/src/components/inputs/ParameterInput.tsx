@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, type ClipboardEvent } from 'react';
-import { NumberParameter, Parameter } from '../Helpers/DataModel';
-import { normalizeConnectorId } from '../Helpers/connectorId';
+import { NumberParameter, Parameter } from '../../helpers/dataModel';
+import { normalizeMediaId } from '../../helpers/mediaId';
 import { ParameterDictionaryInput } from './ParameterDictionaryInput';
 import { ParameterListInput } from './ParameterListInput';
 
@@ -62,7 +62,7 @@ export const ParameterInput = ({
       return;
     }
 
-    const normalized = normalizeConnectorId(pasted);
+    const normalized = normalizeMediaId(pasted);
     if (normalized !== pasted.trim()) {
       event.preventDefault();
       handleInputChange(normalized);
@@ -101,7 +101,7 @@ export const ParameterInput = ({
             placeholder={parameter.name}
             onChange={(e) => handleInputChange(e.target.value)}
             onBlur={(e) => {
-              const normalized = normalizeConnectorId(e.target.value);
+              const normalized = normalizeMediaId(e.target.value);
               if (normalized !== e.target.value) {
                 handleInputChange(normalized);
               }
@@ -123,7 +123,7 @@ export const ParameterInput = ({
             name={parameter.name}
             type="checkbox"
             onChange={(e) => handleInputChange(e.target.checked)}
-            value={parameter.value ?? false}
+            checked={Boolean(parameter.value)}
           />
         </div>
       );
@@ -139,7 +139,7 @@ export const ParameterInput = ({
             name={parameter.name}
             type="number"
             onChange={(e) => handleInputChange(Number(e.target.value))}
-            defaultValue={parameter.value}
+            value={parameter.value ?? ''}
             min={(parameter as NumberParameter).min}
             max={(parameter as NumberParameter).max}
           />
@@ -156,9 +156,9 @@ export const ParameterInput = ({
             className="dbg-input"
             name={parameter.name}
             onChange={(e) => handleInputChange(e.target.value)}
-            defaultValue={parameter.value}
+            value={parameter.value ?? ''}
           >
-            <option value="" selected disabled>
+            <option value="" disabled>
               [Select]
             </option>
             {parameter.options?.map((item) => (

@@ -2,14 +2,14 @@ function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isStructuredConnectorId(
+function isStructuredMediaId(
   value: unknown
 ): value is Record<string, unknown> | unknown[] {
   return Array.isArray(value) || isJsonObject(value);
 }
 
-function canonicalizeParsedConnectorId(parsed: unknown): string | null {
-  if (isStructuredConnectorId(parsed)) {
+function canonicalizeParsedMediaId(parsed: unknown): string | null {
+  if (isStructuredMediaId(parsed)) {
     return JSON.stringify(parsed);
   }
   return null;
@@ -37,11 +37,11 @@ function extractBracketedFragment(value: string): string | null {
 }
 
 /**
- * Normalizes a connector id string for detail/download methods.
+ * Normalizes a media asset id string for detail/download methods.
  * Some connectors store ids as JSON.stringify(payload) — object or array
  * (Acquia, Kadanza, Sitecore, …); others use plain strings (Bynder, AEM paths, …).
  */
-export function normalizeConnectorId(input: string): string {
+export function normalizeMediaId(input: string): string {
   let value = input.trim();
   if (!value) {
     return value;
@@ -56,7 +56,7 @@ export function normalizeConnectorId(input: string): string {
         continue;
       }
 
-      const canonical = canonicalizeParsedConnectorId(parsed);
+      const canonical = canonicalizeParsedMediaId(parsed);
       if (canonical !== null) {
         return canonical;
       }
