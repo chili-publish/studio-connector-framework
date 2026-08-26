@@ -9,8 +9,10 @@ declare global {
 
 export const Sidebar = ({
   onModelChanged,
+  activeModelName,
 }: {
   onModelChanged: (model: DataModel) => void;
+  activeModelName?: string;
 }) => {
   // get url parameter for connector type (media/font/data)
   let models: DataModel[] = [];
@@ -32,27 +34,32 @@ export const Sidebar = ({
 
   window.Models = Models;
 
+  const navItemClass = (modelName: string) =>
+    `dbg-nav-item${activeModelName === modelName ? ' dbg-nav-item-active' : ''}`;
+
   return (
-    <div className="w-64 bg-blue-800 text-white p-6">
-      <div className="font-bold text-xl mb-6">Connector Debugger</div>
+    <aside className="dbg-sidebar">
+      <div className="dbg-sidebar-title">Connector Debugger</div>
       <nav>
         <ul>
           <li>
-            <div>Settings</div>
+            <div className="dbg-sidebar-section">Settings</div>
             {configurationModels.map((model) => (
               <a
                 key={model.name}
                 href="#"
-                className="capitalize flex items-center py-2 px-4 bg-blue-700 rounded-md mb-2"
-                onClick={() => onModelChanged(model)}
+                className={navItemClass(model.name)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onModelChanged(model);
+                }}
               >
                 <svg
-                  className="h-6 w-6 mr-3"
+                  className="h-5 w-5 mr-sm shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12h18M3 6h18M3 18h18" /> */}
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -65,21 +72,23 @@ export const Sidebar = ({
             ))}
           </li>
           <li>
-            <div>Methods</div>
+            <div className="dbg-sidebar-section">Methods</div>
             {models.map((model) => (
               <a
                 key={model.name}
                 href="#"
-                className="capitalize flex items-center py-2 px-4 bg-blue-700 rounded-md mb-2"
-                onClick={() => onModelChanged(model)}
+                className={navItemClass(model.name)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onModelChanged(model);
+                }}
               >
                 <svg
-                  className="h-6 w-6 mr-3"
+                  className="h-5 w-5 mr-sm shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12h18M3 6h18M3 18h18" /> */}
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -93,6 +102,6 @@ export const Sidebar = ({
           </li>
         </ul>
       </nav>
-    </div>
+    </aside>
   );
 };
