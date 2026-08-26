@@ -1,5 +1,9 @@
 # Releases
 
+## 1.0.7
+
+- Fix boolean custom metadata values being silently dropped from the media picker's mapped `metaData` instead of reaching Studio's `boolean` variables
+
 ## 1.0.6
 
 - Use the DAM thumbnail/preview instead of the raw original for TIFF (`tif`/`tiff`) assets on output-facing download paths (`highres`, `fullres`)
