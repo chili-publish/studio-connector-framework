@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           echo "::add-mask::${APP_TOKEN}"
 
-          NEW_VERSION=$(npm --prefix=src/connector-cli version prerelease --no-git-tag-version | tr -d 'v[:space:]')
+          NEW_VERSION=$(npm --prefix=src/connector-cli version prerelease --preid=rc --no-git-tag-version | tr -d 'v[:space:]')
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           echo "Bumped connector-cli to ${NEW_VERSION}"
 
