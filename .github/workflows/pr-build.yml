@@ -59,7 +59,7 @@ jobs:
           name: cli-build
           path: connector-cli/upload/
       - name: Upload CLI to Blob Storage
-        uses: azure/CLI@v1
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             az storage blob upload-batch -d sdk -s connector-cli/upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true
