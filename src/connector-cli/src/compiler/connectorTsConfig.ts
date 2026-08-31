@@ -26,6 +26,7 @@ export const connectorTsCompilerOptionsJson = {
   declaration: false,
   // Emit is owned by connector-cli (esbuild). tsc / the editor only typecheck.
   noEmit: true,
+  skipLibCheck: true,
 } as const;
 
 export type ConnectorTsCompilerOptionsJson =

@@ -38,6 +38,10 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn run build-cli
+      - name: Run connector-cli coverage
+        run: yarn workspace @chili-publish/connector-cli cover
+      - name: Update coverage badges
+        run: yarn workspace @chili-publish/connector-cli make-badges
       - name: Bump version and push
         id: bump
         env:
@@ -54,7 +58,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/connector-cli/package.json package.json yarn.lock
+          git add src/connector-cli/package.json src/connector-cli/readme.md package.json yarn.lock
           git commit -m "CI: bumps version to ${NEW_VERSION} [skip ci]"
 
           AUTHORIZATION=$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')
