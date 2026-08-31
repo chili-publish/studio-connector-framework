@@ -1,0 +1,5 @@
+{
+  "name": "test-static-key",
+  "key": "api-key",
+  "value": "secret-value"
+}

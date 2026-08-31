@@ -38,12 +38,16 @@
     "@types/dot-object": "^2.1.6",
     "@types/express": "^4.17.13",
     "@types/handlebars": "^4.1.0",
+    "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "copyfiles": "2.4.1",
+    "jest": "^29.7.0",
+    "jest-junit": "^16.0.0",
     "prettier": "^3.0.3",
     "quicktype": "23.0.0",
     "rimraf": "^5.0.5",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.1"
   },
   "scripts": {
@@ -51,6 +55,9 @@
     "debugger": "yarn run ts-node src/index.ts login && yarn run ts-node src/index.ts publish ../connectors/acquia/connector.ts",
     "update": "yarn build && npm version patch && yarn pack",
     "demo": "yarn run ts-node src/index.ts demo '../connectors/acquia/connector.ts'",
-    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json -o src/core/types/gen-types.ts && node scripts/fix-gen-types.js"
+    "produce-types": "quicktype -s schema ./resources/schemas/**/*.json -o src/core/types/gen-types.ts && node scripts/fix-gen-types.js",
+    "test": "jest",
+    "cover": "jest --coverage",
+    "make-badges": "node createCoverageBadge.cjs"
   }
 }
