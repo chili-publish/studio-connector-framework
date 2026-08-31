@@ -56,7 +56,7 @@ Connector PR rules:
 
 - Change exactly **one** connector per PR.
 - Bump that connector’s `package.json` version vs `main`.
-- Do not combine with `src/connector-cli/**` or other non-connector files.
+- Do not combine with `src/connector-cli/**` or other non-connector files. Root `yarn.lock` is allowed when a connector’s dependencies change.
 - A JIRA link in the PR body is optional for connector-only PRs.
 - Include required `package.json` metadata: `name`, `description`, `author`, `license`, and `config` (options + mappings). License must be MIT.
 - Expose a `yarn build` script; `package.json` `main` must point at the compiled connector output.
