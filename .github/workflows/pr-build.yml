@@ -1,25 +1,28 @@
-# workflow to run both yarn && yarn build in the repo when pr is created
+# workflow to install (frozen lockfile) and build when a PR is created
 name: Build PR
 on: [pull_request]
 env:
-  NODE_VERSION: 22.x
+  NODE_VERSION: 24.x
 jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
       cli_changed: ${{ steps.git_diff.outputs.cli_changed }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Fetches all history for all branches and tags
+          persist-credentials: false
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
       - name: Build CLI
         run: yarn run build-cli
+      - name: Test connector-cli
+        run: yarn workspace @chili-publish/connector-cli cover
       - name: Build connectors
         run: yarn run build-connectors
       - name: Check for changes in src/connector-cli/**/*
@@ -28,7 +31,7 @@ jobs:
           git fetch --depth=1 origin main # Ensures the main branch is up to date
           if git diff --name-only origin/main...HEAD | grep 'src/connector-cli/'
           then
-            echo "::set-output name=cli_changed::true"
+            echo "cli_changed=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Prepare artifact
         if: steps.git_diff.outputs.cli_changed == 'true'
@@ -43,7 +46,7 @@ jobs:
           mkdir -p "src/connector-cli/$path" && yarn workspace @chili-publish/connector-cli pack -f "$path/connector-cli.tgz"
       - name: Upload CLI build artifacts
         if: steps.git_diff.outputs.cli_changed == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cli-build
           path: src/connector-cli/upload/
@@ -53,12 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build CLI artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cli-build
           path: connector-cli/upload/
       - name: Upload CLI to Blob Storage
-        uses: azure/CLI@v1
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             az storage blob upload-batch -d sdk -s connector-cli/upload/ --connection-string "${{ secrets.AZURE_CDN_STUDIO_DEV_CONNECTION_STRING }}" --overwrite true

@@ -3,7 +3,11 @@ out
 yarn-error.log
 .npmrc
 package-lock.json
+coverage
+src/connector-cli/test/.tmp
+tests.generated.json
 
 #Mac OS
 .DS_Store
 /.claude
+/cmd

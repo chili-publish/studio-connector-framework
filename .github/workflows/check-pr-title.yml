@@ -1,0 +1,112 @@
+name: Check PR title
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Fetch head branch
+        run: |
+          # Check if the PR is from a fork
+          if [[ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]]; then
+            echo "Pull request is from a fork. Fetching head branch from the fork repository."
+            git fetch https://github.com/${{ github.event.pull_request.head.repo.full_name }} \
+              ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          else
+            echo "Pull request is from the same repository. Fetching head branch locally."
+            git fetch origin ${{ github.event.pull_request.head.ref }}:${{ github.event.pull_request.head.ref }}
+          fi
+
+      - name: Validate PR title against changed paths
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          files=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}")
+
+          if [[ -z "${files}" ]]; then
+            echo "No changed files detected; skipping title validation."
+            exit 0
+          fi
+
+          has_connector=0
+          has_other=0
+
+          while IFS= read -r file; do
+            [[ -z "${file}" ]] && continue
+            # Root lockfile is updated when a connector bumps dependencies.
+            # Do not treat it as mixing connector and non-connector tracks.
+            if [[ "${file}" == "yarn.lock" ]]; then
+              continue
+            fi
+            if [[ "${file}" == src/connectors/* ]]; then
+              has_connector=1
+            else
+              has_other=1
+            fi
+          done <<< "${files}"
+
+          echo "PR title: ${TITLE}"
+          echo "has_connector=${has_connector} has_other=${has_other}"
+
+          # Lockfile-only PRs still follow non-connector title rules.
+          if [[ "${has_connector}" -eq 0 && "${has_other}" -eq 0 ]]; then
+            has_other=1
+            echo "Only yarn.lock (or equivalent ignored paths) changed; treating as non-connector."
+          fi
+
+          fail() {
+            echo "::error::$1"
+            echo ""
+            echo "See CONTRIBUTING.md for PR title rules."
+            exit 1
+          }
+
+          if [[ "${has_connector}" -eq 1 && "${has_other}" -eq 1 ]]; then
+            fail "Keep connector and non-connector changes in separate PRs."
+          fi
+
+          # Connector track: [Connector] … or [Connector][TICKET] …
+          connector_re='^\[Connector\](\[[A-Z][A-Z0-9]+-[0-9]+\])? .+'
+          # Non-connector track: optional [MAJOR]|[MINOR], then [TICKET] or [NO-TICKET]
+          other_re='^(\[(MAJOR|MINOR)\])?\[(NO-TICKET|[A-Z][A-Z0-9]+-[0-9]+)\] .+'
+
+          if [[ "${has_connector}" -eq 1 ]]; then
+            if [[ "${TITLE}" == *'[MAJOR]'* || "${TITLE}" == *'[MINOR]'* ]]; then
+              fail "Connector PRs must not use [MAJOR] or [MINOR]. Use [Connector] with an optional [JIRA-KEY]."
+            fi
+            if [[ "${TITLE}" == *'[NO-TICKET]'* ]]; then
+              fail "Connector PRs must not use [NO-TICKET]. Use [Connector] or [Connector][JIRA-KEY]."
+            fi
+            if [[ ! "${TITLE}" =~ ${connector_re} ]]; then
+              fail "Connector PR title must match: [Connector] <description> or [Connector][JIRA-KEY] <description>"
+            fi
+            echo "Connector PR title OK."
+            exit 0
+          fi
+
+          if [[ "${has_other}" -eq 1 ]]; then
+            if [[ "${TITLE}" == *'[Connector]'* ]]; then
+              fail "Non-connector PRs must not use [Connector]. Use [[MAJOR|MINOR]][JIRA-KEY|NO-TICKET] <description>."
+            fi
+            if [[ ! "${TITLE}" =~ ${other_re} ]]; then
+              fail "Non-connector PR title must match: [[MAJOR|MINOR]][JIRA-KEY|NO-TICKET] <description>"
+            fi
+            echo "Non-connector PR title OK."
+            exit 0
+          fi

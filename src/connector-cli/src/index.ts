@@ -13,13 +13,27 @@ import { runSetAuth } from './commands/set-auth';
 import { AuthenticationUsage } from './commands/set-auth/types';
 import { runStressTest } from './commands/stress';
 import { runDemo, runTests } from './commands/test';
-import { supportedDryRunCommands, withErrorHandlerAction } from './core';
+import {
+  setExecutionContext,
+  supportedDryRunCommands,
+  withErrorHandlerAction,
+} from './core';
 import {
   SupportedAuth as AuthenticationType,
   ConnectorType,
   Tenant,
 } from './core/types';
 import { connectorProject } from './utils/connector-project';
+
+function withExecutionContext(
+  fn: (...args: any[]) => void | Promise<void>
+): (...args: any[]) => void | Promise<void> {
+  return withErrorHandlerAction(async (...args) => {
+    const { verbose, dryRun, dryRunOut } = program.opts();
+    setExecutionContext({ verbose: !!verbose, dryRun, dryRunOut });
+    await fn(...args);
+  });
+}
 
 function main() {
   program
@@ -59,7 +73,7 @@ function main() {
       '-o, --out [out]',
       'Output path of project files. By default it outputs files to newly created <projectName> folder'
     )
-    .action(withErrorHandlerAction(runNewProject));
+    .action(withExecutionContext(runNewProject));
 
   program
     .command('publish')
@@ -111,25 +125,26 @@ function main() {
       '--proxyOption.forwardedHeaders',
       'If enabled, any request to connector via proxy ednpoint will include X-Forwarded-* headers'
     )
-    .action(withErrorHandlerAction(runPublish));
+    .action(withExecutionContext(runPublish));
 
   program
     .command('build')
     .description('Build connector project')
     .addArgument(connectorProject)
     .option('-w, --watch', 'Watch for changes')
-    .action(withErrorHandlerAction(runBuild));
+    .action(withExecutionContext(runBuild));
 
   program
     .command('debug')
     .description('Run connector project in debug mode for testing in browser')
     .addArgument(connectorProject)
     .option('-p, --port [port]', 'Port to run debug application', '3300')
+    .option('--open', 'Open the debug URL in the default browser')
     .option(
-      '-w, --watch',
-      "Enable watch mode to reload connector's code when changed"
+      '--host <host>',
+      'Host address to bind the debug server (e.g. 0.0.0.0)'
     )
-    .action(withErrorHandlerAction(runDebugger));
+    .action(withExecutionContext(runDebugger));
 
   program
     .command('info')
@@ -138,24 +153,24 @@ function main() {
     )
     .addArgument(connectorProject)
     .option('-o, --out [out]', 'Output json file')
-    .action(withErrorHandlerAction(runGetInfo));
+    .action(withExecutionContext(runGetInfo));
 
   program
     .command('test')
     .addArgument(connectorProject)
     .requiredOption('-t, --testFile <testFile>')
-    .action(withErrorHandlerAction(runTests));
+    .action(withExecutionContext(runTests));
 
   program
     .command('demo')
     .addArgument(connectorProject)
-    .action(withErrorHandlerAction(runDemo));
+    .action(withExecutionContext(runDemo));
 
   program
     .command('stress')
     .addArgument(connectorProject)
     .option('-i, --iterations <iterations>')
-    .action(withErrorHandlerAction(runStressTest));
+    .action(withExecutionContext(runStressTest));
 
   program
     .command('login')
@@ -167,7 +182,7 @@ function main() {
         .choices(Object.values(Tenant))
         .default(Tenant.Prod)
     )
-    .action(withErrorHandlerAction(runLogin));
+    .action(withExecutionContext(runLogin));
 
   program
     .command('set-auth')
@@ -213,7 +228,7 @@ function main() {
       '--auth-data-file <auth-data-file>',
       'Path to the file (json or yaml) that contains authentication information for the specified "--type"'
     )
-    .action(withErrorHandlerAction(runSetAuth));
+    .action(withExecutionContext(runSetAuth));
 
   program
     .command('delete-auth')
@@ -246,7 +261,7 @@ function main() {
         .choices(Object.values(AuthenticationUsage))
         .makeOptionMandatory(true)
     )
-    .action(withErrorHandlerAction(runDeleteAuth));
+    .action(withExecutionContext(runDeleteAuth));
 
   program
     .command('delete')
@@ -271,7 +286,7 @@ function main() {
       '--connectorId <connectorId>',
       'Id of the connector to perform operation'
     )
-    .action(withErrorHandlerAction(runDelete));
+    .action(withExecutionContext(runDelete));
 
   program
     .command('update')
@@ -314,7 +329,7 @@ function main() {
       '-n, --name <name>',
       'Connector display name to set (overrides current name)'
     )
-    .action(withErrorHandlerAction(runUpdate));
+    .action(withExecutionContext(runUpdate));
 
   program.parse(process.argv);
 }

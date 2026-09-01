@@ -3,8 +3,7 @@ on:
   release:
     types: [published]
 env:
-  # NOTE: Stick to this node version because of the bug https://github.com/nodejs/node/issues/62425
-  NODE_VERSION: 22.22.1
+  NODE_VERSION: 24.x
 permissions:
   id-token: write # Required for OIDC authentication
   contents: read
@@ -12,14 +11,17 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Update to latest npm version
         run: npm i -g npm@11.13.0
       - name: Check version correctness
+        id: version
         env:
           GITHUB_REF: ${{ github.ref }}
         run: |
@@ -28,6 +30,8 @@ jobs:
 
           if [ "$PACKAGE_VERSION" = "$TAG_VERSION" ]; then
               echo "The package.json version matches the tag version."
+              echo "version=${PACKAGE_VERSION#v}" >> "$GITHUB_OUTPUT"
+              echo "tag=${TAG_VERSION}" >> "$GITHUB_OUTPUT"
           else
               echo "The package.json version does not match the tag version."
               echo "package.json version: $PACKAGE_VERSION"
@@ -44,3 +48,28 @@ jobs:
       - name: Publish
         working-directory: src/connector-cli
         run: npm publish --access=public --tag=latest
+      - name: Notify Teams success
+        continue-on-error: true
+        uses: ./.github/actions/teams-notify
+        with:
+          text: |
+            🎉 Production Deployment Completed
+
+            **Version:** ${{ steps.version.outputs.version }}
+
+            **Tag:** ${{ steps.version.outputs.tag }}
+
+            **Repository:** ${{ github.repository }}
+
+            Deployment to Production environment completed successfully.
+
+            [View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}
+      - name: Notify Teams failure
+        if: failure()
+        uses: ./.github/actions/cd-notify-failure
+        with:
+          pipeline_name: Publish CLI to NPM
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_RELEASE_HOOK_URL }}

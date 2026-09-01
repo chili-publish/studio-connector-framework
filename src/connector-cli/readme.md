@@ -1,5 +1,7 @@
 # Connector CLI
 
+![Coverage](https://img.shields.io/badge/coverage-51.78%25-red.svg)
+
 `@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to create new projects, build connectors, debug, test, and deploy them to your environment.
 
 ## Features
@@ -32,7 +34,7 @@
 
 ### Prerequisites
 
-- Node.js 20 LTS or higher
+- Node.js 22 LTS or higher
 - [Yarn v1.22.19](https://classic.yarnpkg.com/lang/en/docs/install/) or higher (for building from source)
 
 You can install `@chili-publish/connector-cli` globally via npm:
@@ -69,11 +71,13 @@ connector-cli new YourProjectName -t data -n YourConnectorName
 
 ### Build a connector
 
+Connector projects can span multiple local `.ts` files. The entry point remains `connector.ts`; the CLI bundles local modules into a single `out/connector.js`. Only relative project imports and `@chili-publish/studio-connectors` are allowed. See the [GraFx Developers: Connector project structure](https://docs.chiligrafx.com/GraFx-Developers/connectors/connector-cli/project-structure/) docs for details.
+
 ```sh
 connector-cli build
 ```
 
-With watch mode:
+With watch mode (recompiles when any project `.ts` file changes):
 
 ```sh
 connector-cli build -w
@@ -133,8 +137,22 @@ Options: `--enabled` and `--default` accept `true` or `false`. `-n, --name` sets
 
 ### Debug a connector
 
+The CLI recompiles when any project `.ts` file changes and reloads the browser tab. Compile failures are shown in the browser overlay as well as the terminal.
+
 ```sh
-connector-cli debug -p 3300 -w
+connector-cli debug -p 3300
+```
+
+The server prints the debug URL and does not open a browser by default. Open it explicitly when needed:
+
+```sh
+connector-cli debug --open
+```
+
+Bind the debug server to a specific host (e.g. for remote access):
+
+```sh
+connector-cli debug --host 0.0.0.0
 ```
 
 ### Get connector information

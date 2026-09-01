@@ -3,40 +3,17 @@
 // It is derived from the internal GraFx Studio Media connectors but is not intended to be used, nor is there any promise that this connector will keep in sync.
 
 import { Connector, Media } from '@chili-publish/studio-connectors';
-
-// ─── Swagger-derived API Types ────────────────────────────────────────────────
-
-/** EntityType from the GraFx Environment API (Swagger: EntityType enum) */
-type GrafxEntityType = 'Item' | 'Directory' | string | number | null;
-
-/** Asset schema from GET /media and GET /media/{mediaId} (Swagger: Asset) */
-interface GrafxAsset {
-  id: string;
-  name: string | null;
-  relativePath: string | null;
-  extension: string | null;
-  type: GrafxEntityType;
-  width: number | null;
-  height: number | null;
-  metaData: Record<string, string> | null;
-}
-
-/** Paged response returned by GET /media (Swagger: AssetPagedResponse) */
-interface GrafxAssetPagedResponse {
-  data: GrafxAsset[] | null;
-  pageSize: number;
-  links: Record<string, string> | null;
-  total: number | null;
-}
-
-interface GrafxAssetDetailResponse {
-  data: GrafxAsset | null;
-  links: Record<string, string> | null;
-}
-
-declare function sleep(ms: number): Promise<void>;
-
-// ─── Connector implementation ─────────────────────────────────────────────────
+import {
+  assetToMediaDetail,
+  extractAssetFromDetailResponse,
+  toMediaPage,
+} from './lib/media';
+import { asBoolean, formatPath, getUploadFolder } from './lib/path';
+import type {
+  GrafxAsset,
+  GrafxAssetDetailResponse,
+  GrafxAssetPagedResponse,
+} from './lib/types';
 
 export default class GrafxMediaConnector implements Media.MediaConnector {
   private runtime: Connector.ConnectorRuntimeContext;
@@ -55,19 +32,19 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     const sortOrder = options.sortOrder ?? '';
     const pageSize = options.pageSize ?? '';
     const searchInUploadFolder =
-      this._asBoolean(context['searchInUploadFolder']) ?? false;
-    const browseQueryFolder = this._formatPath(
+      asBoolean(context['searchInUploadFolder']) ?? false;
+    const browseQueryFolder = formatPath(
       (context['folder'] as string) ?? ''
     );
-    const uploadQueryFolder = this._getUploadFolder(context);
+    const uploadQueryFolder = getUploadFolder(context);
     const queryConfigFolder = searchInUploadFolder
       ? uploadQueryFolder
       : browseQueryFolder;
     const includeSubfolders =
-      this._asBoolean(context['includeSubfolders']) ?? true;
+      asBoolean(context['includeSubfolders']) ?? true;
     const isSearching = filter.length > 0;
     const includeItemsFromSubfolders = isSearching && includeSubfolders;
-    const collection = this._formatPath(
+    const collection = formatPath(
       (options.collection as string | undefined) ?? ''
     );
     const collectionIsSubOfQueryFolder = collection
@@ -112,7 +89,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     }
 
     const json = JSON.parse(result.text) as GrafxAssetPagedResponse;
-    return this._toMediaPage(json);
+    return toMediaPage(json);
   }
 
   async detail(
@@ -138,7 +115,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     const payload = JSON.parse(result.text) as
       | GrafxAsset
       | GrafxAssetDetailResponse;
-    const asset = this._extractAssetFromDetailResponse(payload);
+    const asset = extractAssetFromDetailResponse(payload);
 
     if (!asset.id) {
       throw new ConnectorHttpError(
@@ -147,7 +124,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
       );
     }
 
-    return this._assetToMediaDetail(asset);
+    return assetToMediaDetail(asset);
   }
 
   async download(
@@ -222,7 +199,7 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     files: Connector.FilePointer[],
     context: Connector.Dictionary
   ): Promise<GrafxAsset[]> {
-    const folderPath = this._getUploadFolder(context);
+    const folderPath = getUploadFolder(context);
 
     let queryEndpoint = this._getBaseMediaUrl();
     queryEndpoint += `?folderPath=${encodeURIComponent(folderPath)}`;
@@ -283,8 +260,6 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
     };
   }
 
-  // ─── Private helpers ──────────────────────────────────────────────────────
-
   private _getBaseMediaUrl(): string {
     const baseUrl = this.runtime.options['ENVIRONMENT_API'];
     if (typeof baseUrl !== 'string' || baseUrl.trim().length === 0) {
@@ -294,132 +269,5 @@ export default class GrafxMediaConnector implements Media.MediaConnector {
       );
     }
     return `${baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`}media`;
-  }
-
-  private _getUploadFolder(context: Connector.Dictionary): string {
-    const uploadFolder = context['uploadFolder'] as string | undefined;
-    return this._formatPath(
-      uploadFolder && uploadFolder.trim().length > 0
-        ? uploadFolder.trim()
-        : '/Upload'
-    );
-  }
-
-  /**
-   * Normalise an arbitrary path string to a GraFx-compatible forward-slash
-   * path that always starts with `/` and never ends with `/` (unless root).
-   */
-  private _formatPath(path: string): string {
-    path = path.trim();
-
-    if (path.length === 0) {
-      return '/';
-    }
-
-    // Decode URL encoding if present (safe to call on already-decoded strings)
-    path = decodeURIComponent(path);
-
-    // Ensure leading slash, collapse backslashes and duplicate slashes
-    path = ('/' + path).replace(/\\/g, '/').replace(/\/+/g, '/');
-
-    // Remove trailing slash (unless root)
-    if (path.length > 1 && path.endsWith('/')) {
-      path = path.slice(0, -1);
-    }
-
-    return path;
-  }
-
-  /**
-   * Convert a raw `GrafxAssetPagedResponse` to the `Media.MediaPage` shape.
-   * Directory assets have their name appended to `relativePath` so the full
-   * path is available on the item (mirrors the original _formatRelativePath).
-   */
-  private _toMediaPage(json: GrafxAssetPagedResponse): Media.MediaPage {
-    const data = (json.data ?? []).map((asset) => {
-      if (this._isFolderEntityType(asset.type)) {
-        const newRelativePath = `${asset.relativePath ?? ''}/${
-          asset.name ?? ''
-        }`.replace(/\/\//g, '/');
-        asset = { ...asset, relativePath: newRelativePath };
-      }
-      return this._assetToMedia(asset);
-    });
-
-    return {
-      pageSize: json.pageSize,
-      links: {
-        nextPage: json.links?.['nextPage'] ?? '',
-      },
-      data,
-    };
-  }
-
-  private _assetToMedia(asset: GrafxAsset): Media.Media {
-    const isFolder = this._isFolderEntityType(asset.type);
-    return {
-      id: asset.id,
-      name: asset.name ?? '',
-      relativePath: asset.relativePath ?? '',
-      type: isFolder ? 1 : 0,
-      metaData: asset.metaData ?? {},
-      extension: asset.extension ?? '',
-    };
-  }
-
-  private _assetToMediaDetail(asset: GrafxAsset): Media.MediaDetail {
-    const isFolder = this._isFolderEntityType(asset.type);
-    return {
-      id: asset.id,
-      name: asset.name ?? '',
-      relativePath: asset.relativePath ?? '',
-      type: isFolder ? 1 : 0,
-      metaData: asset.metaData ?? {},
-      extension: asset.extension ?? '',
-      width: asset.width ?? undefined,
-      height: asset.height ?? undefined,
-    };
-  }
-
-  private _extractAssetFromDetailResponse(
-    payload: GrafxAsset | GrafxAssetDetailResponse
-  ): GrafxAsset {
-    const maybeWrappedResponse = payload as GrafxAssetDetailResponse;
-    if (
-      maybeWrappedResponse?.data &&
-      typeof maybeWrappedResponse.data === 'object'
-    ) {
-      return maybeWrappedResponse.data;
-    }
-
-    return payload as GrafxAsset;
-  }
-
-  private _isFolderEntityType(entityType: unknown): boolean {
-    if (typeof entityType === 'number') {
-      return entityType === 1;
-    }
-
-    if (typeof entityType !== 'string') {
-      return false;
-    }
-
-    const normalizedType = entityType.toLowerCase();
-    return (
-      normalizedType === 'directory' ||
-      normalizedType === 'folder' ||
-      normalizedType === 'collection' ||
-      normalizedType === '1'
-    );
-  }
-
-  private _asBoolean(value: unknown): boolean | undefined {
-    if (typeof value === 'boolean') {
-      return value;
-    }
-    if (typeof value === 'string' && value.length > 0) {
-      return value.toLowerCase() === 'true';
-    }
-    return undefined;
   }
 }

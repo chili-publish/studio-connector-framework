@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: 22.x
+  NODE_VERSION: 24.x
 
 jobs:
   validate-input:
@@ -27,10 +27,12 @@ jobs:
       connectors_json: ${{ steps.parse-input.outputs.connectors_json }}
       validated_connectors: ${{ steps.parse-input.outputs.validated_connectors }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -54,10 +56,8 @@ jobs:
     environment: uat
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           creds: |
             {
@@ -67,13 +67,8 @@ jobs:
               "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
             }
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
       - name: Download connector files from UAT
-        uses: azure/CLI@v2
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             set -eo pipefail
@@ -121,7 +116,7 @@ jobs:
             ls -la uat_connectors/
 
       - name: Upload connector files as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: uat-connectors
           path: uat_connectors/
@@ -134,7 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           creds: |
             {
@@ -145,7 +140,7 @@ jobs:
             }
 
       - name: Download PRD index.json
-        uses: azure/CLI@v2
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             container_name="connector-marketplace"
@@ -162,7 +157,7 @@ jobs:
             echo "Downloaded PRD index.json"
 
       - name: Upload PRD index as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prd-index
           path: prd_index.json
@@ -175,21 +170,23 @@ jobs:
     outputs:
       skip_upload: ${{ steps.filter-versions.outputs.skip_upload }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Download connector files artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: uat-connectors
           path: uat_connectors/
 
       - name: Download PRD index artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: prd-index
           path: ./
@@ -230,7 +227,7 @@ jobs:
 
       - name: Upload filtered connectors as artifact
         if: env.SKIP_UPLOAD != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: filtered-connectors
           path: uat_connectors/
@@ -238,7 +235,7 @@ jobs:
 
       - name: Upload updated PRD index as artifact
         if: env.SKIP_UPLOAD != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prd-index-updated
           path: prd_index.json
@@ -251,19 +248,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download filtered connector files artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: filtered-connectors
           path: uat_connectors/
 
       - name: Download updated PRD index artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: prd-index-updated
           path: ./
 
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           creds: |
             {
@@ -274,7 +271,7 @@ jobs:
             }
 
       - name: Upload connectors to PRD
-        uses: azure/CLI@v2
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             set -eo pipefail

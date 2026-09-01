@@ -1,0 +1,24 @@
+{
+  "name": "test-media-connector",
+  "description": "Fixture media connector for connector-cli tests",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "TestMediaConnector",
+    "type": "media",
+    "iconUrl": "https://example.com/logo.png",
+    "options": {},
+    "mappings": {},
+    "supportedAuth": ["staticKey"]
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1",
+    "typescript": "^5.2.2"
+  }
+}

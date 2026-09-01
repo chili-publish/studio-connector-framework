@@ -5,11 +5,13 @@
     "module": "ES2020",
     "outDir": "out",
     "target": "ES2020",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "preserveConstEnums": false,
     "esModuleInterop": false,
     "removeComments": true,
-    "declaration": false
+    "declaration": false,
+    "noEmit": true
   },
-  "include": ["connector.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "out"]
 }

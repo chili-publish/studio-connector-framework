@@ -1,5 +1,8 @@
 # Releases
 
+# 1.0.4
+- [NO-TICKET] Enable auth settings (staticKey, oAuth2ClientCredentials, oAuthAuthorizationCode, oAuth2ResourceOwnerPassword) in connector config
+
 # 1.0.2
 
 - [NO-TICKET] Add support for CSV files with empty column headers — empty columns are silently ignored and no longer cause errors in GraFx Studio
