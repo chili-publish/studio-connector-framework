@@ -25,14 +25,14 @@ interface ParsedSheet {
 // Handles:
 //   • Comma-separated and semicolon-separated files
 //   • Quoted fields (fields containing commas, semicolons or line breaks)
-//   • UTF-8 BOM added by Excel's "CSV UTF-8" export
+//   • UTF-8 / UTF-16 BOM (decoded as U+FEFF or as Latin-1 "ï»¿" / "ÿþ")
 //   • Windows (CRLF) and Unix (LF) line endings
 //   • Type inference: numbers, booleans, ISO dates → singleLine fallback
 
 class CsvParser {
   parse(raw: string): ParsedSheet {
-    // Strip UTF-8 BOM that Excel prepends to CSV UTF-8 exports.
-    const text = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
+    // Strip any byte-order mark Excel / other editors prepend to exports.
+    const text = this.stripBom(raw);
 
     const allRows = this.tokenize(text);
 
@@ -87,6 +87,33 @@ class CsvParser {
       .filter((row) => row.values.some((v) => v !== null && v !== ''));
 
     return { headers, types, rows };
+  }
+
+  // Strip a byte-order mark from the start of the text, covering the cases
+  // where the runtime decoded the file bytes correctly *and* where it decoded
+  // them as Latin-1 (which turns a UTF-8/UTF-16 BOM into visible characters
+  // such as "ï»¿" that would otherwise stick to the first column header).
+  private stripBom(raw: string): string {
+    // UTF-8 / UTF-16 BOM decoded correctly as U+FEFF.
+    if (raw.charCodeAt(0) === 0xfeff) return raw.slice(1);
+
+    // UTF-8 BOM (EF BB BF) decoded byte-for-byte as Latin-1 → "ï»¿".
+    if (
+      raw.charCodeAt(0) === 0x00ef &&
+      raw.charCodeAt(1) === 0x00bb &&
+      raw.charCodeAt(2) === 0x00bf
+    )
+      return raw.slice(3);
+
+    // UTF-16 LE BOM (FF FE) decoded byte-for-byte as Latin-1 → "ÿþ".
+    if (raw.charCodeAt(0) === 0x00ff && raw.charCodeAt(1) === 0x00fe)
+      return raw.slice(2);
+
+    // UTF-16 BE BOM (FE FF) decoded byte-for-byte as Latin-1 → "þÿ".
+    if (raw.charCodeAt(0) === 0x00fe && raw.charCodeAt(1) === 0x00ff)
+      return raw.slice(2);
+
+    return raw;
   }
 
   // RFC 4180-compliant tokeniser — returns a 2-D array of raw cell strings.
@@ -166,7 +193,8 @@ class CsvParser {
       return 'boolean';
     if (
       sample.length > 0 &&
-      !/^[+0]/.test(sample) &&
+      !/^[+]/.test(sample) &&
+      !/^0\d/.test(sample) &&
       Number.isFinite(Number(sample))
     )
       return 'number';
