@@ -6,16 +6,18 @@
   main, then commit. Root package.json resolutions pins
   @chili-publish/connector-cli to that exact workspace version so connectors
   use the local CLI (Yarn Classic file: resolutions skip the package's
-  devDependencies and break `yarn build-cli`). yarn.lock also records that
-  version under the connector-cli stanzas. CI uses yarn install
-  --frozen-lockfile, so a bump without syncing resolutions + lock fails the
-  next install.
+  devDependencies and break `yarn build-cli`). yarn.lock may also record that
+  version under connector-cli stanzas when other workspaces depend on a
+  version range. Yarn Classic often omits the workspace package from the
+  lockfile entirely; missing stanzas are then expected. CI uses yarn install
+  --frozen-lockfile, so a bump without syncing resolutions (and lock stanzas
+  when present) fails the next install.
 
   Running a full `yarn install` on the runner to refresh the lock is unsafe:
   Yarn Classic can rewrite machine-specific file: keys and unrelated lock
   entries (the original publish-cli lock churn). This script only updates:
     1) package.json resolutions["@chili-publish/connector-cli"]
-    2) yarn.lock version lines for @chili-publish/connector-cli stanzas
+    2) yarn.lock version lines for @chili-publish/connector-cli stanzas, if any
 */
 const fs = require('fs');
 const path = require('path');
@@ -45,7 +47,7 @@ const lock = fs.readFileSync(lockPath, 'utf8');
 
 // Stanza whose key line is for @chili-publish/connector-cli (caret or exact).
 const pattern =
-  /^("[^"]*@chili-publish\/connector-cli@[^"]+"(?:, "[^"]+")*:)\n((?:  .*\n)*?)(  version )"[^"]*"/gm;
+  /^("[^"]*@chili-publish\/connector-cli@[^"]+"(?:, "[^"]+")*:)\r?\n((?:  .*\r?\n)*?)(  version )"[^"]*"/gm;
 
 let replacements = 0;
 const updatedLock = lock.replace(pattern, (match, keyLine, middle, versionPrefix) => {
@@ -53,14 +55,14 @@ const updatedLock = lock.replace(pattern, (match, keyLine, middle, versionPrefix
   return `${keyLine}\n${middle}${versionPrefix}"${version}"`;
 });
 
-if (replacements === 0) {
+const lockMentionsPackage = /@chili-publish\/connector-cli@/.test(lock);
+if (replacements === 0 && lockMentionsPackage) {
   console.error(
-    'No @chili-publish/connector-cli entries found in yarn.lock; refusing to continue',
+    'Found @chili-publish/connector-cli in yarn.lock but could not parse stanzas; refusing to continue',
   );
   process.exit(1);
 }
 
-// Persist only after lockfile validation succeeds (avoid partial updates).
 fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
 console.log(
   previousResolution === version
@@ -68,7 +70,11 @@ console.log(
     : `Updated package.json resolutions @chili-publish/connector-cli: ${previousResolution} → ${version}`,
 );
 
-if (updatedLock === lock) {
+if (replacements === 0) {
+  console.log(
+    'No @chili-publish/connector-cli stanzas in yarn.lock (workspace package omitted); skipped lockfile rewrite',
+  );
+} else if (updatedLock === lock) {
   console.log(
     `yarn.lock already at connector-cli ${version} (${replacements} entr${replacements === 1 ? 'y' : 'ies'})`,
   );
