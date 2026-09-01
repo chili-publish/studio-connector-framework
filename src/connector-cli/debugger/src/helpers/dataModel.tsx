@@ -1,0 +1,75 @@
+import type { UpdateSettingsFn } from '../core/connectorSettingsStorage';
+
+export type DataModel = {
+  name: string;
+  displayName?: string;
+  parameters: Parameter[];
+};
+
+export type InvokableDataModel = DataModel & {
+  returnsImage: boolean;
+  returnJson: boolean;
+  returnJsonArray: boolean;
+  invoke: (values: any[], connector: any) => Promise<any>;
+};
+
+export type SettableDataModel = DataModel & {
+  set: (values: any, updateSettings: UpdateSettingsFn) => void;
+};
+
+export type ConnectorMetadata = {
+  name: string;
+  type: 'mediaconnector' | 'fontconnector' | 'dataconnector';
+  getDisplayType: () => string;
+};
+
+export type SimpleParameter = {
+  value?: any;
+  name: string;
+  componentType: 'text' | 'boolean' | 'list';
+};
+
+export type IdParameter = {
+  value?: string;
+  name: string;
+  componentType: 'id';
+};
+
+export type SelectParameter = {
+  value?: any;
+  name: string;
+  componentType: 'select';
+  options?: string[];
+};
+
+export type NumberParameter = {
+  value?: number;
+  name: string;
+  componentType: 'number';
+  min?: number;
+  max?: number;
+};
+
+export type DictionaryParameter = {
+  value?: any;
+  name: string;
+  componentType: 'dictionary';
+  restrictModification?: boolean;
+};
+
+export type Parameter =
+  | SimpleParameter
+  | IdParameter
+  | ComplexParameter
+  | SelectParameter
+  | DictionaryParameter
+  | NumberParameter;
+
+export type ComplexParameter = {
+  value?: any;
+  name: string;
+  componentType: 'complex';
+  complex: Array<
+    SimpleParameter | IdParameter | DictionaryParameter | NumberParameter
+  >;
+};

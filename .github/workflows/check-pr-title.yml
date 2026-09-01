@@ -49,6 +49,11 @@ jobs:
 
           while IFS= read -r file; do
             [[ -z "${file}" ]] && continue
+            # Root lockfile is updated when a connector bumps dependencies.
+            # Do not treat it as mixing connector and non-connector tracks.
+            if [[ "${file}" == "yarn.lock" ]]; then
+              continue
+            fi
             if [[ "${file}" == src/connectors/* ]]; then
               has_connector=1
             else
@@ -58,6 +63,12 @@ jobs:
 
           echo "PR title: ${TITLE}"
           echo "has_connector=${has_connector} has_other=${has_other}"
+
+          # Lockfile-only PRs still follow non-connector title rules.
+          if [[ "${has_connector}" -eq 0 && "${has_other}" -eq 0 ]]; then
+            has_other=1
+            echo "Only yarn.lock (or equivalent ignored paths) changed; treating as non-connector."
+          fi
 
           fail() {
             echo "::error::$1"

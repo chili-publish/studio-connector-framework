@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cli/*": ["src/*"]
+    },
+    "types": ["jest", "node"],
+    "noEmit": true,
+    "isolatedModules": true,
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "debugger", "coverage", "out"]
+}

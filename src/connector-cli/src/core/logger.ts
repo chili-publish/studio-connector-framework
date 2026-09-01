@@ -7,14 +7,13 @@ import {
   isDryRunToFile,
   readDryRunOutOption,
 } from './dry-run';
+import { getExecutionContext } from './execution-context';
 import { ExecutionError } from './types';
 
 const startTime = Date.now();
-let verboseEnabled: boolean = false;
 
-export function enableVerboseLogging() {
-  verboseEnabled = true;
-  verbose(`Verbose logging enabled`);
+function isVerboseEnabled() {
+  return getExecutionContext().verbose;
 }
 
 export function info(arg0: string) {
@@ -41,7 +40,7 @@ export function warn(arg0: string) {
 
 /** Yellow warning that only prints when verbose logging is enabled. */
 export function verboseWarning(arg0: string) {
-  if (verboseEnabled) {
+  if (isVerboseEnabled()) {
     warn(arg0);
   }
 }
@@ -51,7 +50,7 @@ export function error(arg0: string) {
 }
 
 export function verbose(arg0: string) {
-  if (verboseEnabled) {
+  if (isVerboseEnabled()) {
     info(arg0);
   }
 }

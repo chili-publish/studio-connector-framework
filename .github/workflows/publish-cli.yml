@@ -8,7 +8,7 @@ on:
       - 'src/connector-cli/**' # Only trigger when files under the cli package have changed
       - '.github/workflows/publish-cli.yml'
 env:
-  NODE_VERSION: 22.x
+  NODE_VERSION: 24.x
 permissions:
   contents: read
   packages: write
@@ -38,6 +38,10 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build
         run: yarn run build-cli
+      - name: Run connector-cli coverage
+        run: yarn workspace @chili-publish/connector-cli cover
+      - name: Update coverage badges
+        run: yarn workspace @chili-publish/connector-cli make-badges
       - name: Bump version and push
         id: bump
         env:
@@ -46,7 +50,7 @@ jobs:
           set -euo pipefail
           echo "::add-mask::${APP_TOKEN}"
 
-          NEW_VERSION=$(npm --prefix=src/connector-cli version prerelease --no-git-tag-version | tr -d 'v[:space:]')
+          NEW_VERSION=$(npm --prefix=src/connector-cli version prerelease --preid=rc --no-git-tag-version | tr -d 'v[:space:]')
           echo "version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
           echo "Bumped connector-cli to ${NEW_VERSION}"
 
@@ -54,7 +58,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/connector-cli/package.json package.json yarn.lock
+          git add src/connector-cli/package.json src/connector-cli/readme.md package.json yarn.lock
           git commit -m "CI: bumps version to ${NEW_VERSION} [skip ci]"
 
           AUTHORIZATION=$(printf 'x-access-token:%s' "${APP_TOKEN}" | base64 | tr -d '\n')

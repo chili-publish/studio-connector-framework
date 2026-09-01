@@ -1,0 +1,29 @@
+{
+  "setup": {
+    "runtime_options": {
+      "BASE_URL": "https://localhost:3000"
+    }
+  },
+  "tests": [
+    {
+      "id": "default_query",
+      "name": "default_query",
+      "description": "default query returns a page",
+      "method": "query",
+      "arguments": {
+        "queryOptions": {
+          "collection": null,
+          "filter": null,
+          "pageSize": 1,
+          "pageToken": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": []
+      }
+    }
+  ]
+}

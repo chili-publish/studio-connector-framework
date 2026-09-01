@@ -79,7 +79,7 @@ Use **Yarn Classic (v1)** — not npm, not pnpm, not Yarn Berry for workspace in
 | Requirement | Value |
 | ----------- | ----- |
 | Yarn        | `1.22.x` (lockfile is Yarn v1) |
-| Node        | CLI requires `>=20`; CI uses `22.x` |
+| Node        | CLI requires `>=22`; CI uses `24.x` |
 
 ```bash
 yarn install
@@ -102,12 +102,12 @@ Useful root scripts: `yarn build-connectors`, `yarn publish-all` (see root `pack
 
 Root `resolutions` pins `@chili-publish/connector-cli` to the exact workspace package version so connectors in this monorepo always use the local CLI build (kept in sync by `scripts/sync-connector-cli-lock-version.js` on publish/promote).
 
-Do **not** manually bump `src/connector-cli/package.json` for the normal merge-to-main prerelease flow — CI owns that (`publish-cli.yml` publishes `-rc.N` to GitHub Packages).
+Do **not** manually bump `src/connector-cli/package.json` for the normal merge-to-main prerelease flow — CI owns that. On each CLI merge to `main`, `publish-cli.yml` runs `npm version prerelease --preid=rc` and publishes `X.Y.Z-rc.N` to GitHub Packages (UAT). After a stable promote, `main` may briefly equal the published PROD version until the next CLI merge; that is expected — no immediate post-prod `-rc.0` rewrite.
 
 For a stable public npm release:
 
 1. Run the **Promote CLI to NPM** workflow (`promote-cli.yml`) on `main` (environment `cli-production`; optional `version` input overrides inferred semver).
-2. Promote commits the stable version (and syncs the workspace version in `yarn.lock`), creates tag `vX.Y.Z`, and opens a **draft** GitHub Release with connector-cli-only notes.
+2. Promote commits the stable `X.Y.Z` version (and syncs the workspace version in `yarn.lock`), creates tag `vX.Y.Z`, and opens a **draft** GitHub Release with connector-cli-only notes.
 3. Publish the draft Release — `publish-cli-release.yml` publishes `@chili-publish/connector-cli` to public npm `latest`.
 
 `[MAJOR]` / `[MINOR]` in connector-cli-related PR titles since the last stable tag drive the inferred bump (default patch). See [CONTRIBUTING.md](CONTRIBUTING.md).
