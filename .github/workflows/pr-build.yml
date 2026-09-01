@@ -21,6 +21,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Build CLI
         run: yarn run build-cli
+      - name: Test connector-cli
+        run: yarn workspace @chili-publish/connector-cli cover
       - name: Build connectors
         run: yarn run build-connectors
       - name: Check for changes in src/connector-cli/**/*

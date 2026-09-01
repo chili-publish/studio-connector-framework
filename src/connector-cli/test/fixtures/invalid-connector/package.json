@@ -1,0 +1,23 @@
+{
+  "name": "invalid-connector",
+  "description": "Fixture that fails TypeScript compilation",
+  "version": "1.0.0",
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "InvalidConnector",
+    "type": "media",
+    "options": {},
+    "mappings": {},
+    "supportedAuth": []
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1",
+    "typescript": "^5.2.2"
+  }
+}
