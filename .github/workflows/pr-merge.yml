@@ -1,4 +1,4 @@
-# workflow to run both yarn && yarn build in the repo when pr is merged to main
+# workflow to install (frozen lockfile), build, and publish connectors when merged to main
 name: Publish Connectors
 
 on:
@@ -9,16 +9,17 @@ on:
       - 'src/connectors/**' # Only trigger when files under the cli package have changed
       - 'scripts/publish.js'
 env:
-  NODE_VERSION: 22.x
+  NODE_VERSION: 24.x
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
       changed_connector: ${{ steps.changed-connectors.outputs.changed_connector }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Determine changed connectors
         id: changed-connectors
@@ -43,20 +44,21 @@ jobs:
     environment: ${{ matrix.environment }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: yarn
+        run: yarn install --frozen-lockfile
 
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@7ddb5af1ef8758cf1353cf3b42f940aee27ba21c # v3.0.2
         with:
           creds: |
             {
@@ -67,7 +69,7 @@ jobs:
             }
 
       - name: Download index.json from ${{ matrix.environment }}
-        uses: azure/CLI@v2
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             container_name="connector-marketplace"
@@ -111,7 +113,7 @@ jobs:
         run: mkdir -p upload/connector-repo && cp -r publish/* upload/connector-repo
 
       - name: Upload to ${{ matrix.environment }}
-        uses: azure/CLI@v2
+        uses: azure/cli@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
             container_name="connector-marketplace"

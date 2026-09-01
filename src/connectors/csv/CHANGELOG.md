@@ -1,5 +1,8 @@
 # Releases
 
+# 1.0.4
+- [NO-TICKET] Enable auth settings (staticKey, oAuth2ClientCredentials, oAuthAuthorizationCode, oAuth2ResourceOwnerPassword) in connector config
+
 # 1.0.3
 
 - [NO-TICKET] Fixed number type inference — columns whose values include a bare `0` are now correctly detected as numbers (only multi-digit leading zeros like `007` and a leading `+` are kept as text)

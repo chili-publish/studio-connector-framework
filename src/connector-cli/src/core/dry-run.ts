@@ -1,5 +1,4 @@
-import { program } from 'commander';
-
+import { getExecutionContext } from './execution-context';
 import { ExecutionError } from './types';
 
 export const supportedDryRunCommands = ['set-auth', 'delete-auth', 'publish'];
@@ -17,11 +16,11 @@ export function isDryRunToFile() {
 }
 
 export function readDryRunOption() {
-  return program.opts().dryRun;
+  return getExecutionContext().dryRun;
 }
 
 export function readDryRunOutOption() {
-  return program.opts().dryRunOut;
+  return getExecutionContext().dryRunOut;
 }
 
 export function checkDryRunExecution(command: string) {

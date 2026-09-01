@@ -1,0 +1,36 @@
+name: 'Teams Notify'
+description: 'Send a Markdown message to a Teams webhook (TEAMS_WEBHOOK_URL)'
+
+inputs:
+  text:
+    description: 'Markdown message body'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send Teams notification
+      shell: bash
+      env:
+        TEXT: ${{ inputs.text }}
+        TEAMS_WEBHOOK_URL: ${{ env.TEAMS_WEBHOOK_URL }}
+      run: |
+        if [ -z "$TEAMS_WEBHOOK_URL" ]; then
+          echo "Teams webhook URL not available - skipping notification"
+          exit 0
+        fi
+
+        if [ -z "$TEXT" ]; then
+          echo "No notification text provided - skipping"
+          exit 0
+        fi
+
+        payload=$(jq -nc --arg text "$TEXT" '{text: $text}')
+
+        curl --request POST \
+          --silent --show-error \
+          --fail \
+          --max-time 30 \
+          --header "Content-Type: application/json" \
+          --data "$payload" \
+          "$TEAMS_WEBHOOK_URL"

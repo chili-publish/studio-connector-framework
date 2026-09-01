@@ -1,0 +1,46 @@
+name: 'CD Notify Failure'
+description: 'Compose and send a Teams failure notification for a release / CD pipeline'
+
+inputs:
+  pipeline_name:
+    description: 'Short pipeline name shown in the failure title'
+    required: false
+    default: 'Release pipeline'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build failure message
+      id: msg
+      shell: bash
+      env:
+        PIPELINE: ${{ inputs.pipeline_name }}
+        REPOSITORY: ${{ github.repository }}
+        COMMIT_SHA: ${{ github.sha }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        # Blank lines (\n\n) between blocks: Teams often collapses a single \n to a space.
+        # Bold only via **Label:** fact lines.
+        TEXT=$(printf '%s\n\n%s\n\n%s\n\n%s' \
+          "❌ ${PIPELINE} failed" \
+          "**Repository:** ${REPOSITORY}" \
+          "**Commit:** ${COMMIT_SHA}" \
+          "Pipeline stopped - further release steps may be blocked")
+        if [ -n "$RUN_URL" ]; then
+          TEXT=$(printf '%s\n\n%s' "$TEXT" "[View Run](${RUN_URL})")
+        fi
+
+        # Collision-resistant delimiter so pipeline_name / TEXT cannot terminate the output early.
+        DELIM="ghadelim_$(openssl rand -hex 16)"
+        {
+          echo "text<<${DELIM}"
+          printf '%s\n' "$TEXT"
+          echo "${DELIM}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Send Teams notification
+      uses: ./.github/actions/teams-notify
+      with:
+        text: ${{ steps.msg.outputs.text }}
+      env:
+        TEAMS_WEBHOOK_URL: ${{ env.TEAMS_WEBHOOK_URL }}

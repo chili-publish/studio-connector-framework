@@ -22,6 +22,381 @@
           }
         ]
       }
+    },
+    {
+      "name": "Query categoryGroup root shows folders only, no assets",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": [],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "categoryGroup": "1"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories?categoryGroup=1&includeChildren=false&pageSize=9999&excludePermissions=true",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 2,
+                "hydra:itemsPerPage": 9999,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  { "id": 2, "name": "Logos", "parent": 1 },
+                  { "id": 4, "name": "Photos", "parent": 1 }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query inside a configured category lists subfolders and assets on page 1",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": [],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "category": "2"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories/2",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": 2,
+                "name": "Logos",
+                "parent": 1
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/categories?parentCategory=2&includeChildren=false&pageSize=9999&excludePermissions=true",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 1,
+                "hydra:itemsPerPage": 9999,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  { "id": 5, "name": "Approved", "parent": 2 }
+                ]
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/assets?page=1&pageSize=15&category=2&includeChildren=false&search=format:(eps%20OR%20jpeg%20OR%20jpg%20OR%20pdf%20OR%20png%20OR%20psd%20OR%20tif%20OR%20tiff%20OR%20ai)",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 1,
+                "hydra:itemsPerPage": 15,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": [
+                  {
+                    "id": 101,
+                    "name": "logo-final.png",
+                    "thumbnail": "/cdn/thumb/101.png",
+                    "format": "png",
+                    "width": 800,
+                    "height": 600,
+                    "size": 12345,
+                    "assetHash": "hash101",
+                    "tenantHash": "tenant1",
+                    "fileName": "logo-final.png",
+                    "title": "Logo Final"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/custom-metadata",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 0,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Query while searching suppresses folders",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "collection": "/",
+          "filter": ["shoe"],
+          "pageSize": 15,
+          "pageToken": "1",
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {
+          "category": "2",
+          "searchQuery": "_all:<search_input>"
+        }
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/api/categories/2",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": 2,
+                "name": "Logos",
+                "parent": 1
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/assets?page=1&pageSize=15&category=2&includeChildren=false&search=format:(eps%20OR%20jpeg%20OR%20jpg%20OR%20pdf%20OR%20png%20OR%20psd%20OR%20tif%20OR%20tiff%20OR%20ai)AND%20_all:shoe",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 15,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          },
+          {
+            "url": "https://localhost:3000/api/custom-metadata",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "hydra:totalItems": 0,
+                "hydra:itemsPerPage": 0,
+                "hydra:currentPage": 1,
+                "hydra:totalPages": 1,
+                "hydra:member": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF fullres output uses DAM preview, not the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "fullres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/55.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF highres output uses DAM preview, not the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tiff\"}",
+        "previewType": "highres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/55.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF with explicit 'original' previewType still returns the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "original",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashTiff/big-scan/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/tiff" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with print intent uses pdf-wrap (DAM-3300)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "fullres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/pdf-wrap",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/pdf" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with web intent is unchanged (raw original)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "fullres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/pdf" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PNG highres is unchanged (raw original)",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"101\",\"name\":\"logo-final\",\"assetHash\":\"hash101\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/101.png\",\"extension\":\"png\"}",
+        "previewType": "highres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hash101/logo-final/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/png" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download JPG (extension 'jpg', not 'jpeg') highres returns the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"9\",\"name\":\"layout-preview\",\"assetHash\":\"hash9\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/9.jpg\",\"extension\":\"jpg\"}",
+        "previewType": "highres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hash9/layout-preview/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
     }
   ]
 }

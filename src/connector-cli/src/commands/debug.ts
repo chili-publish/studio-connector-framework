@@ -1,12 +1,15 @@
 import express from 'express';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
+import chalk from 'chalk';
 import reload from 'reload';
 import { compileToTempFile } from '../compiler/connectorCompiler';
 import { error, info, readConnectorConfig, startCommand, verbose } from '../core';
 import { ExecutionError } from '../core/types';
 import { ConnectorType } from '../core/types';
 import { getConnectorProjectFileInfo } from '../utils/connector-project';
+import { watchConnectorProject } from '../utils/watch-connector-project';
 
 function getDebugConnectorType(configType: ConnectorType): string {
   switch (configType) {
@@ -23,9 +26,82 @@ function getDebugConnectorType(configType: ConnectorType): string {
   }
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function buildDebuggerHtml(compileError: string | null): string {
+  const overlay =
+    compileError === null
+      ? ''
+      : `
+  <div id="compile-error-overlay" style="position:fixed;inset:0;z-index:99999;background:#1e1e1e;color:#f44747;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;padding:24px;overflow:auto;box-sizing:border-box;">
+    <h1 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#f48771;">Compilation failed</h1>
+    <pre style="margin:0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.5;color:#d4d4d4;">${escapeHtml(compileError)}</pre>
+  </div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Connector Debugger</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div id="root"></div>
+    ${overlay}
+    <script src="/reload/reload.js"></script>
+    <script src="bundle.js"></script>
+</body>
+</html>`;
+}
+
+function displayHostForUrl(host: string | undefined): string {
+  if (!host || host === '0.0.0.0' || host === '::') {
+    return 'localhost';
+  }
+  return host;
+}
+
+function logDebugServerReady(
+  port: number,
+  connectorType: string,
+  host: string | undefined
+): string {
+  const localURL = `http://localhost:${port}?type=${connectorType}`;
+  const arrow = chalk.green('➜');
+  const label = (text: string) => chalk.bold(text);
+
+  console.info('');
+  console.info(
+    `  ${arrow}  ${label('Local:')}   ${chalk.cyan(localURL)}`
+  );
+
+  if (host && host !== 'localhost' && host !== '127.0.0.1') {
+    const networkURL = `http://${displayHostForUrl(host)}:${port}?type=${connectorType}`;
+    // When bound to 0.0.0.0 / ::, show the bind host so remote access is obvious.
+    const networkDisplay =
+      host === '0.0.0.0' || host === '::'
+        ? chalk.dim(`bound to ${host}:${port} — use a machine IP to access`)
+        : chalk.cyan(networkURL);
+    console.info(`  ${arrow}  ${label('Network:')} ${networkDisplay}`);
+  }
+
+  console.info(`  ${arrow}  ${chalk.dim('press ctrl+c to stop')}`);
+  console.info('');
+
+  return localURL;
+}
+
 interface DebuggerCommandOptions {
   port: number;
-  watch?: true;
+  open?: boolean;
+  host?: string;
 }
 
 export async function runDebugger(
@@ -34,59 +110,62 @@ export async function runDebugger(
 ): Promise<void> {
   startCommand('debug', { projectPath, options });
 
-  const { connectorFile, packageJson } = getConnectorProjectFileInfo(projectPath);
+  const { projectDir, connectorFile, packageJson } =
+    getConnectorProjectFileInfo(projectPath);
   const config = readConnectorConfig(packageJson);
   const connectorType = getDebugConnectorType(config.type);
 
-  const compilation = await compileToTempFile(connectorFile);
+  // Allocate a stable temp path up front so watch rebuilds reuse it even when
+  // the initial compile fails (compileToTempFile returns tempFile: '' on error).
+  const tempConnectorBuild = path.join(
+    os.tmpdir(),
+    `file_${Date.now()}_${Math.floor(Math.random() * 10000)}.js`
+  );
+
+  let lastCompileError: string | null = null;
+  let hasSuccessfulBuild = false;
+
+  const compilation = await compileToTempFile(
+    connectorFile,
+    tempConnectorBuild
+  );
   if (compilation.errors.length > 0) {
-    if (options.watch) {
-      error(compilation.formattedDiagnostics);
-    } else {
-      throw new ExecutionError(compilation.formattedDiagnostics);
-    }
+    lastCompileError = compilation.formattedDiagnostics;
+    error(compilation.formattedDiagnostics);
+  } else {
+    lastCompileError = null;
+    hasSuccessfulBuild = true;
   }
 
   const app = express();
   const reloadTrigger = await reload(app);
   const port = options.port;
-  const indexTemplate = debuggerHandleBarTemplate;
+  const shouldOpenBrowser = options.open === true;
+  const host = options.host;
 
-  if (options.watch) {
-    info(
-      'Watching for changes on ' + connectorFile + '... (press ctrl+c to exit)'
+  info('Watching for changes on project .ts files...');
+  const watcher = watchConnectorProject(projectDir, async (changedFile) => {
+    verbose(`Triggers watch callback for ${changedFile}`);
+    info('Recompiling...');
+
+    const watchCompilation = await compileToTempFile(
+      connectorFile,
+      tempConnectorBuild
     );
-    const watcher = fs.watch(connectorFile, async function (event, filename) {
-      verbose(`Triggers watch callback for ${event}, ${filename}`);
-      info('Recompiling...');
 
-      const watchCompilation = await compileToTempFile(
-        connectorFile,
-        compilation.tempFile
-      );
-
-      if (watchCompilation.errors.length > 0) {
-        error(watchCompilation.formattedDiagnostics);
-      } else {
-        verbose('Compiled -> ' + watchCompilation.tempFile);
-        info('Reloading browser tab...');
-        reloadTrigger.reload();
-      }
-      info('Watching for changes... (press ctrl+c to exit)');
-    });
-
-    process.on('SIGINT', async () => {
-      verbose('Destroy debug for "SIGINT"');
-      verbose('Stop watching the connector file: ' + connectorFile);
-      watcher.close();
-    });
-
-    process.on('exit', async () => {
-      verbose('Destroy debug for "exit"');
-      verbose('Stop watching the connector file: ' + connectorFile);
-      watcher.close();
-    });
-  }
+    if (watchCompilation.errors.length > 0) {
+      lastCompileError = watchCompilation.formattedDiagnostics;
+      error(watchCompilation.formattedDiagnostics);
+    } else {
+      lastCompileError = null;
+      hasSuccessfulBuild = true;
+      verbose('Compiled -> ' + watchCompilation.tempFile);
+      info('Reloading browser tab...');
+    }
+    // Always reload so the browser picks up success or the compile-error overlay.
+    reloadTrigger.reload();
+    info('Watching for changes...');
+  });
 
   // recursive (3 deep) find parent folder with subfolder 'out'
   function findOutFolder(folder: string, depth: number): string | undefined {
@@ -109,9 +188,6 @@ export async function runDebugger(
 
   verbose('Detected out folder: ' + outFolder);
 
-  // make sure connectorFile is absolute path
-  const tempConnectorBuild = path.resolve(compilation.tempFile);
-
   // handle all preflight requests
   app.options('*', (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -122,7 +198,7 @@ export async function runDebugger(
 
   app.get('/', (req, res) => {
     verbose('Serving index.html');
-    res.send(indexTemplate);
+    res.send(buildDebuggerHtml(lastCompileError));
   });
 
   app.get('/bundle.js', (req, res) => {
@@ -150,47 +226,55 @@ export async function runDebugger(
 
   app.get('/connector.js', (req, res) => {
     verbose('Serving connector.js');
+    if (!hasSuccessfulBuild || !fs.existsSync(tempConnectorBuild)) {
+      res.status(503).type('text/plain').send('Connector not compiled yet');
+      return;
+    }
     res.sendFile(tempConnectorBuild);
   });
 
-  const server = app.listen(port, async () => {
-    const debugURL = `http://localhost:${port}?type=${connectorType}`;
-    info(`Debugger running on port ${port}. Visit "${debugURL}" for testing`);
-    (await import('open')).default(debugURL);
-  });
+  const onListening = async () => {
+    const debugURL = logDebugServerReady(port, connectorType, host);
+    if (shouldOpenBrowser) {
+      (await import('open')).default(debugURL);
+    }
+  };
 
-  process.on('SIGINT', async () => {
-    verbose('Destroy debug for "SIGINT"');
-    verbose('Stoping express server...');
-    server.closeAllConnections();
-    server.close();
-    verbose('Closing websocket connection');
-    await reloadTrigger.closeServer();
-  });
+  const server = host
+    ? app.listen(port, host, onListening)
+    : app.listen(port, onListening);
 
-  process.on('exit', async () => {
-    verbose('Destroy debug for "exit"');
-    verbose('Stoping express server...');
-    server.closeAllConnections();
-    server.close();
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    verbose(`Destroy debug for "${signal}"`);
+    verbose('Stop watching project .ts files in: ' + projectDir);
+    watcher.close();
     verbose('Closing websocket connection');
-    await reloadTrigger.closeServer();
+    try {
+      await reloadTrigger.closeServer();
+    } catch (err) {
+      verbose(
+        `Failed to close reload server: ${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
+    verbose('Stopping express server...');
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT');
+  });
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
   });
 }
-
-const debuggerHandleBarTemplate = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Connector Debugger</title>
-    <link rel="stylesheet" href="main.css">
-</head>
-<body>
-    <div id="root"></div>
-    <script src="/reload/reload.js"></script>
-    <script src="bundle.js"></script>
-    <script type="module" src="connector.js"></script>
-</body>
-</html>
-        `;
