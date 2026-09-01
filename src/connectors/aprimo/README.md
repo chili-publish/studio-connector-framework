@@ -23,7 +23,7 @@ It implements the `Media.MediaConnector` interface: `query`, `detail`,
 | `query`     | ✅ | Browse the classification tree and search the library. |
 | `detail`    | ✅ | Fetch metadata (and pixel dimensions) for a single asset. |
 | `filtering` | ✅ | Server-side full-text search against Aprimo. |
-| `metadata`  | ✅ | Expose Aprimo field values as asset metadata. |
+| `metadata`  | ✅ | Expose Aprimo field values as asset metadata, with GUID references resolved to readable labels. See [Metadata fields](#metadata-fields). |
 | `upload`    | ❌ | Read-only connector — no asset creation. |
 
 Servable file types: **JPG/JPEG, PNG, PDF, TIF/TIFF** — restrictable per
@@ -148,7 +148,8 @@ runtime options are `SCREAMING_SNAKE_CASE`, configuration options are `camelCase
 | Key                    | Required | Example                              | Purpose |
 |------------------------|----------|--------------------------------------|---------|
 | `BASE_URL`             | **Yes**  | `https://acme.dam.aprimo.com`        | Aprimo DAM tenant base URL. The connector appends `/api/core`. There is **no default** — an unset `BASE_URL` raises an error rather than silently targeting a wrong tenant. |
-| `META_DATA_FIELDS`     | No       | `Campaign Name, Spider Chart Count`  | Comma-separated whitelist of Aprimo field names to expose as metadata. Empty / unset → expose **all** fields that have a value. See [Metadata fields](#metadata-fields). |
+| `META_DATA_FIELDS`     | No       | `ADAM_Video_Width, _PMDominantColors` | Comma-separated whitelist of Aprimo field **system names** (not display labels) to expose as metadata. Empty / unset → expose **all** fields that have a value. **Setting this explicitly is recommended** — see [Metadata fields](#metadata-fields). |
+| `RESOLVE_CLASSIFICATIONS` | No    | `true`                               | When `true` (the default), classification field values carry a readable `label` alongside their `id`. Set to `false` on tenants with very large taxonomies to skip that lookup — values still carry `id`, but lose `label`. **This changes what appears on rendered output.** See [Classification labels](#classification-labels). |
 | `SUPPORTED_FILE_TYPES` | No       | `JPG, PNG, PDF, TIF`                 | Comma-separated, case-insensitive list of file types to serve. Empty / unset → all four types. See [Supported file types](#supported-file-types). |
 | `DEBUG_LOG`            | No       | `false`                              | When truthy, emits diagnostic log lines via `runtime.logError`. **Leave OFF for production** — on the browser these lines surface in the end user's DevTools console. Never logs tokens or request bodies. |
 
@@ -245,26 +246,130 @@ forwarding it would cause the storage origin to reject a valid signature.
 ## Metadata fields
 
 `META_DATA_FIELDS` controls which Aprimo field values are exposed as asset metadata.
-Aprimo fields are typed, localized, and sometimes multi-valued; each is collapsed to
-a single scalar (list fields are comma-joined) for CHILI's flat metadata bag. Fields
-with no value are omitted.
+Fields with no value are omitted.
 
-- **Format:** a comma-separated list of field names, e.g.
-  `Campaign Name, Spider Chart Count`.
-- **Whitespace:** spaces around each name are trimmed; spaces *within* a field name
-  are preserved (`Campaign Name` stays intact).
+**Every metadata value reaches Studio as a string.** That is a hard constraint of the
+engine, not a choice this connector makes — a number or a boolean would fail to
+deserialize. Aprimo's list-shaped types are therefore emitted as **JSON encoded in a
+string**, which a JavaScript action parses. See
+[What each field type becomes](#what-each-field-type-becomes).
+
+### Choosing which fields to expose
+
+- **Format:** a comma-separated list of field **system names**, e.g.
+  `ADAM_Video_Width, _PMDominantColors`.
+- **Whitespace:** spaces around each name are trimmed; spaces *within* a name are
+  preserved.
 - **Empty / unset:** every field that has a value is exposed.
 
-The language used to read these values is controlled by the `metaDataLanguageId`
-configuration option (with the language-neutral value as fallback).
+> **Use the system name, not the display label.** These are usually different — the
+> field labelled "Width" is named `ADAM_Video_Width`, and "Dominant Colors" is
+> `_PMDominantColors`. A whitelist written in labels matches nothing and silently
+> yields no metadata. Find system names with `GET /api/core/fielddefinitions` and read
+> the `name` property (the `label` property is the display text).
 
-### ⚠️ Field names with commas are not supported
+**Setting `META_DATA_FIELDS` explicitly is recommended.** Left unset, every populated
+field is exposed — commonly 30–55 fields and up to ~20 KB *per asset*, on every row of
+every page. Raw XMP/IPTC blocks and AI-generated summaries are among the heaviest, and
+nothing is truncated.
 
-The comma is the delimiter, so a field whose name contains a literal comma **cannot**
-be whitelisted (it would be split into two names). Aprimo does allow commas in field
-names, but this is very rare. **If you need to whitelist such a field, rename it in
-Aprimo to remove the comma.** Field names with spaces are fully supported — only
-commas are a problem.
+The language used to read values is controlled by the `metaDataLanguageId`
+configuration option, falling back to the language-neutral value.
+
+### What each field type becomes
+
+The **"On a text variable"** column is what a designer sees with *no action written*.
+Five types need an action before a human-readable value appears on artwork.
+
+| Aprimo type | Example in Aprimo | Metadata value | On a text variable, no action | In an action |
+|---|---|---|---|---|
+| SingleLineText, MultiLineText | `Autumn hero` | `"Autumn hero"` | Autumn hero | `getVariableValue('Title')` |
+| Numeric | `6142` | `"6142"` | 6142 — also maps to a Number variable | `Number(v)` |
+| Date | `2026-12-31` | `"2026-12-31"` | 2026-12-31 — also maps to a Date variable | `new Date(v)` |
+| Duration | 32.37 seconds | `"00:00:32.3686170"` | raw ticks; a Number variable fails | parse manually |
+| Html | rich text | `"<div>Autumn</div>"` | markup shown literally | strip tags yourself |
+| Json | `{ "k": 1 }` | `"{\"k\":1}"` | the raw JSON | `JSON.parse(v)` |
+| TextList | `Green, Black` | `"[\"Green\",\"Black\"]"` | the JSON string | `JSON.parse(v).join(', ')` |
+| OptionList | `English` | `"[{\"id\":\"12fa…\",\"label\":\"English\"}]"` | the JSON string | `JSON.parse(v)[0].label ?? …id` |
+| ClassificationList | `Benelux` | `"[{\"id\":\"55ce…\",\"label\":\"Benelux\"}]"` | the JSON string | `JSON.parse(v)[0].label ?? …id` |
+| HyperlinkList | a link | `"[{\"url\":\"https://…\",\"displayText\":null}]"` | the JSON string | `JSON.parse(v)[0].url` |
+| RecordLink | a linked asset | `"[\"4b820ab3…\"]"` | the JSON string | `JSON.parse(v)[0]` |
+| UserList | `Becky Lane` | *key absent* | empty string | — not exposed, [see below](#user-fields-are-not-exposed) |
+
+**List types always emit an array, even for a single value**, so an action never has
+to branch on how many values it received.
+
+### Reading values in an action
+
+```js
+// A label to display. `label ?? id` is the idiom: a reference whose label could
+// not be resolved keeps its id and simply has no label key.
+const brand = JSON.parse(getVariableValue('Brand'))[0];
+setVariableValue('BrandText', brand.label ?? brand.id);
+
+// A link. displayText is nullable, so fall back to the url.
+const link = JSON.parse(getVariableValue('ReportLink'))[0];
+setVariableValue('LinkText', link.displayText ?? link.url);
+
+// A linked asset: the record ID feeds straight back into this connector,
+// which resolves a bare 32-hex GUID to a record.
+const pdf = JSON.parse(getVariableValue('AssociatedPDF'))[0];
+setVariableValue('PdfImage', pdf);
+
+// A list of plain text values.
+const keywords = JSON.parse(getVariableValue('Keywords')).join(', ');
+```
+
+`label` and `displayText` are **optional**. When a lookup cannot resolve a reference,
+the key is omitted rather than filled with the raw GUID — so `label ?? id` reliably
+tells you whether you have a real label or are falling back.
+
+### Classification labels
+
+Classification and option values are stored in Aprimo as GUIDs; the connector looks up
+their readable labels once and caches them.
+
+`RESOLVE_CLASSIFICATIONS=false` skips the classification lookup on tenants whose
+taxonomy is very large. Values keep the same shape and still carry `id`, but lose
+`label` — so an action using `label ?? id` keeps working and renders the GUID instead
+of the name. **This changes what appears on rendered output**, so it is not a setting
+to flip casually on a tenant whose templates already display classification names.
+
+Labels are leaf names. If your taxonomy reuses a name across branches (a `Brochure`
+under both *AssetType* and *Channel*), the labels alone will not distinguish them.
+
+### User fields are not exposed
+
+Aprimo `UserList` fields — `Owner` and similar — are **deliberately excluded** from
+metadata. Resolving them means placing a named individual's details into a Studio
+document and, from there, into rendered output. No template-building use case has been
+identified that requires it, so the connector does not open that door.
+
+This is a decision, not an oversight. If a genuine use case appears, it should be
+added deliberately rather than enabled by default.
+
+### Mapping metadata onto Studio variables
+
+Metadata reaches a template by being mapped onto a variable. Mismatches **fail
+silently** — the variable keeps its previous value and the error goes only to the
+engine log.
+
+| Variable type | Given | Result |
+|---|---|---|
+| Text | anything | Works. A missing key sets `''`. |
+| Number | `"6142"` | Works. A duration, a GUID, or a comma decimal separator fails. |
+| Date | `"2026-12-31"` | Works; `yyyy-MM-dd`, and datetimes are truncated at `T`. |
+| Boolean | a GUID | Fails. Only `true/yes/1/false/no/0/''` are accepted. |
+| List | a value not among the list items | Fails. |
+
+Because JSON-shaped values are strings, mapping one directly onto a Number, Date, or
+Boolean variable will not work — parse it in an action and write the result instead.
+
+### Field names with commas
+
+The comma is the delimiter, so a field whose system name contains a literal comma
+cannot be whitelisted. This is rare — if you hit it, rename the field in Aprimo.
+Names containing **spaces** are fully supported.
 
 ## Supported file types
 
@@ -314,5 +419,8 @@ The configuration options take 32-char GUIDs. To find them:
 - **Language ID** — the Aprimo language GUID for the locale whose field values you
   want; ask your Aprimo administrator or read it from the field metadata API. The
   all-zero GUID is the language-neutral value (the default when no language is set).
+- **Field system name** — for `META_DATA_FIELDS`, use `GET /api/core/fielddefinitions`
+  and read each entry's `name` property. This is *not* the display label shown in the
+  Aprimo UI.
 
 The connector accepts dashed or bare GUIDs, so paste whichever form the UI gives you.
