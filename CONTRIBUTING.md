@@ -99,6 +99,12 @@ Reuse [`.github/pull_request_template.md`](.github/pull_request_template.md). Pr
 
 Do **not** include Cursor attribution in the PR body.
 
+## Dependabot
+
+Dependabot `github-actions` PRs are auto-labeled `No JIRA ticket`. They run the full build and test. The PR-title check is skipped for the bot — its "Bump …" titles don't follow the track/ticket format.
+
+**Do not enable auto-merge for these PRs and do not merge one without a human review** — check the publisher, the pinned SHA and the changelog. The next human PR or the merge-to-`main` build is what actually exercises the new action version; revert the bump if that build fails.
+
 ## Checklist
 
 - Keep the PR on one track (connectors **or** non-connector).
