@@ -23,7 +23,7 @@ It implements the `Media.MediaConnector` interface: `query`, `detail`,
 | `query`     | ✅ | Browse the classification tree and search the library. |
 | `detail`    | ✅ | Fetch metadata (and pixel dimensions) for a single asset. |
 | `filtering` | ✅ | Server-side full-text search against Aprimo. |
-| `metadata`  | ✅ | Expose Aprimo field values as asset metadata, with GUID references resolved to readable labels. See [Metadata fields](#metadata-fields). |
+| `metadata`  | ✅ | Expose Aprimo field values as asset metadata, with references resolved to readable names. Read when a single asset is resolved, not on picker pages. See [Metadata fields](#metadata-fields). |
 | `upload`    | ❌ | Read-only connector — no asset creation. |
 
 Servable file types: **JPG/JPEG, PNG, PDF, TIF/TIFF** — restrictable per
@@ -148,10 +148,9 @@ runtime options are `SCREAMING_SNAKE_CASE`, configuration options are `camelCase
 | Key                    | Required | Example                              | Purpose |
 |------------------------|----------|--------------------------------------|---------|
 | `BASE_URL`             | **Yes**  | `https://acme.dam.aprimo.com`        | Aprimo DAM tenant base URL. The connector appends `/api/core`. There is **no default** — an unset `BASE_URL` raises an error rather than silently targeting a wrong tenant. |
-| `META_DATA_FIELDS`     | No       | `ADAM_Video_Width, _PMDominantColors` | Comma-separated whitelist of Aprimo field **system names** (not display labels) to expose as metadata. Empty / unset → expose **all** fields that have a value. **Setting this explicitly is recommended** — see [Metadata fields](#metadata-fields). |
-| `RESOLVE_CLASSIFICATIONS` | No    | `true`                               | When `true` (the default), classification field values carry a readable `label` alongside their `id`. Set to `false` on tenants with very large taxonomies to skip that lookup — values still carry `id`, but lose `label`. **This changes what appears on rendered output.** See [Classification labels](#classification-labels). |
+| `META_DATA_FIELDS`     | No       | `ADAM_Video_Width, _PMDominantColors` | Comma-separated whitelist of Aprimo field **system names** (not display labels) to expose as metadata. When set, the connector also asks Aprimo to send only those fields, which makes each response substantially smaller. Empty / unset → expose **all** fields that have a value. **Setting this explicitly is recommended** — see [Metadata fields](#metadata-fields). |
 | `SUPPORTED_FILE_TYPES` | No       | `JPG, PNG, PDF, TIF`                 | Comma-separated, case-insensitive list of file types to serve. Empty / unset → all four types. See [Supported file types](#supported-file-types). |
-| `DEBUG_LOG`            | No       | `false`                              | When truthy, emits diagnostic log lines via `runtime.logError`. **Leave OFF for production** — on the browser these lines surface in the end user's DevTools console. Never logs tokens or request bodies. |
+| `DEBUG_LOG`            | No       | `false`                              | When truthy, emits diagnostic log lines via `runtime.logError`, including one line per metadata resolution with its request counts and timing. **Leave OFF for production** — on the browser these lines surface in the end user's DevTools console. Never logs tokens or request bodies. |
 
 ### Configuration options
 
@@ -162,7 +161,7 @@ These appear in the template/designer UI and are passed back per request in
 |----------------------|------|---------|
 | `classificationId`   | text | Aprimo classification ID (32-char GUID). When set, browsing starts in this classification and searches are confined to it (exact match — records filed only under descendant classifications appear once the designer navigates into them). Empty → browse the whole library. |
 | `collectionId`       | text | Aprimo collection ID (32-char GUID). When set, browse and search return only records that belong to this collection (static *or* dynamic). Combines with `classificationId` as an **AND** — a record must satisfy both. Folder navigation narrows *within* the collection but never escapes it. Empty → not filtered by collection. |
-| `metaDataLanguageId` | text | Aprimo language GUID used when reading field values for metadata. Empty → use the language-neutral value. If a field has no value for this language, the neutral value is used as a fallback. |
+| `metaDataLanguageId` | text | Aprimo language GUID used when reading field values for metadata. Empty → use the language-neutral value. If a field has no value for this language, the neutral value is used as a fallback. The same language is also sent to Aprimo as the **label language** for option and classification names — see [Language](#language). |
 
 All three accept a dashed GUID (`576ee5bf-24db-4830-8cbf-abc201167e3d`), a bare
 32-char GUID, or a pasted path/URL containing one — the connector extracts the
@@ -178,6 +177,14 @@ The connector mirrors Aprimo's own Browse experience:
   followed by its records.
 - **Typing a search term** switches to records-only results across the current
   scope.
+
+The root folder list is fetched with a **server-side filter**, so Aprimo returns only
+the real top-level classifications rather than the whole taxonomy. The top level is
+therefore a single request on a tenant of any size, and `classificationId` is a way to
+start designers inside one branch — not a performance measure. The listing is paged at
+1000 classifications per request with a safety guard of 50 pages; a tenant with more
+than 50,000 root classifications would have its list cut short, and a line is logged
+when `DEBUG_LOG` is on.
 
 Two configuration options scope the *whole* connector, and they behave differently:
 
@@ -248,11 +255,28 @@ forwarding it would cause the storage origin to reject a valid signature.
 `META_DATA_FIELDS` controls which Aprimo field values are exposed as asset metadata.
 Fields with no value are omitted.
 
+**Metadata keys are Aprimo field system names**, not display labels — the same names you
+write in `META_DATA_FIELDS`.
+
 **Every metadata value reaches Studio as a string.** That is a hard constraint of the
 engine, not a choice this connector makes — a number or a boolean would fail to
-deserialize. Aprimo's list-shaped types are therefore emitted as **JSON encoded in a
-string**, which a JavaScript action parses. See
-[What each field type becomes](#what-each-field-type-becomes).
+deserialize. A field holding several values is therefore joined into one string with
+`, `, and references such as options and classifications arrive as **readable names**
+rather than GUIDs. See [What each field type becomes](#what-each-field-type-becomes).
+
+### When metadata is read
+
+**Pages of results carry no metadata.** Searching and browsing in the media picker return
+assets with an empty metadata bag, and the connector does not ask Aprimo for field values
+on those requests. Metadata is read only when Studio **resolves a single asset** — an
+image variable being set, a render starting — and when it asks for an asset's `detail`.
+A single-asset resolve is a query for one value with a page size of one, whether that
+value is a record ID or a name set by an action; in the name case the metadata belongs to
+the first match, as described under [How search and ID lookup work](#how-search-and-id-lookup-work).
+
+This is a property of the connector, not a delay: a thumbnail in the picker will never
+show field values, and nothing you configure changes that. It is also why picker
+browsing and searching stay fast no matter how many fields you expose.
 
 ### Choosing which fields to expose
 
@@ -269,74 +293,72 @@ string**, which a JavaScript action parses. See
 > the `name` property (the `label` property is the display text).
 
 **Setting `META_DATA_FIELDS` explicitly is recommended.** Left unset, every populated
-field is exposed — commonly 30–55 fields and up to ~20 KB *per asset*, on every row of
-every page. Raw XMP/IPTC blocks and AI-generated summaries are among the heaviest, and
-nothing is truncated.
+field is exposed — commonly 30–55 fields *per asset*, and a measured record with a full
+field set came to 111 items and ~100 KB. Raw XMP/IPTC blocks and AI-generated summaries
+are among the heaviest, and nothing is truncated.
 
-The language used to read values is controlled by the `metaDataLanguageId`
-configuration option, falling back to the language-neutral value.
+Setting it does more than filter: the connector asks Aprimo to **embed only the listed
+fields** in the record it fetches, which cuts the response roughly four-fold. A handful
+of fields Aprimo always includes regardless are still dropped by the connector, so the
+metadata bag contains exactly what you listed. Left unset, all fields are requested and
+exposed, as before.
+
+### Language
+
+`metaDataLanguageId` selects the language in two ways:
+
+- **Field values** are read in that language, falling back to the language-neutral value
+  when the field has no entry for it.
+- **Option and classification names** are requested from Aprimo in that language. Where a
+  name has no label in the chosen language, Aprimo substitutes its internal name.
+
+> When `metaDataLanguageId` is left empty, Aprimo uses the **API service account's default
+> language** for option and classification names, while field values fall back to the
+> language-neutral value.
 
 ### What each field type becomes
 
-The **"On a text variable"** column is what a designer sees with *no action written*.
-Five types need an action before a human-readable value appears on artwork.
+Below, **`Name`** stands for the field's own system name — the key a designer maps onto a
+variable. Some types add a **companion key** carrying the machine-readable side of the
+value, so the mappable key can stay human-readable. Every value is a string, and a field
+holding several values is joined with `, `.
 
-| Aprimo type | Example in Aprimo | Metadata value | On a text variable, no action | In an action |
-|---|---|---|---|---|
-| SingleLineText, MultiLineText | `Autumn hero` | `"Autumn hero"` | Autumn hero | `getVariableValue('Title')` |
-| Numeric | `6142` | `"6142"` | 6142 — also maps to a Number variable | `Number(v)` |
-| Date | `2026-12-31` | `"2026-12-31"` | 2026-12-31 — also maps to a Date variable | `new Date(v)` |
-| Duration | 32.37 seconds | `"00:00:32.3686170"` | raw ticks; a Number variable fails | parse manually |
-| Html | rich text | `"<div>Autumn</div>"` | markup shown literally | strip tags yourself |
-| Json | `{ "k": 1 }` | `"{\"k\":1}"` | the raw JSON | `JSON.parse(v)` |
-| TextList | `Green, Black` | `"[\"Green\",\"Black\"]"` | the JSON string | `JSON.parse(v).join(', ')` |
-| OptionList | `English` | `"[{\"id\":\"12fa…\",\"label\":\"English\"}]"` | the JSON string | `JSON.parse(v)[0].label ?? …id` |
-| ClassificationList | `Benelux` | `"[{\"id\":\"55ce…\",\"label\":\"Benelux\"}]"` | the JSON string | `JSON.parse(v)[0].label ?? …id` |
-| HyperlinkList | a link | `"[{\"url\":\"https://…\",\"displayText\":null}]"` | the JSON string | `JSON.parse(v)[0].url` |
-| RecordLink | a linked asset | `"[\"4b820ab3…\"]"` | the JSON string | `JSON.parse(v)[0]` |
-| UserList | `Becky Lane` | *key absent* | empty string | — not exposed, [see below](#user-fields-are-not-exposed) |
+| Aprimo type | Example in Aprimo | Value under `Name` | Companion key |
+|---|---|---|---|
+| SingleLineText, MultiLineText | `Autumn hero` | `Autumn hero` | — |
+| Numeric | `6142` | `6142` — also maps to a Number variable | — |
+| Date | `2026-12-31` | `2026-12-31` — also maps to a Date variable | — |
+| Duration | 32.37 seconds | `00:00:32.3686170` — passed through unchanged | — |
+| Html | rich text | `<div>Autumn</div>` — markup passed through unchanged | — |
+| Json | `{ "k": 1 }` | `{"k":1}` — the raw JSON text, passed through unchanged | — |
+| TextList | Green, Black | `Green, Black` | — |
+| OptionList | English, French | `English, French` — the option **labels** | `Name.ids` — the option item ids |
+| ClassificationList | Benelux, Nordics | `Benelux, Nordics` — the classification **names** | `Name.ids` — the classification ids |
+| RecordLink | a linked asset | `4b820ab3…` — the linked **record ids** | — |
+| HyperlinkList | a link | `https://…` — the **urls** | `Name.text` — the display texts |
+| UserList, UserGroupList | `Becky Lane` | *key absent* | — not exposed, [see below](#user-fields-are-not-exposed) |
 
-**List types always emit an array, even for a single value**, so an action never has
-to branch on how many values it received.
+Notes on the table:
 
-### Reading values in an action
+- **Duration, Html and Json are raw.** The connector does not parse or reformat them —
+  a Duration lands on artwork as Aprimo's tick string, and HTML as literal markup.
+- **Option and classification labels come from the field definition**, in the language
+  described under [Language](#language).
+- **`RecordLink` carries record ids on purpose.** A record id is exactly what an image
+  variable consumes: set an image variable to one and this connector resolves the bare
+  32-character id straight back to that asset.
+- **`Name.text` is only present when at least one link has a display text**, and links
+  without one contribute a blank entry so the texts line up with the urls.
 
-```js
-// A label to display. `label ?? id` is the idiom: a reference whose label could
-// not be resolved keeps its id and simply has no label key.
-const brand = JSON.parse(getVariableValue('Brand'))[0];
-setVariableValue('BrandText', brand.label ?? brand.id);
+> **An id is never placed in the field a designer would map.** If a reference's name
+> cannot be resolved it is simply left out of `Name`; if none of them resolve, `Name` is
+> absent altogether and only `Name.ids` is written. A GUID will not appear on artwork in
+> place of a missing name.
 
-// A link. displayText is nullable, so fall back to the url.
-const link = JSON.parse(getVariableValue('ReportLink'))[0];
-setVariableValue('LinkText', link.displayText ?? link.url);
-
-// A linked asset: the record ID feeds straight back into this connector,
-// which resolves a bare 32-hex GUID to a record.
-const pdf = JSON.parse(getVariableValue('AssociatedPDF'))[0];
-setVariableValue('PdfImage', pdf);
-
-// A list of plain text values.
-const keywords = JSON.parse(getVariableValue('Keywords')).join(', ');
-```
-
-`label` and `displayText` are **optional**. When a lookup cannot resolve a reference,
-the key is omitted rather than filled with the raw GUID — so `label ?? id` reliably
-tells you whether you have a real label or are falling back.
-
-### Classification labels
-
-Classification and option values are stored in Aprimo as GUIDs; the connector looks up
-their readable labels once and caches them.
-
-`RESOLVE_CLASSIFICATIONS=false` skips the classification lookup on tenants whose
-taxonomy is very large. Values keep the same shape and still carry `id`, but lose
-`label` — so an action using `label ?? id` keeps working and renders the GUID instead
-of the name. **This changes what appears on rendered output**, so it is not a setting
-to flip casually on a tenant whose templates already display classification names.
-
-Labels are leaf names. If your taxonomy reuses a name across branches (a `Brochure`
-under both *AssetType* and *Channel*), the labels alone will not distinguish them.
+Classification names are **leaf names**. If your taxonomy reuses a name across branches (a
+`Brochure` under both *AssetType* and *Channel*), the names alone will not distinguish
+them — exposing the full classification path as an extra companion key is a possible
+future addition.
 
 ### User fields are not exposed
 
@@ -362,14 +384,58 @@ engine log.
 | Boolean | a GUID | Fails. Only `true/yes/1/false/no/0/''` are accepted. |
 | List | a value not among the list items | Fails. |
 
-Because JSON-shaped values are strings, mapping one directly onto a Number, Date, or
-Boolean variable will not work — parse it in an action and write the result instead.
+Only Numeric and Date fields map cleanly onto Number and Date variables. Multi-valued
+fields, durations, HTML and JSON are text — map them onto a Text variable, or onto a List
+variable whose items exactly match the incoming value.
 
 ### Field names with commas
 
 The comma is the delimiter, so a field whose system name contains a literal comma
 cannot be whitelisted. This is rare — if you hit it, rename the field in Aprimo.
 Names containing **spaces** are fully supported.
+
+## Rate limits and output jobs
+
+Aprimo enforces a rate limit **per environment**: roughly **15 requests per second
+sustained, with a burst allowance of 100**. That budget is shared with every other
+integration talking to the same Aprimo environment — other connectors, scheduled jobs,
+in-house scripts. Requests over the limit are not queued; Aprimo rejects them immediately
+with HTTP 429.
+
+**What resolving one asset costs:**
+
+| Work | Requests |
+|---|---|
+| Reading the record and its fields | 1 |
+| Each exposed option-list field | 1 each (at most 8 per call) |
+| Classification names | 1 per 200 classification ids, batched |
+
+When Aprimo answers 429, the connector **waits briefly and retries once**. If the retry is
+also rejected it fails the call with an error naming the rate limit as the cause, so the
+reason is visible rather than guessed at.
+
+What a failure looks like:
+
+- **In Studio** — the image variable shows *"Unable to load"* and the previously placed
+  image stays on the canvas.
+- **In output generation** — the record gets a preflight error and the frame shows
+  *"Unable to load"*.
+
+> ⚠️ **Output jobs driven by a data source resolve one asset per row.** A job of a few
+> hundred rows can exhaust the limit on its own, and is far more likely to on a tenant
+> that has other active Aprimo integrations. **Records may fail.**
+
+Mitigations, in order of effect:
+
+1. **Set `META_DATA_FIELDS` narrowly.** Every field you do not expose is work the
+   connector never does.
+2. **Do not expose option-list or classification fields unless a template actually uses
+   them** — these are the only field types that cost extra requests.
+3. **Run smaller batches**, so a single job never sits on the whole environment's budget.
+
+Browsing and searching in the media picker add no metadata cost: those pages carry no
+metadata, so they ask for no fields and make no lookups. They still spend requests on
+thumbnails (two per asset shown), which count against the same budget.
 
 ## Supported file types
 

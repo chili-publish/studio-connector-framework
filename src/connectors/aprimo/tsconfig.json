@@ -14,7 +14,7 @@
     "declaration": false
   },
   "include": [
-    "connector.ts"
+    "**/*.ts"
   ],
   "exclude": [
     "node_modules",
