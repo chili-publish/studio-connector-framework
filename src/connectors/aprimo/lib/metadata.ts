@@ -24,9 +24,21 @@ import type {
 export const NEUTRAL_LANGUAGE_ID = "00000000000000000000000000000000";
 
 // Values that are multi-valued in Aprimo but single in CHILI are collapsed with
-// this separator, both for the primary value and for its companion keys — so
-// `Name`, `Name.ids` and `Name.text` stay index-aligned and a consumer can
-// split them back apart the same way.
+// this separator. ONE rule governs every key built from it: a companion key
+// (`.ids`, `.text`) has the SAME number of slots as its primary key, and a
+// reference that cannot be resolved leaves an EMPTY slot rather than shifting
+// everything after it. A consumer can therefore split `Name` and `Name.ids` on
+// the separator and zip them positionally.
+//
+// Ids are GUIDs and never contain the separator, so the id array is always
+// correct. Labels can contain it — a label reading "Acme, Inc" splits into two
+// slots and nothing downstream can tell that separator from a real one. That is
+// unfixable here (escaping it would put a backslash on the artwork this key
+// exists to be printed on), which is why the README tells tenants not to use
+// commas in labels they intend to pair — mirroring the same rule for field names
+// in `META_DATA_FIELDS` (see parseFieldWhitelist). The primary key is written
+// only when at least one slot has content, so a field where nothing resolved is
+// absent rather than a bare string of separators.
 const JOIN = ", ";
 
 // Fields that are never exposed. User fields carry user ids, and resolving
@@ -152,9 +164,11 @@ export function collectReferences(
 // Reference fields publish TWO keys: the human-readable `Name` and a companion
 // `Name.ids` holding the raw ids. The names are what a designer puts on the
 // canvas; the ids are stable across renames and localization, which is what an
-// automation matches on. `Name` is omitted when nothing resolved (a stale id, or
-// a definition skipped by the lookup cap) — `Name.ids` is always written, so the
-// value is never silently lost.
+// automation matches on. The two are index-aligned per the JOIN contract above,
+// so an id that resolved to nothing (a stale id, or a definition skipped by the
+// lookup cap) holds an empty slot in `Name`. `Name` is omitted entirely only
+// when NOTHING resolved — `Name.ids` is always written, so the value is never
+// silently lost.
 export function buildMetaData(
   items: AprimoFieldItem[],
   lookups: Lookups,
@@ -172,10 +186,12 @@ export function buildMetaData(
         const ids = valuesOf(lv);
         if (ids.length === 0) break;
         const byId = lookups.optionItems.get(field.id);
-        const labels = ids
-          .map((id) => byId?.get(id))
-          .filter((l): l is string => l != null && l !== "");
-        if (labels.length > 0) meta[name] = labels.join(JOIN);
+        // An id that resolves to nothing (a deleted option, or a definition past
+        // the lookup cap) keeps its SLOT — see the JOIN contract above. It shows
+        // on artwork as a stray separator, which is how a broken reference in
+        // Aprimo makes itself visible instead of quietly renumbering the list.
+        const labels = ids.map((id) => byId?.get(id) ?? "");
+        if (labels.some((l) => l !== "")) meta[name] = labels.join(JOIN);
         meta[`${name}.ids`] = ids.join(JOIN);
         break;
       }
@@ -183,10 +199,10 @@ export function buildMetaData(
       case "ClassificationList": {
         const ids = valuesOf(lv);
         if (ids.length === 0) break;
-        const names = ids
-          .map((id) => lookups.classifications.get(id))
-          .filter((n): n is string => n != null && n !== "");
-        if (names.length > 0) meta[name] = names.join(JOIN);
+        // Same slot rule as OptionList: an unreadable or deleted classification
+        // leaves an empty slot so `Name` and `Name.ids` stay index-aligned.
+        const names = ids.map((id) => lookups.classifications.get(id) ?? "");
+        if (names.some((n) => n !== "")) meta[name] = names.join(JOIN);
         meta[`${name}.ids`] = ids.join(JOIN);
         break;
       }
@@ -208,11 +224,11 @@ export function buildMetaData(
       }
 
       case "HyperlinkList": {
-        // Keep the url list and the display-text list index-aligned: entries
-        // without a url are dropped from both, and a null displayText becomes a
-        // blank slot rather than shifting the rest. The companion is written
-        // only when at least one link actually has text — otherwise it would be
-        // a string of commas.
+        // The same slot rule as the two branches above, with the url list as the
+        // primary key: entries without a url are dropped from both lists, and a
+        // null displayText becomes a blank slot rather than shifting the rest.
+        // The companion is written only when at least one link actually has text
+        // — otherwise it would be a bare string of separators.
         const links = (lv.hyperlinks ?? []).filter(
           (h) => h?.url != null && h.url !== ""
         );

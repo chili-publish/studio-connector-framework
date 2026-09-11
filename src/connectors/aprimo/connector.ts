@@ -149,19 +149,38 @@ export default class AprimoConnector implements Media.MediaConnector {
     return matches && matches.length > 0 ? matches[matches.length - 1] : null;
   }
 
+  // The ONE normalizer behind every GUID-shaped configuration option, so all
+  // three (`classificationId`, `collectionId`, `metaDataLanguageId`) accept the
+  // same inputs and the README's promise holds for each of them. The Aprimo UI
+  // shows dashed GUIDs (8-4-4-4-12, e.g. "576ee5bf-24db-4830-8cbf-abc201167e3d")
+  // while the API uses the bare 32-char hex form, and a designer may well paste a
+  // whole DAM path or URL that merely CONTAINS the id. So: trim, drop dashes,
+  // pull the last 32-hex run out of what is left (the same extractor `collection`
+  // uses), and lowercase it — the form the API itself returns and compares in.
+  //
+  // A value holding no GUID at all is "not set" (null). That is the documented
+  // behaviour, but doing it silently is not: a typo would simply widen the scope,
+  // or read the wrong language, with nothing anywhere to say so. A non-empty
+  // value that fails to normalize therefore logs a line naming the option.
+  private _normalizeGuidOption(raw: unknown, option: string): string | null {
+    if (raw == null) return null;
+    const trimmed = String(raw).trim();
+    if (!trimmed) return null;
+    const id = this._classificationIdFromCollection(trimmed.replace(/-/g, ""));
+    if (!id) {
+      this._debug("option.notAGuid", { option, value: trimmed });
+      return null;
+    }
+    return id.toLowerCase();
+  }
+
   // The designer-configured classification (a 32-char hex GUID) that scopes the
   // whole connector. Delivered per-call in `context` under the `classificationId`
-  // key declared in getConfigurationOptions(). The Aprimo UI shows dashed GUIDs
-  // (8-4-4-4-12, e.g. "576ee5bf-24db-4830-8cbf-abc201167e3d") while the API uses
-  // the bare 32-char hex form, so strip dashes before running it through the same
-  // GUID extractor as `collection`. That way a pasted dashed GUID, bare GUID, or
+  // key declared in getConfigurationOptions(). A pasted dashed GUID, bare GUID, or
   // path/URL all yield the bare GUID; a non-GUID value (or empty) yields null →
-  // unscoped, the original behaviour.
+  // unscoped, the original behaviour. See _normalizeGuidOption.
   private _configuredClassificationId(context: Connector.Dictionary): string | null {
-    const raw = context["classificationId"];
-    if (raw == null) return null;
-    const s = String(raw).trim().replace(/-/g, "");
-    return s ? this._classificationIdFromCollection(s) : null;
+    return this._normalizeGuidOption(context["classificationId"], "classificationId");
   }
 
   // The designer-configured collection (a 32-char hex GUID). Like
@@ -175,10 +194,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // run), so a dashed GUID, bare GUID, or pasted path/URL all yield the bare
   // GUID; a non-GUID value (or empty) yields null → not filtered by collection.
   private _configuredCollectionId(context: Connector.Dictionary): string | null {
-    const raw = context["collectionId"];
-    if (raw == null) return null;
-    const s = String(raw).trim().replace(/-/g, "");
-    return s ? this._classificationIdFromCollection(s) : null;
+    return this._normalizeGuidOption(context["collectionId"], "collectionId");
   }
 
   // Map one Aprimo record to a Media row. `metaData` is passed IN rather than
@@ -233,11 +249,26 @@ export default class AprimoConnector implements Media.MediaConnector {
 
   // `metaDataLanguageId` configuration option: the Aprimo language GUID to read
   // field values for, delivered per-call in `context` (see
-  // getConfigurationOptions). Empty / null → read the neutral value directly.
+  // getConfigurationOptions). Empty / null / not a GUID → read the neutral value
+  // directly.
+  //
+  // Normalized through the same _normalizeGuidOption as the other two options,
+  // and it MATTERS here in a way it does not there, because the value is used in
+  // two places that disagree about accepted forms:
+  //   • pickFieldValue (lib/metadata.ts) compares it to `languageId` on a
+  //     record's localized values — Aprimo writes those bare and lowercase (the
+  //     same form as NEUTRAL_LANGUAGE_ID), so a dashed GUID matches NOTHING and
+  //     the field silently falls back to the neutral value.
+  //   • languageHeaders (lib/lookups.ts) sends it as the `languages` request
+  //     header — which DOES accept the dashed form. So a dashed GUID used to
+  //     return option and classification labels in the chosen language while
+  //     scalar field values came back neutral: one asset, two languages.
+  // A pasted URL is worse still: the header is rejected 400 and the whole asset
+  // fails to resolve. Normalizing to the bare lowercase GUID gives both consumers
+  // the one form they agree on, and a value that is not a GUID at all becomes
+  // "not set" (logged) rather than a malformed header.
   private _metaDataLanguageId(context: Connector.Dictionary): string | null {
-    const raw = context["metaDataLanguageId"];
-    const s = raw == null ? "" : String(raw).trim();
-    return s ? s : null;
+    return this._normalizeGuidOption(context["metaDataLanguageId"], "metaDataLanguageId");
   }
 
   // Build the metaData bag for each of `records`, resolving every id they refer
@@ -356,8 +387,20 @@ export default class AprimoConnector implements Media.MediaConnector {
   // in `_searchRecords`). Bounds worst-case latency on tenants where a long run
   // of records are unsupported file types: rather than scan the whole library in
   // one call, we yield after this many pages with a non-empty `nextPage` so the
-  // engine can resume. Each fetch is ~`pageSize` records, so 6 ≈ 90 records/call.
+  // engine can resume. Each fetch is ~`fetchSize` records, so a picker page
+  // (fetchSize 15) inspects ≈ 90 records per call, and a by-name resolve
+  // (fetchSize _RESOLVE_SCAN_PAGE_SIZE) ≈ 300.
   private static readonly _MAX_FILL_FETCHES = 6;
+
+  // Aprimo page size used when resolving ONE asset by name. The engine asks for a
+  // page of 1 and — unlike the picker — NEVER follows `nextPage`: its name
+  // resolver reads the first row of the first response and throws if there isn't
+  // one. So the fetch budget has to be spent on width rather than depth. At the
+  // engine's page size of 1, `_MAX_FILL_FETCHES` covers exactly 6 candidates, and
+  // six unsupported matches in a row (a video, a DOCX…) fail a name that really
+  // is in the tenant. Scanning 50 slim records per fetch makes that 6 × 50 = 300
+  // candidates inspected before giving up, for the same number of requests.
+  private static readonly _RESOLVE_SCAN_PAGE_SIZE = 50;
 
   // GET one record WITH its fields, for the two calls Studio actually reads
   // `metaData` from: the single-asset resolve in `query()`, and `detail()`.
@@ -449,18 +492,32 @@ export default class AprimoConnector implements Media.MediaConnector {
     );
   }
 
-  // `withFields` asks the search to bring each record's fields back so the
-  // caller can build metaData from them (see _isSingleAssetResolve) — the raw
-  // records are returned alongside the mapped Media for exactly that. Browse and
-  // search pages leave it off and pay nothing.
+  // `wanted` and `fetchSize` are the two things `pageSize` used to mean at once,
+  // and they are only the same number for the picker:
+  //   • `wanted`    — how many allowed rows to accumulate before stopping. The
+  //                   caller's page size for browse and picker search; 1 for a
+  //                   by-name resolve, which needs exactly one hit.
+  //   • `fetchSize` — how many records ONE Aprimo request carries. The caller's
+  //                   page size for the picker (so `nextPage` keeps counting in
+  //                   the units the picker will send back); _RESOLVE_SCAN_PAGE_SIZE
+  //                   for a by-name resolve, which has one response to find a hit
+  //                   in and no second chance.
+  // Browse and picker search pass `wanted === fetchSize === options.pageSize`, so
+  // their request pattern and `nextPage` values are exactly what they were when
+  // this took a single `pageSize`.
+  //
+  // `scanned` comes back alongside the rows: the number of RAW records inspected,
+  // before the client-side file-type filter. It is what tells a debug line the
+  // difference between "the keyword matched nothing" and "everything it matched
+  // was a file type we don't serve".
   private async _searchRecords(
     classificationId: string | null,
     keyword: string,
     page: number,
-    pageSize: number,
-    context: Connector.Dictionary,
-    withFields: boolean = false
-  ): Promise<{ items: Media.Media[]; records: any[]; nextPage: string }> {
+    wanted: number,
+    fetchSize: number,
+    context: Connector.Dictionary
+  ): Promise<{ items: Media.Media[]; scanned: number; total: number; nextPage: string }> {
     // No keyword and no classification → nothing to scope a record search to.
     // Root browse shows the classification folders only (mirroring Aprimo's
     // own Browse); records appear once a classification is selected or a
@@ -473,7 +530,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     const collectionId = this._configuredCollectionId(context);
     if (!keyword && !classificationId && !collectionId) {
       this._debug("searchRecords.skip", { reason: "no keyword, classification, or collection" });
-      return { items: [], records: [], nextPage: "" };
+      return { items: [], scanned: 0, total: 0, nextPage: "" };
     }
     // The classification filter (when scoped) is ANDed onto whichever keyword
     // expression we run. `Classification` is a nested complex property — filter
@@ -508,7 +565,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     const phrase = compose(keyword ? ["?"] : [], keyword ? [keyword] : []);
     let expression = phrase.expression;
     let parameters = phrase.parameters;
-    let first = await this._runRecordSearch(expression, parameters, page, pageSize, context, withFields);
+    let first = await this._runRecordSearch(expression, parameters, page, fetchSize, context);
 
     // Attempt 2 — TOKEN-AND fallback: only when the precise phrase found NOTHING
     // and the keyword is multi-word. Re-run each whitespace token as its own
@@ -526,69 +583,72 @@ export default class AprimoConnector implements Media.MediaConnector {
       const tokenAnd = compose(tokens.map(() => "?"), tokens);
       expression = tokenAnd.expression;
       parameters = tokenAnd.parameters;
-      first = await this._runRecordSearch(expression, parameters, page, pageSize, context, withFields);
+      first = await this._runRecordSearch(expression, parameters, page, fetchSize, context);
     }
 
     // PAGE-FILL: `_runRecordSearch` already drops unsupported types client-side
     // (Aprimo can't filter by file type server-side — there is no searchable
     // extension field), so a single Aprimo page can shrink to a handful of
     // allowed items, or zero. Rather than hand the engine a tiny/empty page, we
-    // pull consecutive Aprimo pages until we've accumulated at least `pageSize`
+    // pull consecutive Aprimo pages until we've accumulated at least `wanted`
     // allowed items (or run out, or hit the per-call fetch cap).
     //
     // The connector is STATELESS — the only thing carried to the next `query()`
     // is the `nextPage` token, which can name an Aprimo *page number* but cannot
     // resume mid-page. So we only ever stop on a whole-page boundary and return
-    // ALL accumulated items (even if slightly over `pageSize`); the engine
+    // ALL accumulated items (even if slightly over `wanted`); the engine
     // tolerates a page larger or smaller than requested. `nextPage` is simply
     // the next unconsumed Aprimo page (empty only when Aprimo is exhausted), so
     // a follow-up call resumes exactly where we stopped — no skips, no dupes.
+    // It counts in pages of `fetchSize`, which is why the by-name resolve path
+    // discards it rather than handing the picker's 15-row counter a page number
+    // measured in 50s.
     const total = first.total;
-    const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(total / fetchSize);
     const items: Media.Media[] = [...first.items];
-    // Index-aligned with `items`: records[i] is the Aprimo record that produced
-    // items[i], so metaData can be attached back onto the right row.
-    const records: any[] = [...first.records];
+    let scanned = first.scanned;
     let lastFetched = page;
     let fetches = 1;
     while (
-      items.length < pageSize &&
+      items.length < wanted &&
       lastFetched < totalPages &&
       fetches < AprimoConnector._MAX_FILL_FETCHES
     ) {
       lastFetched++;
       fetches++;
-      const more = await this._runRecordSearch(expression, parameters, lastFetched, pageSize, context, withFields);
+      const more = await this._runRecordSearch(expression, parameters, lastFetched, fetchSize, context);
       items.push(...more.items);
-      records.push(...more.records);
+      scanned += more.scanned;
     }
 
     // More to come whenever we haven't consumed the last Aprimo page — this is
-    // true both when we filled `pageSize` early AND when we bailed on the fetch
+    // true both when we filled `wanted` early AND when we bailed on the fetch
     // cap still short (the engine re-requests, and the next call resumes here).
     const nextPage = lastFetched < totalPages ? String(lastFetched + 1) : "";
     this._debug("searchRecords.fill", {
       startPage: page,
       lastFetched,
       fetches,
+      wanted,
+      fetchSize,
+      scanned,
       returned: items.length,
       total,
       nextPage,
     });
-    return { items, records, nextPage };
+    return { items, scanned, total, nextPage };
   }
 
   // Execute one /search/records POST and map the hits to Media. Returns the
-  // mapped items, the raw records behind them, and Aprimo's `totalCount` so the
-  // caller can decide on fallback and paging.
+  // mapped items, how many raw records were inspected to get them, and Aprimo's
+  // `totalCount` so the caller can decide on fallback and paging.
   private async _runRecordSearch(
     expression: string,
     parameters: string[],
     page: number,
     pageSize: number,
-    context: Connector.Dictionary,
-    withFields: boolean = false
-  ): Promise<{ items: Media.Media[]; records: any[]; total: number }> {
+    context: Connector.Dictionary
+  ): Promise<{ items: Media.Media[]; scanned: number; total: number }> {
     const path = "/search/records";
     this._debug("searchRecords.request", {
       path,
@@ -596,46 +656,39 @@ export default class AprimoConnector implements Media.MediaConnector {
       parameters,
       page,
       pageSize,
-      withFields,
     });
-    // A page of picker results asks for NO `fields`: Studio reads `metaData`
-    // only when it resolves a single asset (and from `detail`), so embedding
-    // every record's fields here would pay for a payload nothing looks at — on
-    // a 15-record page with wide records that is the bulk of the response.
-    const selection: Connector.Dictionary = withFields
-      ? this._fieldSelectHeaders()
-      : { "Select-Record": "title,masterfilelatestversion,classifications" };
+    // Searches NEVER ask for `fields`. Studio reads `metaData` only when it
+    // resolves a single asset (and from `detail`), and both of those go through
+    // `_fetchRecordWithFields` on the one record that matters — so embedding
+    // every hit's fields here would pay for a payload nothing looks at. On a
+    // 15-record picker page with wide records that is the bulk of the response,
+    // and on a 50-record by-name scan it would be far worse.
     const r = await this._aprimoFetch(path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         page: String(page),
         pageSize: String(pageSize),
-        ...selection,
+        "Select-Record": "title,masterfilelatestversion,classifications",
       },
       body: JSON.stringify({ searchExpression: { expression, parameters } }),
     });
     if (!r.ok) throw this._failure(r, path);
     const data = JSON.parse(r.text);
-    // Keep the mapped rows and the records they came from index-aligned:
-    // unsupported file types drop out of both, so the caller can attach metaData
-    // built from records[i] onto items[i].
-    const records: any[] = [];
+    const raw: any[] = data.items ?? [];
     const items: Media.Media[] = [];
-    for (const rec of data.items ?? []) {
+    for (const rec of raw) {
       const media = this._toMedia(rec, context);
-      if (!media) continue;
-      records.push(rec);
-      items.push(media);
+      if (media) items.push(media);
     }
     const total: number = data.totalCount ?? 0;
     this._debug("searchRecords.response", {
       status: r.status,
-      rawCount: (data.items ?? []).length,
+      rawCount: raw.length,
       returned: items.length,
       totalCount: total,
     });
-    return { items, records, total };
+    return { items, scanned: raw.length, total };
   }
 
   // ── MediaConnector interface ───────────────────────────────────────────────
@@ -703,28 +756,55 @@ export default class AprimoConnector implements Media.MediaConnector {
       page,
     });
 
+    // Resolve-by-name: a single-asset resolve whose stored value is NOT a GUID
+    // lands here. The image variable holds the asset NAME (an action set it), so
+    // the engine resolves it as a one-row keyword search — and still reads
+    // `metaData` off the result. It is not a picker page and must not be treated
+    // as one: the engine reads the first row of THIS response and throws if there
+    // isn't one, never following `nextPage`. So we scan wide (fetchSize
+    // _RESOLVE_SCAN_PAGE_SIZE) for a single wanted row, and hand back an EMPTY
+    // token whatever happens — a token here would count pages in 50s while the
+    // picker counts in 15s, and nothing would ever follow it anyway.
+    if (keyword && singleAsset) {
+      const scan = await this._searchRecords(
+        collectionId,
+        keyword,
+        1,
+        1,
+        AprimoConnector._RESOLVE_SCAN_PAGE_SIZE,
+        context
+      );
+      const hit = scan.items[0];
+      if (!hit) {
+        // Either the keyword matched nothing, or everything it matched is a file
+        // type this connector doesn't serve and the scan budget ran out before a
+        // servable one turned up. `scanned` vs `total` tells the two apart.
+        this._debug("resolve.exhausted", {
+          keyword,
+          scanned: scan.scanned,
+          total: scan.total,
+        });
+        return { data: [], pageSize: 0, links: { nextPage: "" } };
+      }
+      // The scan deliberately carried no fields (50 wide records with fields is
+      // an expensive way to find one). Read the winner the same way the
+      // query-by-ID branch and `detail()` do, then build its metaData from that.
+      const record = await this._fetchRecordWithFields(hit.id);
+      const [metaData] = await this._resolveMetaData([record], context);
+      hit.metaData = metaData;
+      return { data: [hit], pageSize: 1, links: { nextPage: "" } };
+    }
+
     // Search mode: records only, no folder rows
     if (keyword) {
-      // A single-asset resolve whose stored value is NOT a GUID lands here: the
-      // image variable holds the asset NAME (an action set it), so the engine
-      // resolves it as a one-row keyword search — and still reads `metaData` off
-      // the result. That is the only search that asks for `fields`.
       const result = await this._searchRecords(
         collectionId,
         keyword,
         page,
         pageSize,
-        context,
-        singleAsset
+        pageSize,
+        context
       );
-      if (singleAsset && result.items.length > 0) {
-        // The page-fill loop can hand back more than the one row that was asked
-        // for; resolve every returned record in ONE batch of lookups.
-        const bags = await this._resolveMetaData(result.records, context);
-        result.items.forEach((media, i) => {
-          media.metaData = bags[i] ?? {};
-        });
-      }
       return {
         data: result.items,
         pageSize: result.items.length,
@@ -736,7 +816,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     if (page === 1) {
       const [folders, records] = await Promise.all([
         this._getClassifications(collectionId),
-        this._searchRecords(collectionId, "", 1, pageSize, context),
+        this._searchRecords(collectionId, "", 1, pageSize, pageSize, context),
       ]);
       return {
         data: [...folders, ...records.items],
@@ -746,7 +826,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     }
 
     // Browse mode subsequent pages: records only
-    const records = await this._searchRecords(collectionId, "", page, pageSize, context);
+    const records = await this._searchRecords(collectionId, "", page, pageSize, pageSize, context);
     return {
       data: records.items,
       pageSize: records.items.length,

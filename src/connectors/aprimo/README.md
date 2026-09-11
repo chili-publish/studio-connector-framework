@@ -163,9 +163,13 @@ These appear in the template/designer UI and are passed back per request in
 | `collectionId`       | text | Aprimo collection ID (32-char GUID). When set, browse and search return only records that belong to this collection (static *or* dynamic). Combines with `classificationId` as an **AND** — a record must satisfy both. Folder navigation narrows *within* the collection but never escapes it. Empty → not filtered by collection. |
 | `metaDataLanguageId` | text | Aprimo language GUID used when reading field values for metadata. Empty → use the language-neutral value. If a field has no value for this language, the neutral value is used as a fallback. The same language is also sent to Aprimo as the **label language** for option and classification names — see [Language](#language). |
 
-All three accept a dashed GUID (`576ee5bf-24db-4830-8cbf-abc201167e3d`), a bare
-32-char GUID, or a pasted path/URL containing one — the connector extracts the
-GUID. A non-GUID (or empty) value is treated as "not set".
+All three go through the **same** normalizer, so all three accept a dashed GUID
+(`576ee5bf-24db-4830-8cbf-abc201167e3d`), a bare 32-char GUID, or a pasted path/URL
+containing one — the connector strips the dashes, extracts the GUID, and lowercases it
+to the form the Aprimo API uses. Case does not matter. A value that contains no GUID at
+all (or an empty one) is treated as **"not set"**; when it was not empty, the connector
+also logs an `option.notAGuid` line naming the option, so a typo is visible with
+[`DEBUG_LOG`](#runtime-options) on instead of silently widening the scope.
 
 ## How browsing & scoping works
 
@@ -220,6 +224,18 @@ to whichever Aprimo ranks first; if none match, the variable fails to resolve. F
 deterministic results, set the variable to the **record ID** rather than a display
 name.
 
+Aprimo cannot filter a search by file type, so matches outside
+[`SUPPORTED_FILE_TYPES`](#supported-file-types) — a video, a DOCX — have to be discarded
+by the connector after Aprimo returns them. When resolving a name, the connector
+therefore **inspects up to 300 matching records** (six requests of 50) looking for the
+first one it can serve. That is the whole budget: if none of those 300 is a supported
+file type, the variable fails to resolve, even if a supported match exists further down
+the result list. Turn `DEBUG_LOG` on and look for the `resolve.exhausted` line — it
+records how many records were scanned against how many matched in total, which
+distinguishes "the name matched nothing" from "everything it matched is a file type this
+connector does not serve". Narrowing the name, or setting the **record ID** instead,
+avoids the problem entirely.
+
 ### ⚠️ Don't name records as 32 hex characters
 
 Routing is based purely on the value's shape, so a record whose **name happens to
@@ -240,10 +256,12 @@ them to the right Aprimo endpoint:
 |--------------------------|--------|
 | `thumbnail`              | Aprimo rendered thumbnail (~160px). |
 | `mediumres` / `highres`  | Aprimo rendered `preview` (larger rendered image). |
-| `fullres` / `original`   | The true **master file**, delivered via an Aprimo *download order*. Falls back to the rendered `preview` if the order fails (e.g. a download agreement or processing permission blocks it). |
+| `fullres` / `original`   | The true **master file**, delivered via an Aprimo *download order*. Falls back to the rendered `preview` if the master download fails for **any** reason — a download agreement or processing permission blocking it, or a rate limit. |
 
 When CHILI produces **output**, it requests the `fullres`/`original` tier, so output
-uses the original master file (with a rendered-preview fallback).
+uses the original master file — *unless* the fallback fires, in which case the frame
+renders from the preview and nothing reports an error. See
+[What a 429 does](#what-a-429-does) for why that matters under load.
 
 Rendered previews and master files are delivered as short-lived **signed URLs**.
 These are self-authenticating, so the connector deliberately strips the
@@ -316,6 +334,16 @@ exposed, as before.
 > language** for option and classification names, while field values fall back to the
 > language-neutral value.
 
+The value is normalized exactly like the other two configuration options — dashed GUID,
+bare GUID, or a pasted path/URL containing one all work, and anything that is not a GUID
+is treated as "not set". That normalization is load-bearing here in a way it is not for
+the other two, because the language is used in two places with different tolerances:
+field values are matched against the **bare lowercase** GUID Aprimo writes onto each
+localized value, while the label request accepts the dashed form too. Pasting a dashed
+GUID used to give you option and classification names in the chosen language and field
+values in the neutral one; pasting a URL failed the whole asset with an HTTP 400. Both
+now normalize to the one form the two agree on.
+
 ### What each field type becomes
 
 Below, **`Name`** stands for the field's own system name — the key a designer maps onto a
@@ -348,12 +376,35 @@ Notes on the table:
   variable consumes: set an image variable to one and this connector resolves the bare
   32-character id straight back to that asset.
 - **`Name.text` is only present when at least one link has a display text**, and links
-  without one contribute a blank entry so the texts line up with the urls.
+  without one contribute a blank slot — the same alignment rule as `Name.ids`, below.
 
-> **An id is never placed in the field a designer would map.** If a reference's name
-> cannot be resolved it is simply left out of `Name`; if none of them resolve, `Name` is
-> absent altogether and only `Name.ids` is written. A GUID will not appear on artwork in
-> place of a missing name.
+#### The companion-key contract
+
+> **An id is never placed in the field a designer would map.** A GUID will not appear on
+> artwork in place of a missing name.
+
+Beyond that, one rule governs every companion key (`Name.ids`, `Name.text`):
+
+- **Same length, always.** `Name` and `Name.ids` have the **same number of slots**. A
+  reference that cannot be resolved — a deleted option, a classification the service
+  account cannot read, a definition past the eight-definition cap — leaves an **empty
+  slot** so the two lists stay aligned. On artwork that shows as a stray separator
+  (`, Nordics`), which is deliberate: it signals a broken reference in Aprimo rather than
+  hiding it. If **none** of them resolve, `Name` is absent altogether and only `Name.ids`
+  is written — never a bare string of separators.
+- **Split on the literal comma-space (`", "`).** Ids are GUIDs and can never contain it,
+  so the id array is always correct.
+- **Avoid commas in option and classification labels you intend to pair.** A label
+  containing `", "` splits into two slots, and nothing can tell a real separator from one
+  inside a label. This mirrors the existing rule that field names in `META_DATA_FIELDS`
+  must not contain commas — [see below](#field-names-with-commas). Escaping is not an
+  option here: `Name` is the value a designer prints, so an escape character would render
+  on the proof.
+- **Check the lengths.** An action pairing the two should confirm both arrays have the
+  same length and treat a mismatch as **unpairable** rather than zip them anyway.
+- **Escape hatch.** If a tenant cannot rename labels containing commas, a JSON companion
+  key holding `[{ "id", "name" }]` pairs is the lossless alternative — a possible future
+  addition, **not implemented today**.
 
 Classification names are **leaf names**. If your taxonomy reuses a name across branches (a
 `Brochure` under both *AssetType* and *Channel*), the names alone will not distinguish
@@ -406,15 +457,34 @@ with HTTP 429.
 
 | Work | Requests |
 |---|---|
-| Reading the record and its fields | 1 |
+| Reading the record and its fields — **by ID** | 1 |
+| Reading the record and its fields — **by name** | 2 (one search to find it, then the record read) |
 | Each exposed option-list field | 1 each (at most 8 per call) |
 | Classification names | 1 per 200 classification ids, batched |
 
-When Aprimo answers 429, the connector **waits briefly and retries once**. If the retry is
-also rejected it fails the call with an error naming the rate limit as the cause, so the
-reason is visible rather than guessed at.
+### What a 429 does
 
-What a failure looks like:
+When Aprimo answers 429, the connector **waits briefly and retries once**. What happens
+if the retry is *also* rejected depends on which call it was, and the two outcomes are
+very different:
+
+| Call | On a second 429 |
+|---|---|
+| **Asset queries** — browse, search, `query`, `detail`, and every metadata lookup behind them | **Fails** with an error naming the rate limit as the cause, so the reason is visible rather than guessed at. |
+| **Downloads** of the `fullres` / `original` tier | **Falls back to the rendered preview.** The call *succeeds* and returns image bytes — but they are Aprimo's rendered preview, not the master file. |
+
+That download fallback is the same one described under
+[How downloads work](#how-downloads-work): `fullres`/`original` recovers from *any*
+failure of the master-file download — a blocking download agreement, a missing processing
+permission, **or a rate limit** — by serving the rendered preview instead of throwing.
+
+> ⚠️ **A rate-limited output job can produce rendered previews in place of master files.**
+> Output requests the `fullres`/`original` tier, so a 429 on the master download is not
+> reported as an error at all: the frame renders, with preview-quality pixels. Under load
+> this is silent — there is no preflight error and nothing on the canvas says which frames
+> got the fallback. Turn `DEBUG_LOG` on to see the rate-limit lines if you suspect it.
+
+What a *query* failure looks like:
 
 - **In Studio** — the image variable shows *"Unable to load"* and the previously placed
   image stays on the canvas.
