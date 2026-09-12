@@ -24,7 +24,7 @@ export default class AprimoConnector implements Media.MediaConnector {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
-  private _api(): string {
+  private api(): string {
     // BASE_URL is required — it names the Aprimo DAM tenant this connector
     // talks to (e.g. "https://acme.dam.aprimo.com"). There is deliberately no
     // default: a baked-in tenant would silently misroute every deployment that
@@ -36,7 +36,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     return base.replace(/\/$/, "") + "/api/core";
   }
 
-  private _headers(extra: Connector.Dictionary = {}): Connector.Dictionary {
+  private headers(extra: Connector.Dictionary = {}): Connector.Dictionary {
     return { Accept: "application/hal+json", "API-VERSION": "1", ...extra };
   }
 
@@ -51,21 +51,21 @@ export default class AprimoConnector implements Media.MediaConnector {
   // absolute URL (Aprimo's `_links.next` hands back absolute ones).
   //
   // NOT for the signed delivery URLs — those are a different origin, must NOT
-  // carry our headers, and are fetched directly (see _SIGNED_URL_HEADERS).
-  private async _aprimoFetch(
+  // carry our headers, and are fetched directly (see SIGNED_URL_HEADERS).
+  private async aprimoFetch(
     path: string,
     init: Connector.ChiliRequestInit
   ): Promise<Connector.ChiliResponse> {
-    const url = /^https?:\/\//i.test(path) ? path : this._api() + path;
+    const url = /^https?:\/\//i.test(path) ? path : this.api() + path;
     const send = () =>
       this.runtime.fetch(url, {
         ...init,
-        headers: this._headers(init.headers ?? {}),
+        headers: this.headers(init.headers ?? {}),
         referrer: "aprimo-connector",
       });
     const r = await send();
     if (r.status !== 429) return r;
-    this._debug("fetch.rateLimited", { path, retryInMs: 700 });
+    this.debug("fetch.rateLimited", { path, retryInMs: 700 });
     await sleep(700);
     return send();
   }
@@ -74,7 +74,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // path that produced it, so a stack-less sandbox error still says which call
   // broke. The message is built in lib/lookups.ts so that failures raised there
   // (during metadata resolution) are indistinguishable from these.
-  private _failure(response: Connector.ChiliResponse, path: string): Error {
+  private failure(response: Connector.ChiliResponse, path: string): Error {
     return httpFailure(response, path);
   }
 
@@ -85,7 +85,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // writes to the END USER's browser DevTools console — so gate it on the
   // `DEBUG_LOG` runtime option (toggle OFF for production) and never log tokens
   // or raw request bodies. `data` is JSON-stringified onto a single line.
-  private _debug(label: string, data?: unknown): void {
+  private debug(label: string, data?: unknown): void {
     const opt = this.runtime.options["DEBUG_LOG"];
     if (!(opt === true || String(opt).toLowerCase() === "true")) return;
     const suffix = data === undefined ? "" : " " + JSON.stringify(data);
@@ -98,14 +98,14 @@ export default class AprimoConnector implements Media.MediaConnector {
   // proxy adds Authorization to every proxied request by default; the
   // `X-GraFx-Proxy-Exclude-Headers` header tells the proxy which headers to strip
   // before it hits the wire, so we exclude Authorization on these fetches.
-  private static readonly _SIGNED_URL_HEADERS: Connector.Dictionary = {
+  private static readonly SIGNED_URL_HEADERS: Connector.Dictionary = {
     "X-GraFx-Proxy-Exclude-Headers": "Authorization",
   };
 
   // Every file type this connector can serve, mapped from each accepted (case-
   // insensitive) name to its canonical key. Dual names collapse to ONE key, so
   // "JPG"/"JPEG" are the same type (jpg) and "TIF"/"TIFF" are the same (tif).
-  private static readonly _FILE_TYPE_ALIASES: Record<string, string> = {
+  private static readonly FILE_TYPE_ALIASES: Record<string, string> = {
     jpg: "jpg",
     jpeg: "jpg",
     png: "png",
@@ -113,38 +113,38 @@ export default class AprimoConnector implements Media.MediaConnector {
     tif: "tif",
     tiff: "tif",
   };
-  private static readonly _ALL_FILE_TYPES = ["jpg", "png", "pdf", "tif"];
+  private static readonly ALL_FILE_TYPES = ["jpg", "png", "pdf", "tif"];
 
   // `SUPPORTED_FILE_TYPES` runtime option: a comma-separated, case-insensitive
   // list of file types to serve — JPG/JPEG, PNG, PDF, TIF/TIFF. Dual names
   // collapse to one canonical type (JPG/JPEG → jpg, TIF/TIFF → tif), so listing
   // both is harmless. Unrecognised entries are ignored. Empty / unset (or a list
   // with no recognised entries) → all four types are allowed.
-  private _supportedTypes(): Set<string> {
+  private supportedTypes(): Set<string> {
     const raw = this.runtime.options["SUPPORTED_FILE_TYPES"];
     const tokens =
       raw == null ? [] : String(raw).split(",").map((s) => s.trim()).filter((s) => s !== "");
     const set = new Set<string>();
     for (const t of tokens) {
-      const canon = AprimoConnector._FILE_TYPE_ALIASES[t.toLowerCase()];
+      const canon = AprimoConnector.FILE_TYPE_ALIASES[t.toLowerCase()];
       if (canon) set.add(canon);
-      else this._debug("supportedTypes.unknown", { value: t });
+      else this.debug("supportedTypes.unknown", { value: t });
     }
-    if (set.size === 0) return new Set(AprimoConnector._ALL_FILE_TYPES);
+    if (set.size === 0) return new Set(AprimoConnector.ALL_FILE_TYPES);
     return set;
   }
 
-  private _allowed(ext: string): boolean {
+  private allowed(ext: string): boolean {
     if (!ext) return false; // no recognisable extension — can't serve it
-    const canon = AprimoConnector._FILE_TYPE_ALIASES[ext.toLowerCase()];
-    return canon != null && this._supportedTypes().has(canon);
+    const canon = AprimoConnector.FILE_TYPE_ALIASES[ext.toLowerCase()];
+    return canon != null && this.supportedTypes().has(canon);
   }
 
   // Aprimo classification/record IDs are 32-char hex GUIDs. The engine feeds a
   // folder's relativePath back as `collection`, but mangles it (leading slash +
   // appended folder name, e.g. "/576ee5bf…DAM"), so recover the GUID by pulling
   // the last hex match out of whatever comes back.
-  private _classificationIdFromCollection(collection: string): string | null {
+  private classificationIdFromCollection(collection: string): string | null {
     const matches = collection.match(/[0-9a-f]{32}/gi);
     return matches && matches.length > 0 ? matches[matches.length - 1] : null;
   }
@@ -162,13 +162,13 @@ export default class AprimoConnector implements Media.MediaConnector {
   // behaviour, but doing it silently is not: a typo would simply widen the scope,
   // or read the wrong language, with nothing anywhere to say so. A non-empty
   // value that fails to normalize therefore logs a line naming the option.
-  private _normalizeGuidOption(raw: unknown, option: string): string | null {
+  private normalizeGuidOption(raw: unknown, option: string): string | null {
     if (raw == null) return null;
     const trimmed = String(raw).trim();
     if (!trimmed) return null;
-    const id = this._classificationIdFromCollection(trimmed.replace(/-/g, ""));
+    const id = this.classificationIdFromCollection(trimmed.replace(/-/g, ""));
     if (!id) {
-      this._debug("option.notAGuid", { option, value: trimmed });
+      this.debug("option.notAGuid", { option, value: trimmed });
       return null;
     }
     return id.toLowerCase();
@@ -178,9 +178,9 @@ export default class AprimoConnector implements Media.MediaConnector {
   // whole connector. Delivered per-call in `context` under the `classificationId`
   // key declared in getConfigurationOptions(). A pasted dashed GUID, bare GUID, or
   // path/URL all yield the bare GUID; a non-GUID value (or empty) yields null →
-  // unscoped, the original behaviour. See _normalizeGuidOption.
-  private _configuredClassificationId(context: Connector.Dictionary): string | null {
-    return this._normalizeGuidOption(context["classificationId"], "classificationId");
+  // unscoped, the original behaviour. See normalizeGuidOption.
+  private configuredClassificationId(context: Connector.Dictionary): string | null {
+    return this.normalizeGuidOption(context["classificationId"], "classificationId");
   }
 
   // The designer-configured collection (a 32-char hex GUID). Like
@@ -193,15 +193,15 @@ export default class AprimoConnector implements Media.MediaConnector {
   // (the GUID extractor is collection-agnostic — it just pulls the last 32-hex
   // run), so a dashed GUID, bare GUID, or pasted path/URL all yield the bare
   // GUID; a non-GUID value (or empty) yields null → not filtered by collection.
-  private _configuredCollectionId(context: Connector.Dictionary): string | null {
-    return this._normalizeGuidOption(context["collectionId"], "collectionId");
+  private configuredCollectionId(context: Connector.Dictionary): string | null {
+    return this.normalizeGuidOption(context["collectionId"], "collectionId");
   }
 
   // Map one Aprimo record to a Media row. `metaData` is passed IN rather than
-  // built here: filling it costs extra round-trips (see _resolveMetaData), and
+  // built here: filling it costs extra round-trips (see resolveMetaData), and
   // only the calls Studio actually reads metadata from pay for it. Everything
   // else gets the empty bag.
-  private _toMedia(
+  private toMedia(
     record: any,
     context: Connector.Dictionary,
     metaData: Connector.Dictionary = {}
@@ -216,7 +216,7 @@ export default class AprimoConnector implements Media.MediaConnector {
       record._embedded?.masterfileversion ??
       record.masterfilelatestversion;
     const ext = (mf?.fileExtension ?? mf?.extension ?? mf?.Extension ?? "").toLowerCase();
-    if (!this._allowed(ext)) return null;
+    if (!this.allowed(ext)) return null;
     const clsList: any[] =
       record._embedded?.classifications?.items ??
       record.classifications ??
@@ -237,13 +237,13 @@ export default class AprimoConnector implements Media.MediaConnector {
   // The mapping itself lives in lib/metadata.ts (pure, no runtime) and the id →
   // name lookups it needs in lib/lookups.ts. What stays here is the part that
   // needs the runtime: reading the options, making the HTTP calls, and deciding
-  // WHICH calls are worth paying for (see _isSingleAssetResolve).
+  // WHICH calls are worth paying for (see isSingleAssetResolve).
 
   // `META_DATA_FIELDS` runtime option: a comma-separated list of Aprimo field
   // names to expose, e.g. "Campaign Name, Spider Chart Count". See
   // parseFieldWhitelist for the exact parsing rules. Empty / unset means expose
   // ALL fields that have a value.
-  private _metaDataFieldWhitelist(): string[] {
+  private metaDataFieldWhitelist(): string[] {
     return parseFieldWhitelist(this.runtime.options["META_DATA_FIELDS"]);
   }
 
@@ -252,7 +252,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // getConfigurationOptions). Empty / null / not a GUID → read the neutral value
   // directly.
   //
-  // Normalized through the same _normalizeGuidOption as the other two options,
+  // Normalized through the same normalizeGuidOption as the other two options,
   // and it MATTERS here in a way it does not there, because the value is used in
   // two places that disagree about accepted forms:
   //   • pickFieldValue (lib/metadata.ts) compares it to `languageId` on a
@@ -267,8 +267,8 @@ export default class AprimoConnector implements Media.MediaConnector {
   // fails to resolve. Normalizing to the bare lowercase GUID gives both consumers
   // the one form they agree on, and a value that is not a GUID at all becomes
   // "not set" (logged) rather than a malformed header.
-  private _metaDataLanguageId(context: Connector.Dictionary): string | null {
-    return this._normalizeGuidOption(context["metaDataLanguageId"], "metaDataLanguageId");
+  private metaDataLanguageId(context: Connector.Dictionary): string | null {
+    return this.normalizeGuidOption(context["metaDataLanguageId"], "metaDataLanguageId");
   }
 
   // Build the metaData bag for each of `records`, resolving every id they refer
@@ -279,7 +279,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   //
   // Records whose fields were never requested (no `fields` in `Select-Record`)
   // simply produce empty bags, so this is safe to call on any record list.
-  private async _resolveMetaData(
+  private async resolveMetaData(
     records: any[],
     context: Connector.Dictionary
   ): Promise<Connector.Dictionary[]> {
@@ -291,8 +291,8 @@ export default class AprimoConnector implements Media.MediaConnector {
     }
 
     const started = Date.now();
-    const whitelist = this._metaDataFieldWhitelist();
-    const langId = this._metaDataLanguageId(context);
+    const whitelist = this.metaDataFieldWhitelist();
+    const langId = this.metaDataLanguageId(context);
 
     const refs: References = {
       optionListDefIds: new Set<string>(),
@@ -307,10 +307,10 @@ export default class AprimoConnector implements Media.MediaConnector {
     }
 
     const lookups = await resolveReferences(
-      (path, init) => this._aprimoFetch(path, init),
+      (path, init) => this.aprimoFetch(path, init),
       refs,
       langId,
-      (label, data) => this._debug(label, data)
+      (label, data) => this.debug(label, data)
     );
     const bags = fieldsPerRecord.map((items) =>
       buildMetaData(items, lookups, langId, whitelist)
@@ -322,7 +322,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     lookups.optionItems.forEach((m) => {
       optionItems += m.size;
     });
-    this._debug("metadata.resolve", {
+    this.debug("metadata.resolve", {
       records: records.length,
       fieldsKept,
       optionListDefsFetched: Math.min(defs, MAX_OPTION_LIST_DEFINITIONS),
@@ -346,11 +346,11 @@ export default class AprimoConnector implements Media.MediaConnector {
   // which keeps a record with a hundred fields from being serialized in full for
   // the sake of three; the client-side whitelist stays authoritative because the
   // server still throws in a few fields of its own.
-  private _fieldSelectHeaders(): Connector.Dictionary {
+  private fieldSelectHeaders(): Connector.Dictionary {
     const headers: Connector.Dictionary = {
       "Select-Record": "title,masterfilelatestversion,classifications,fields",
     };
-    const whitelist = this._metaDataFieldWhitelist();
+    const whitelist = this.metaDataFieldWhitelist();
     if (whitelist.length > 0) {
       headers["select-record-fields"] = whitelist.join(",");
     }
@@ -367,7 +367,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // variable stores, which is USUALLY the record GUID but is the asset NAME when
   // an action set it — so the GUID test cannot be the discriminator, only the
   // branch taken afterwards. (The Keepeek connector applies the same rule.)
-  private _isSingleAssetResolve(options: Connector.QueryOptions): boolean {
+  private isSingleAssetResolve(options: Connector.QueryOptions): boolean {
     return (
       !options.collection &&
       options.filter?.length === 1 &&
@@ -381,40 +381,40 @@ export default class AprimoConnector implements Media.MediaConnector {
   // response with a `_links.next`; we request a large page so a normal tree
   // comes back in one round-trip, and still follow `next` as a safety net for
   // tenants whose tree exceeds it.
-  private static readonly _CLASSIFICATION_PAGE_SIZE = 1000;
+  private static readonly CLASSIFICATION_PAGE_SIZE = 1000;
 
   // Upper bound on Aprimo page fetches per `query()` call (see the page-fill loop
-  // in `_searchRecords`). Bounds worst-case latency on tenants where a long run
+  // in `searchRecords`). Bounds worst-case latency on tenants where a long run
   // of records are unsupported file types: rather than scan the whole library in
   // one call, we yield after this many pages with a non-empty `nextPage` so the
   // engine can resume. Each fetch is ~`fetchSize` records, so a picker page
   // (fetchSize 15) inspects ≈ 90 records per call, and a by-name resolve
-  // (fetchSize _RESOLVE_SCAN_PAGE_SIZE) ≈ 300.
-  private static readonly _MAX_FILL_FETCHES = 6;
+  // (fetchSize RESOLVE_SCAN_PAGE_SIZE) ≈ 300.
+  private static readonly MAX_FILL_FETCHES = 6;
 
   // Aprimo page size used when resolving ONE asset by name. The engine asks for a
   // page of 1 and — unlike the picker — NEVER follows `nextPage`: its name
   // resolver reads the first row of the first response and throws if there isn't
   // one. So the fetch budget has to be spent on width rather than depth. At the
-  // engine's page size of 1, `_MAX_FILL_FETCHES` covers exactly 6 candidates, and
+  // engine's page size of 1, `MAX_FILL_FETCHES` covers exactly 6 candidates, and
   // six unsupported matches in a row (a video, a DOCX…) fail a name that really
   // is in the tenant. Scanning 50 slim records per fetch makes that 6 × 50 = 300
   // candidates inspected before giving up, for the same number of requests.
-  private static readonly _RESOLVE_SCAN_PAGE_SIZE = 50;
+  private static readonly RESOLVE_SCAN_PAGE_SIZE = 50;
 
   // GET one record WITH its fields, for the two calls Studio actually reads
   // `metaData` from: the single-asset resolve in `query()`, and `detail()`.
-  private async _fetchRecordWithFields(id: string): Promise<any> {
+  private async fetchRecordWithFields(id: string): Promise<any> {
     const path = `/record/${encodeURIComponent(id)}`;
-    const r = await this._aprimoFetch(path, {
+    const r = await this.aprimoFetch(path, {
       method: "GET",
-      headers: this._fieldSelectHeaders(),
+      headers: this.fieldSelectHeaders(),
     });
-    if (!r.ok) throw this._failure(r, path);
+    if (!r.ok) throw this.failure(r, path);
     return JSON.parse(r.text);
   }
 
-  private async _getClassifications(parentId: string | null): Promise<Media.Media[]> {
+  private async getClassifications(parentId: string | null): Promise<Media.Media[]> {
     // Two different endpoints with different shapes:
     //  • root       → GET /classifications?filter=Parent = ''
     //                 → the ROOT classifications only, filtered server-side.
@@ -429,7 +429,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     //                 only the `= ''` comparison selects the roots.)
     //  • drill-down → GET /classification/{id} + `Select-Classification: children`
     //                 → only that node's DIRECT children, already scoped, no filter.
-    const pageSize = AprimoConnector._CLASSIFICATION_PAGE_SIZE;
+    const pageSize = AprimoConnector.CLASSIFICATION_PAGE_SIZE;
     let path: string | null = parentId
       ? `/classification/${encodeURIComponent(parentId)}?pagesize=${pageSize}`
       : `/classifications?filter=${encodeURIComponent("Parent = ''")}&pagesize=${pageSize}`;
@@ -442,10 +442,10 @@ export default class AprimoConnector implements Media.MediaConnector {
     // truncated. Bounded by a page cap as a runaway guard.
     let pages = 0;
     for (; path && pages < 50; pages++) {
-      const r = await this._aprimoFetch(path, { method: "GET", headers });
+      const r = await this.aprimoFetch(path, { method: "GET", headers });
       // A folder listing that half-succeeded would look to the designer like a
       // classification that no longer exists, so fail loudly instead.
-      if (!r.ok) throw this._failure(r, path);
+      if (!r.ok) throw this.failure(r, path);
       const data = JSON.parse(r.text);
       const items: any[] = parentId
         ? (data._embedded?.children?.items ?? [])
@@ -455,7 +455,7 @@ export default class AprimoConnector implements Media.MediaConnector {
       path = typeof next === "string" && next ? next : null;
     }
     if (path) {
-      this._debug("getClassifications.pageCap", {
+      this.debug("getClassifications.pageCap", {
         parentId,
         pages,
         fetched: raw.length,
@@ -471,10 +471,10 @@ export default class AprimoConnector implements Media.MediaConnector {
       ? raw
       : raw.filter((c) => {
           if (c?.isRoot === true) return true;
-          this._debug("getClassifications.notRoot", { id: c?.id, name: c?.name });
+          this.debug("getClassifications.notRoot", { id: c?.id, name: c?.name });
           return false;
         });
-    this._debug("getClassifications", {
+    this.debug("getClassifications", {
       parentId,
       fetched: raw.length,
       roots: parentId ? undefined : filtered.length,
@@ -499,7 +499,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   //                   by-name resolve, which needs exactly one hit.
   //   • `fetchSize` — how many records ONE Aprimo request carries. The caller's
   //                   page size for the picker (so `nextPage` keeps counting in
-  //                   the units the picker will send back); _RESOLVE_SCAN_PAGE_SIZE
+  //                   the units the picker will send back); RESOLVE_SCAN_PAGE_SIZE
   //                   for a by-name resolve, which has one response to find a hit
   //                   in and no second chance.
   // Browse and picker search pass `wanted === fetchSize === options.pageSize`, so
@@ -510,7 +510,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // before the client-side file-type filter. It is what tells a debug line the
   // difference between "the keyword matched nothing" and "everything it matched
   // was a file type we don't serve".
-  private async _searchRecords(
+  private async searchRecords(
     classificationId: string | null,
     keyword: string,
     page: number,
@@ -527,9 +527,9 @@ export default class AprimoConnector implements Media.MediaConnector {
     // A configured collection is a third thing we can scope to (besides a
     // keyword or classification), so it counts toward "is there anything to
     // search for" — collection-only browse must NOT short-circuit to empty.
-    const collectionId = this._configuredCollectionId(context);
+    const collectionId = this.configuredCollectionId(context);
     if (!keyword && !classificationId && !collectionId) {
-      this._debug("searchRecords.skip", { reason: "no keyword, classification, or collection" });
+      this.debug("searchRecords.skip", { reason: "no keyword, classification, or collection" });
       return { items: [], scanned: 0, total: 0, nextPage: "" };
     }
     // The classification filter (when scoped) is ANDed onto whichever keyword
@@ -565,7 +565,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     const phrase = compose(keyword ? ["?"] : [], keyword ? [keyword] : []);
     let expression = phrase.expression;
     let parameters = phrase.parameters;
-    let first = await this._runRecordSearch(expression, parameters, page, fetchSize, context);
+    let first = await this.runRecordSearch(expression, parameters, page, fetchSize, context);
 
     // Attempt 2 — TOKEN-AND fallback: only when the precise phrase found NOTHING
     // and the keyword is multi-word. Re-run each whitespace token as its own
@@ -579,14 +579,14 @@ export default class AprimoConnector implements Media.MediaConnector {
     // full-text has no substring or fuzzy matching.)
     const tokens = keyword.trim().split(/\s+/).filter(Boolean);
     if (first.total === 0 && tokens.length > 1) {
-      this._debug("searchRecords.fallback", { tokens });
+      this.debug("searchRecords.fallback", { tokens });
       const tokenAnd = compose(tokens.map(() => "?"), tokens);
       expression = tokenAnd.expression;
       parameters = tokenAnd.parameters;
-      first = await this._runRecordSearch(expression, parameters, page, fetchSize, context);
+      first = await this.runRecordSearch(expression, parameters, page, fetchSize, context);
     }
 
-    // PAGE-FILL: `_runRecordSearch` already drops unsupported types client-side
+    // PAGE-FILL: `runRecordSearch` already drops unsupported types client-side
     // (Aprimo can't filter by file type server-side — there is no searchable
     // extension field), so a single Aprimo page can shrink to a handful of
     // allowed items, or zero. Rather than hand the engine a tiny/empty page, we
@@ -612,11 +612,11 @@ export default class AprimoConnector implements Media.MediaConnector {
     while (
       items.length < wanted &&
       lastFetched < totalPages &&
-      fetches < AprimoConnector._MAX_FILL_FETCHES
+      fetches < AprimoConnector.MAX_FILL_FETCHES
     ) {
       lastFetched++;
       fetches++;
-      const more = await this._runRecordSearch(expression, parameters, lastFetched, fetchSize, context);
+      const more = await this.runRecordSearch(expression, parameters, lastFetched, fetchSize, context);
       items.push(...more.items);
       scanned += more.scanned;
     }
@@ -625,7 +625,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     // true both when we filled `wanted` early AND when we bailed on the fetch
     // cap still short (the engine re-requests, and the next call resumes here).
     const nextPage = lastFetched < totalPages ? String(lastFetched + 1) : "";
-    this._debug("searchRecords.fill", {
+    this.debug("searchRecords.fill", {
       startPage: page,
       lastFetched,
       fetches,
@@ -642,7 +642,7 @@ export default class AprimoConnector implements Media.MediaConnector {
   // Execute one /search/records POST and map the hits to Media. Returns the
   // mapped items, how many raw records were inspected to get them, and Aprimo's
   // `totalCount` so the caller can decide on fallback and paging.
-  private async _runRecordSearch(
+  private async runRecordSearch(
     expression: string,
     parameters: string[],
     page: number,
@@ -650,7 +650,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<{ items: Media.Media[]; scanned: number; total: number }> {
     const path = "/search/records";
-    this._debug("searchRecords.request", {
+    this.debug("searchRecords.request", {
       path,
       expression,
       parameters,
@@ -659,11 +659,11 @@ export default class AprimoConnector implements Media.MediaConnector {
     });
     // Searches NEVER ask for `fields`. Studio reads `metaData` only when it
     // resolves a single asset (and from `detail`), and both of those go through
-    // `_fetchRecordWithFields` on the one record that matters — so embedding
+    // `fetchRecordWithFields` on the one record that matters — so embedding
     // every hit's fields here would pay for a payload nothing looks at. On a
     // 15-record picker page with wide records that is the bulk of the response,
     // and on a 50-record by-name scan it would be far worse.
-    const r = await this._aprimoFetch(path, {
+    const r = await this.aprimoFetch(path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -673,16 +673,16 @@ export default class AprimoConnector implements Media.MediaConnector {
       },
       body: JSON.stringify({ searchExpression: { expression, parameters } }),
     });
-    if (!r.ok) throw this._failure(r, path);
+    if (!r.ok) throw this.failure(r, path);
     const data = JSON.parse(r.text);
     const raw: any[] = data.items ?? [];
     const items: Media.Media[] = [];
     for (const rec of raw) {
-      const media = this._toMedia(rec, context);
+      const media = this.toMedia(rec, context);
       if (media) items.push(media);
     }
     const total: number = data.totalCount ?? 0;
-    this._debug("searchRecords.response", {
+    this.debug("searchRecords.response", {
       status: r.status,
       rawCount: raw.length,
       returned: items.length,
@@ -698,8 +698,8 @@ export default class AprimoConnector implements Media.MediaConnector {
     context: Connector.Dictionary
   ): Promise<Media.MediaPage> {
     // Is the engine resolving ONE stored asset (metadata wanted), or is a user
-    // browsing/searching (metadata never read)? See _isSingleAssetResolve.
-    const singleAsset = this._isSingleAssetResolve(options);
+    // browsing/searching (metadata never read)? See isSingleAssetResolve.
+    const singleAsset = this.isSingleAssetResolve(options);
 
     // Query-by-ID: re-resolve a known image variable's stored asset ID. Only
     // take this path when the lone filter value is actually a record GUID —
@@ -713,13 +713,13 @@ export default class AprimoConnector implements Media.MediaConnector {
       options.filter?.length === 1 &&
       /^[0-9a-f]{32}$/i.test(options.filter[0])
     ) {
-      const record = await this._fetchRecordWithFields(options.filter[0]);
-      const media = this._toMedia(record, context);
+      const record = await this.fetchRecordWithFields(options.filter[0]);
+      const media = this.toMedia(record, context);
       // Resolve metadata only once the record is known to be servable: the
       // id → name lookups behind it are extra round-trips, wasted on a record
       // whose file type this connector filters out anyway.
       if (media) {
-        const [metaData] = await this._resolveMetaData([record], context);
+        const [metaData] = await this.resolveMetaData([record], context);
         media.metaData = metaData;
       }
       return {
@@ -742,11 +742,11 @@ export default class AprimoConnector implements Media.MediaConnector {
     // designer navigates into them).
     const navId =
       options.collection && options.collection !== "/"
-        ? this._classificationIdFromCollection(options.collection as string)
+        ? this.classificationIdFromCollection(options.collection as string)
         : null;
-    const configuredId = this._configuredClassificationId(context);
+    const configuredId = this.configuredClassificationId(context);
     const collectionId = navId ?? configuredId;
-    this._debug("query.scope", {
+    this.debug("query.scope", {
       collection: options.collection ?? null,
       rawClassificationId: context["classificationId"] ?? null,
       navId,
@@ -762,16 +762,16 @@ export default class AprimoConnector implements Media.MediaConnector {
     // `metaData` off the result. It is not a picker page and must not be treated
     // as one: the engine reads the first row of THIS response and throws if there
     // isn't one, never following `nextPage`. So we scan wide (fetchSize
-    // _RESOLVE_SCAN_PAGE_SIZE) for a single wanted row, and hand back an EMPTY
+    // RESOLVE_SCAN_PAGE_SIZE) for a single wanted row, and hand back an EMPTY
     // token whatever happens — a token here would count pages in 50s while the
     // picker counts in 15s, and nothing would ever follow it anyway.
     if (keyword && singleAsset) {
-      const scan = await this._searchRecords(
+      const scan = await this.searchRecords(
         collectionId,
         keyword,
         1,
         1,
-        AprimoConnector._RESOLVE_SCAN_PAGE_SIZE,
+        AprimoConnector.RESOLVE_SCAN_PAGE_SIZE,
         context
       );
       const hit = scan.items[0];
@@ -779,7 +779,7 @@ export default class AprimoConnector implements Media.MediaConnector {
         // Either the keyword matched nothing, or everything it matched is a file
         // type this connector doesn't serve and the scan budget ran out before a
         // servable one turned up. `scanned` vs `total` tells the two apart.
-        this._debug("resolve.exhausted", {
+        this.debug("resolve.exhausted", {
           keyword,
           scanned: scan.scanned,
           total: scan.total,
@@ -789,15 +789,15 @@ export default class AprimoConnector implements Media.MediaConnector {
       // The scan deliberately carried no fields (50 wide records with fields is
       // an expensive way to find one). Read the winner the same way the
       // query-by-ID branch and `detail()` do, then build its metaData from that.
-      const record = await this._fetchRecordWithFields(hit.id);
-      const [metaData] = await this._resolveMetaData([record], context);
+      const record = await this.fetchRecordWithFields(hit.id);
+      const [metaData] = await this.resolveMetaData([record], context);
       hit.metaData = metaData;
       return { data: [hit], pageSize: 1, links: { nextPage: "" } };
     }
 
     // Search mode: records only, no folder rows
     if (keyword) {
-      const result = await this._searchRecords(
+      const result = await this.searchRecords(
         collectionId,
         keyword,
         page,
@@ -815,8 +815,8 @@ export default class AprimoConnector implements Media.MediaConnector {
     // Browse mode: sub-folders on page 1, then records
     if (page === 1) {
       const [folders, records] = await Promise.all([
-        this._getClassifications(collectionId),
-        this._searchRecords(collectionId, "", 1, pageSize, pageSize, context),
+        this.getClassifications(collectionId),
+        this.searchRecords(collectionId, "", 1, pageSize, pageSize, context),
       ]);
       return {
         data: [...folders, ...records.items],
@@ -826,7 +826,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     }
 
     // Browse mode subsequent pages: records only
-    const records = await this._searchRecords(collectionId, "", page, pageSize, pageSize, context);
+    const records = await this.searchRecords(collectionId, "", page, pageSize, pageSize, context);
     return {
       data: records.items,
       pageSize: records.items.length,
@@ -838,10 +838,10 @@ export default class AprimoConnector implements Media.MediaConnector {
     id: string,
     context: Connector.Dictionary
   ): Promise<Media.MediaDetail> {
-    const record = await this._fetchRecordWithFields(id);
-    const base = this._toMedia(record, context);
+    const record = await this.fetchRecordWithFields(id);
+    const base = this.toMedia(record, context);
     if (!base) throw new Error(`Record ${id} not found or unsupported type`);
-    const [metaData] = await this._resolveMetaData([record], context);
+    const [metaData] = await this.resolveMetaData([record], context);
     const mf =
       record._embedded?.masterfilelatestversion ??
       record._embedded?.masterfileversion ??
@@ -867,23 +867,23 @@ export default class AprimoConnector implements Media.MediaConnector {
     // `thumbnail` ≈ 160px; `preview` is the larger rendered preview.
     //
     // Placement tiers (fullres / original) need the true master file, which
-    // Aprimo only delivers via a "download order" (see _downloadOriginal). If
+    // Aprimo only delivers via a "download order" (see downloadOriginal). If
     // that fails (e.g. a download agreement blocks it, or processing perms),
     // fall back to the rendered preview so the canvas still gets pixels rather
     // than a thrown, unrecoverable download.
     switch (previewType) {
       case "thumbnail":
-        return this._previewImageBytes(id, "thumbnail");
+        return this.previewImageBytes(id, "thumbnail");
       case "mediumres":
       case "highres":
-        return this._previewImageBytes(id, "preview");
+        return this.previewImageBytes(id, "preview");
       case "fullres":
       case "original":
       default:
         try {
-          return await this._downloadOriginal(id);
+          return await this.downloadOriginal(id);
         } catch {
-          return this._previewImageBytes(id, "preview");
+          return this.previewImageBytes(id, "preview");
         }
     }
   }
@@ -891,15 +891,15 @@ export default class AprimoConnector implements Media.MediaConnector {
   // Fetch the original master file via a download order: Aprimo doesn't expose
   // the original bytes directly (no public links on this tenant), but a
   // `download` order delivers a short-lived signed URL to the master file.
-  private async _downloadOriginal(id: string): Promise<Connector.ArrayBufferPointer> {
+  private async downloadOriginal(id: string): Promise<Connector.ArrayBufferPointer> {
     // 1) Resolve the latest master file version id — a download target needs
     //    an explicit fileVersionId.
     const recPath = `/record/${encodeURIComponent(id)}`;
-    const recR = await this._aprimoFetch(recPath, {
+    const recR = await this.aprimoFetch(recPath, {
       method: "GET",
       headers: { "Select-Record": "masterfilelatestversion" },
     });
-    if (!recR.ok) throw this._failure(recR, recPath);
+    if (!recR.ok) throw this.failure(recR, recPath);
     const mfId = JSON.parse(recR.text)?._embedded?.masterfilelatestversion?.id;
     if (!mfId) {
       throw new ConnectorHttpError(404, `No master file version for record ${id}`);
@@ -915,21 +915,21 @@ export default class AprimoConnector implements Media.MediaConnector {
       disableProcessing: "yesifpermissiongranted",
       targets: [{ recordId: id, fileVersionId: mfId, targetTypes: [0] }],
     };
-    const ordR = await this._aprimoFetch("/orders", {
+    const ordR = await this.aprimoFetch("/orders", {
       method: "POST",
       headers: { "Content-Type": "application/hal+json" },
       body: JSON.stringify(orderBody),
     });
-    if (!ordR.ok) throw this._failure(ordR, "/orders");
+    if (!ordR.ok) throw this.failure(ordR, "/orders");
     let order = JSON.parse(ordR.text);
 
     // 3) Single-file orders usually complete synchronously, but the order can
     //    also be queued/executing — poll the order until it delivers a file or
     //    reaches a terminal failure state.
     const orderId = order.id;
-    for (let i = 0; i < 6 && !this._orderDelivered(order) && !this._orderFailed(order); i++) {
+    for (let i = 0; i < 6 && !this.orderDelivered(order) && !this.orderFailed(order); i++) {
       await sleep(500 * 1.5 ** i);
-      const pollR = await this._aprimoFetch(
+      const pollR = await this.aprimoFetch(
         `/order/${encodeURIComponent(orderId)}`,
         {
           method: "GET",
@@ -950,7 +950,7 @@ export default class AprimoConnector implements Media.MediaConnector {
     // 4) Fetch the signed delivery URL → original bytes.
     const fileR = await this.runtime.fetch(uri, {
       method: "GET",
-      headers: AprimoConnector._SIGNED_URL_HEADERS,
+      headers: AprimoConnector.SIGNED_URL_HEADERS,
       referrer: "aprimo-connector",
     });
     if (!fileR.ok) {
@@ -959,28 +959,28 @@ export default class AprimoConnector implements Media.MediaConnector {
     return fileR.arrayBuffer;
   }
 
-  private _orderDelivered(order: any): boolean {
+  private orderDelivered(order: any): boolean {
     return Array.isArray(order?.deliveredFiles) && order.deliveredFiles.length > 0;
   }
 
-  private _orderFailed(order: any): boolean {
+  private orderFailed(order: any): boolean {
     return /^(failed|cancelled|partiallyfailed)$/i.test(order?.status ?? "");
   }
 
-  private async _previewImageBytes(
+  private async previewImageBytes(
     id: string,
     endpoint: "thumbnail" | "preview"
   ): Promise<Connector.ArrayBufferPointer> {
     const path = `/record/${encodeURIComponent(id)}/image/${endpoint}`;
-    const descR = await this._aprimoFetch(path, { method: "GET" });
-    if (!descR.ok) throw this._failure(descR, path);
+    const descR = await this.aprimoFetch(path, { method: "GET" });
+    if (!descR.ok) throw this.failure(descR, path);
     const uri = JSON.parse(descR.text)?.uri;
     if (!uri) {
       throw new ConnectorHttpError(502, `Preview ${endpoint} returned no image uri`);
     }
     const imgR = await this.runtime.fetch(uri, {
       method: "GET",
-      headers: AprimoConnector._SIGNED_URL_HEADERS,
+      headers: AprimoConnector.SIGNED_URL_HEADERS,
       referrer: "aprimo-connector",
     });
     if (!imgR.ok) {
