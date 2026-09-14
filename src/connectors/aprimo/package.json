@@ -1,7 +1,7 @@
 {
   "name": "aprimo-connector",
   "description": "Browse, search, and place assets from your Aprimo DAM.",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "author": {
     "name": "CHILI publish",
     "email": "info@chili-publish.com",
@@ -27,7 +27,8 @@
     "@chili-publish/studio-connectors": "^1.45.0"
   },
   "scripts": {
-    "build": "yarn connector-cli build"
+    "build": "yarn connector-cli build",
+    "test": "node --test \"test/*.test.mjs\""
   },
   "devDependencies": {
     "@chili-publish/connector-cli": "^1.12.1"
