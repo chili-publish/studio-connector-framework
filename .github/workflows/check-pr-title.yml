@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   check-pr-title:
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
