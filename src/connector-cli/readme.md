@@ -1,6 +1,6 @@
 # Connector CLI
 
-![Coverage](https://img.shields.io/badge/coverage-51.78%25-red.svg)
+![Coverage](https://img.shields.io/badge/coverage-52.17%25-red.svg)
 
 `@chili-publish/connector-cli` is a command-line interface tool designed to facilitate the management of connector test and publish processes in the CHILI publisher ecosystem. It provides a suite of commands to create new projects, build connectors, debug, test, and deploy them to your environment.
 
