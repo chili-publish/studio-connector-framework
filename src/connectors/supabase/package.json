@@ -1,0 +1,36 @@
+{
+  "name": "supabase",
+  "description": "Read tables, views or RPC functions from a Supabase project (PostgREST) as a data source.",
+  "version": "1.3.0",
+  "private": true,
+  "author": {
+    "name": "CHILI publish",
+    "email": "info@chili-publish.com",
+    "url": "https://github.com/chili-publish"
+  },
+  "config": {
+    "connectorName": "Supabase",
+    "type": "data",
+    "iconUrl": "https://studio-cdn.chiligrafx.com/shared/demo-connectors/supabase-connector.svg",
+    "options": {
+      "SUPABASE_URL": null,
+      "ALLOW_TABLE_VIEW": "false",
+      "logTiming": "false"
+    },
+    "mappings": {},
+    "supportedAuth": ["staticKey"]
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "@chili-publish/studio-connectors": "^1.39.0"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.9.0",
+    "typescript": "^5.2.2"
+  }
+}
