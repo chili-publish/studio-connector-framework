@@ -111,6 +111,14 @@ export default class DamConnector implements Media.MediaConnector {
     }
 
     if (resolution.kind === 'groupRoot') {
+      // Studio resets `collection` back to the root whenever a search is
+      // started, so a search performed anywhere in this categoryGroup will
+      // land here. Run a recursive assets search across the whole group
+      // instead of just returning the (unfiltered) root folder list.
+      if (isSearching(options)) {
+        return this._queryGroupSearch(options, context, pageSize, String(context.categoryGroup));
+      }
+
       // Multiple root categories configured on the categoryGroup: show them
       // as folders only, with no loose assets pool at this level.
       const relativePath = toRelativePath([]);
@@ -186,6 +194,52 @@ export default class DamConnector implements Media.MediaConnector {
     return {
       pageSize,
       data: [...folders, ...assets],
+      links: {
+        nextPage: nextPage.toString(),
+      },
+    };
+  }
+
+  // Recursive assets-only search across an entire categoryGroup, used when
+  // searching from the group root (no single "current category" to scope
+  // to). Mirrors Kadanza's own DAM asset widget, which uses
+  // `categoryGroup=<id>&includeChildren=true` for this exact case. Folders
+  // are never shown while searching, same as `_queryAssetsAndFolders`.
+  private async _queryGroupSearch(
+    options: Connector.QueryOptions,
+    context: Connector.Dictionary,
+    pageSize: number,
+    groupId: string
+  ): Promise<Media.MediaPage> {
+    const currentPage = Number(options.pageToken) || 1;
+
+    this._logError(`currentPage: ${currentPage} pageSize: ${pageSize} groupId: ${groupId} searching group root`);
+
+    let queryEndpoint = `${this._getBaseMediaUrl()}/api/assets?page=${currentPage}&pageSize=${pageSize}&categoryGroup=${groupId}&includeChildren=true`;
+    queryEndpoint += buildSearchQuery(options, context, (err) => this._logError(err));
+
+    this._logError(`Query: endpoint ${queryEndpoint}`);
+
+    const result = await this.runtime.fetch(queryEndpoint, {
+      method: 'GET',
+      headers: this._getHeaders(),
+    });
+
+    if (result.status / 200 != 1) {
+      this._logError(`Query fetch failed.`);
+      throw new Error(`Query failed ${result.status} ${result.statusText}`);
+    }
+
+    const assetsPage: DamMediaPage = JSON.parse(result.text);
+    const metadata = await this._getCustomMetadata();
+    const nextPage = Number(assetsPage['hydra:currentPage']) < Number(assetsPage['hydra:totalPages']) ? Number(assetsPage['hydra:currentPage']) + 1 : '';
+    this._logError(`nextPage: ${nextPage}`);
+
+    return {
+      pageSize,
+      data: assetsPage['hydra:member'].map((a: DamMedia) =>
+        getMediaDetailFromDamMedia(a, metadata)
+      ),
       links: {
         nextPage: nextPage.toString(),
       },
