@@ -30,6 +30,6 @@ export function getMetadataFromDamMedia(damMedia: DamMedia, customMetadata: DAMC
   return Object.fromEntries(
     attributeNames
       .filter((a) => ['string', 'number', 'boolean'].includes(typeof damMedia[a]))
-      .map((a) => [a, typeof damMedia[a] === 'boolean' ? damMedia[a] : damMedia[a].toString()])
+      .map((a) => [a, damMedia[a].toString()])
   );
 }

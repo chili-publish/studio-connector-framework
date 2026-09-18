@@ -40,6 +40,15 @@ export function buildSearchQuery(
 
       const searchInput = context.searchQuery.toString().replace('<search_input>', stringifiedFilter);
       searchValue += `AND ${searchInput}`;
+    } else {
+      // Default: no searchQuery template configured on this variable. Search
+      // the raw typed text directly rather than silently dropping it -
+      // confirmed live that this combines fine with the format filter via
+      // AND, matching Kadanza's own DAM asset widget's plain `search=<text>`
+      // usage.
+      logError(`Filtering query by plain free-text: ${stringifiedFilter}`);
+
+      searchValue += `AND ${stringifiedFilter}`;
     }
   }
 

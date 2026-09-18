@@ -1,5 +1,10 @@
 # Releases
 
+## 1.0.8
+
+- Fix boolean custom metadata values crashing Studio's `metaData` parsing (`TypeError: type 'bool' is not a subtype of type 'String'`) — Studio's runtime requires all `metaData` values to be strings despite `Connector.Dictionary`'s type allowing `boolean`; boolean values are now stringified like everything else instead of passed through raw. This also resolves a downstream "Unable to load"/thumbnail-download failure on unrelated assets caused by the same parse crash corrupting the batch response.
+- Fix free-text search silently doing nothing unless a `searchQuery` template was explicitly configured on the variable — plain typed text is now searched by default. Fix searching from the top level of a `categoryGroup` always returning the unfiltered root folder list instead of actually searching; it now runs a recursive asset search across the whole group, matching Kadanza's own DAM asset widget behavior.
+
 ## 1.0.7
 
 - Fix boolean custom metadata values being silently dropped from the media picker's mapped `metaData` instead of reaching Studio's `boolean` variables
