@@ -1,5 +1,10 @@
 # Releases
 
+## 1.0.9
+
+- Return the DAM `/pdf-wrap` rendition for TIFF (`tif`/`tiff`) assets whenever the download intent is `print`, so PDF output embeds the source file wrapped in a PDF instead of the PNG preview
+- TIFF downloads with any other intent still use the DAM thumbnail/preview (or the raw original when that preview type is requested)
+
 ## 1.0.8
 
 - Fix boolean custom metadata values crashing Studio's `metaData` parsing (`TypeError: type 'bool' is not a subtype of type 'String'`) — Studio's runtime requires all `metaData` values to be strings despite `Connector.Dictionary`'s type allowing `boolean`; boolean values are now stringified like everything else instead of passed through raw. This also resolves a downstream "Unable to load"/thumbnail-download failure on unrelated assets caused by the same parse crash corrupting the batch response.
