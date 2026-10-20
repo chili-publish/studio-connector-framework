@@ -2,8 +2,8 @@
 
 ## 1.0.9
 
-- Return the DAM `/pdf-wrap` rendition for TIFF (`tif`/`tiff`) assets whenever the download intent is `print`, so PDF output embeds the source file wrapped in a PDF instead of the PNG preview
-- TIFF downloads with any other intent still use the DAM thumbnail/preview (or the raw original when that preview type is requested)
+- Return the DAM `/pdf-wrap` rendition for TIFF (`tif`/`tiff`) assets on `fullres` downloads with `print` intent, so PDF output embeds the source file wrapped in a PDF instead of the PNG preview
+- Other TIFF downloads keep using the DAM preview; `original` still returns the source file
 
 ## 1.0.8
 

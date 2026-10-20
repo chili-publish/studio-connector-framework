@@ -11,23 +11,21 @@ export function resolveDownloadPath(
   const original = `${cdnBasePath}/original`;
   const isTiff = ['tif', 'tiff'].includes(format);
   const isPdf = format === 'pdf';
-  const isOutputPreview = previewType === 'fullres' || previewType === 'highres';
 
-  // Print: wrap a TIFF in a PDF; return a PDF source as-is.
-  if (isTiff && intent === 'print') {
-    return `${cdnBasePath}/pdf-wrap`;
-  }
-
-  if (isPdf && intent === 'print') {
+  if (previewType === 'original') {
     return original;
   }
 
-  if (isTiff && isOutputPreview) {
+  if (isTiff || isPdf) {
+    // Only fullres + print may return a PDF; every other request needs PNG/JPEG.
+    if (previewType === 'fullres' && intent === 'print') {
+      return isTiff ? `${cdnBasePath}/pdf-wrap` : original;
+    }
+
     return requireThumbnailPath(detail);
   }
 
   if (
-    previewType === 'original' ||
     previewType === 'fullres' ||
     (previewType === 'highres' && ['png', 'jpeg', 'jpg'].includes(format))
   ) {
