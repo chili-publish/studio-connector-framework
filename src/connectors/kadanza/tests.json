@@ -231,11 +231,35 @@
       }
     },
     {
-      "name": "Download TIFF fullres output uses DAM preview, not the raw original",
+      "name": "Download TIFF fullres with print intent uses pdf-wrap",
       "method": "download",
       "arguments": {
-        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "id": "{\"id\":\"56\",\"name\":\"scan with spaces\",\"assetHash\":\"hashTiff2\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/56.jpg\",\"extension\":\"tif\"}",
         "previewType": "fullres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashTiff2/scan%20with%20spaces/pdf-wrap",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/pdf" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF highres with print intent uses DAM preview",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tiff\"}",
+        "previewType": "highres",
         "intent": "print",
         "context": {}
       },
@@ -279,7 +303,31 @@
       }
     },
     {
-      "name": "Download TIFF with explicit 'original' previewType still returns the raw original",
+      "name": "Download TIFF fullres with web intent uses DAM preview",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "fullres",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/55.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download TIFF original with print intent returns the raw original",
       "method": "download",
       "arguments": {
         "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
@@ -303,7 +351,31 @@
       }
     },
     {
-      "name": "Download PDF fullres with print intent uses pdf-wrap (DAM-3300)",
+      "name": "Download TIFF original with web intent still returns the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"55\",\"name\":\"big-scan\",\"assetHash\":\"hashTiff\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/55.jpg\",\"extension\":\"tif\"}",
+        "previewType": "original",
+        "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/tenant1/hashTiff/big-scan/original",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/tiff" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with print intent returns the original PDF",
       "method": "download",
       "arguments": {
         "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
@@ -314,7 +386,7 @@
       "asserts": {
         "fetch": [
           {
-            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/pdf-wrap",
+            "url": "https://localhost:3000/cdn/tenant1/hashPdf/brochure/original",
             "method": "GET",
             "count": 1,
             "response": {
@@ -327,12 +399,60 @@
       }
     },
     {
-      "name": "Download PDF fullres with web intent is unchanged (raw original)",
+      "name": "Download PDF highres with print intent uses DAM preview",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "highres",
+        "intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/77.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF fullres with web intent uses DAM preview",
       "method": "download",
       "arguments": {
         "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
         "previewType": "fullres",
         "intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "https://localhost:3000/cdn/thumb/77.jpg",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "image/jpeg" },
+              "body": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Download PDF original with print intent returns the raw original",
+      "method": "download",
+      "arguments": {
+        "id": "{\"id\":\"77\",\"name\":\"brochure\",\"assetHash\":\"hashPdf\",\"tenantHash\":\"tenant1\",\"thumbnail\":\"/cdn/thumb/77.jpg\",\"extension\":\"pdf\"}",
+        "previewType": "original",
+        "intent": "print",
         "context": {}
       },
       "asserts": {

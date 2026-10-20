@@ -1,4 +1,4 @@
-import { Media } from '@chili-publish/studio-connectors';
+import type { Media } from '@chili-publish/studio-connectors';
 import type { AssetId } from './types';
 
 export function resolveDownloadPath(
@@ -11,18 +11,21 @@ export function resolveDownloadPath(
   const original = `${cdnBasePath}/original`;
   const isTiff = ['tif', 'tiff'].includes(format);
   const isPdf = format === 'pdf';
-  const isOutputPreview = previewType === 'fullres' || previewType === 'highres';
 
-  if (isPdf && intent === 'print' && isOutputPreview) {
-    return `${cdnBasePath}/pdf-wrap`;
+  if (previewType === 'original') {
+    return original;
   }
 
-  if (isTiff && isOutputPreview) {
+  if (isTiff || isPdf) {
+    // Only fullres + print may return a PDF; every other request needs PNG/JPEG.
+    if (previewType === 'fullres' && intent === 'print') {
+      return isTiff ? `${cdnBasePath}/pdf-wrap` : original;
+    }
+
     return requireThumbnailPath(detail);
   }
 
   if (
-    previewType === 'original' ||
     previewType === 'fullres' ||
     (previewType === 'highres' && ['png', 'jpeg', 'jpg'].includes(format))
   ) {
