@@ -98,9 +98,15 @@ export async function initRuntime(connectorUri: string, runtimeOptions: any) {
   vm.setProp(optionShim, 'testing', vm.newNumber(1));
 
   // copy all runtimeOptions key values to optionShim
-  // for (const [key, value] of Object.entries(runtimeOptions)) {
-  //     vm.setProp(optionShim, key, vm.newString(value as string))
-  // }
+  for (const [key, value] of Object.entries(runtimeOptions ?? {})) {
+    if (typeof value === 'string') {
+      vm.setProp(optionShim, key, vm.newString(value));
+    } else if (typeof value === 'number') {
+      vm.setProp(optionShim, key, vm.newNumber(value));
+    } else if (value !== null && value !== undefined) {
+      vm.setProp(optionShim, key, vm.newString(String(value)));
+    }
+  }
 
   // add logErrorShim
   var logErrorShim = vm.newFunction('logError', (msg: QuickJSHandle) => {

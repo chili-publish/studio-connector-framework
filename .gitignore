@@ -9,4 +9,5 @@ tests.generated.json
 
 #Mac OS
 .DS_Store
+/.claude
 /cmd
