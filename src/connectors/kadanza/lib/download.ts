@@ -13,16 +13,13 @@ export function resolveDownloadPath(
   const isPdf = format === 'pdf';
   const isOutputPreview = previewType === 'fullres' || previewType === 'highres';
 
-  // PDF sources already use /pdf-wrap for print output at fullres/highres.
-  if (isPdf && intent === 'print' && isOutputPreview) {
+  // Print: wrap a TIFF in a PDF; return a PDF source as-is.
+  if (isTiff && intent === 'print') {
     return `${cdnBasePath}/pdf-wrap`;
   }
 
-  // intent "print" means the engine is building a PDF and will embed this file.
-  // A raw TIFF cannot be embedded, so return the source wrapped in a PDF.
-  // Any other intent (editor preview, JPG/PNG output) needs the image preview.
-  if (isTiff && intent === 'print') {
-    return `${cdnBasePath}/pdf-wrap`;
+  if (isPdf && intent === 'print') {
+    return original;
   }
 
   if (isTiff && isOutputPreview) {
