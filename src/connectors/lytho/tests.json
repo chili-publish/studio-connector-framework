@@ -1,0 +1,1182 @@
+{
+  "setup": {
+    "runtime_options": {
+      "LYTHO_BASE_URL": "https://api.example.com"
+    }
+  },
+  "tests": [
+    {
+      "id": "1",
+      "name": "query - no filter",
+      "descr": "Calls POST /search/grafx/api/v1/search with empty terms and default pagination",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageToken": null,
+          "pageSize": 20,
+          "filter": [],
+          "collection": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/search/grafx/api/v1/search",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "totalHits": 1,
+                "from": 0,
+                "size": 20,
+                "hits": [
+                  {
+                    "id": "69de58c9bb8c4c6895418fa0",
+                    "name": "Test Asset",
+                    "fileName": "test-asset.jpg",
+                    "extension": "jpg",
+                    "fileType": "image/jpeg",
+                    "width": 1920,
+                    "height": 1080,
+                    "tags": [{ "id": "tag-1", "name": "Product" }]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "2",
+      "name": "query - with search terms",
+      "descr": "Calls POST /search/grafx/api/v1/search with a search term",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageToken": null,
+          "pageSize": 20,
+          "filter": ["logo"],
+          "collection": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/search/grafx/api/v1/search",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "totalHits": 0,
+                "from": 0,
+                "size": 20,
+                "hits": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "3",
+      "name": "query - second page",
+      "descr": "Uses pageToken as offset for second page",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageToken": "20",
+          "pageSize": 20,
+          "filter": [],
+          "collection": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/search/grafx/api/v1/search",
+            "method": "POST",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "totalHits": 25,
+                "from": 20,
+                "size": 20,
+                "hits": []
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "4",
+      "name": "detail",
+      "descr": "Calls GET /assets/grafx/assets/{id} and returns asset metadata",
+      "method": "detail",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Test Asset",
+                "fileName": "test-asset.jpg",
+                "extension": "jpg",
+                "fileType": "image/jpeg",
+                "width": 1920,
+                "height": 1080,
+                "tags": [{ "name": "Product" }]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "5",
+      "name": "download - thumbnail",
+      "descr": "Routes thumbnail download to /assets/grafx/assets/:id/preview",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "thumbnail",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/preview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "6",
+      "name": "download - mediumres",
+      "descr": "Routes mediumres download to /assets/grafx/assets/:id/hrpreview",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "mediumres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "7",
+      "name": "download - original",
+      "descr": "Routes original download to /assets/grafx/assets/:id/content",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "original",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "8",
+      "name": "download - fullres (web intent, raster original)",
+      "descr": "On the web (on-screen) intent, a PNG/JPEG asset at fullres is served as its original bytes via /assets/grafx/assets/:id/content — GraFx accepts PNG/JPEG on-screen, so no conversion. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Raster Asset",
+                "extension": "jpg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "9",
+      "name": "download - fullres (web intent, PNG original)",
+      "descr": "PNG is a separate member of the web-native set from jpg, so it needs its own case: with only a .jpg fixture, removing png from the set would leave every test passing. Served as original bytes on fullres/web, no rasterized twin.",
+      "method": "download",
+      "arguments": {
+        "id": "7a0b1c2d3e4f50617283a4b5",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/7a0b1c2d3e4f50617283a4b5",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "7a0b1c2d3e4f50617283a4b5",
+                "name": "Raster PNG Asset",
+                "extension": "png",
+                "fileType": "image/png"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/7a0b1c2d3e4f50617283a4b5/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "10",
+      "name": "download - fullres (web intent, JPEG long spelling)",
+      "descr": "The web-native set carries jpg and jpeg as two separate members. With only a .jpg fixture, removing jpeg from the set would leave every test passing. Served as original bytes on fullres/web exactly as .jpg is.",
+      "method": "download",
+      "arguments": {
+        "id": "7b0c1d2e3f405161728394a5",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/7b0c1d2e3f405161728394a5",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "7b0c1d2e3f405161728394a5",
+                "name": "Raster JPEG Asset",
+                "extension": "jpeg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/7b0c1d2e3f405161728394a5/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "11",
+      "name": "download - highres (web intent)",
+      "descr": "On the web (on-screen) intent, highres routes to the rasterized twin /assets/grafx/assets/:id/hrpreview so the canvas can decode non-raster originals",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "highres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "12",
+      "name": "download - highres (print intent)",
+      "descr": "A JPEG is ingestible by CHILI's export pipeline as-is, so highres/print keeps the original /assets/grafx/assets/:id/content rather than downscaling to the 1920px twin. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "highres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Raster Asset",
+                "extension": "jpg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "13",
+      "name": "download - fullres (print intent)",
+      "descr": "A JPEG is ingestible by CHILI's PDF export pipeline as-is, so fullres/print keeps the original /assets/grafx/assets/:id/content and no PDF conversion is requested. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Raster Asset",
+                "extension": "jpg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "14",
+      "name": "download - fullres (animation intent)",
+      "descr": "A JPEG is ingestible by CHILI's animation pipeline as-is, so fullres/animation keeps the original /assets/grafx/assets/:id/content. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "fullres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Raster Asset",
+                "extension": "jpg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "15",
+      "name": "query - ObjectID intercept (resolve saved asset)",
+      "descr": "query(pageSize=1, filter=[24-hex ObjectID]) resolves the asset directly via GET /assets/grafx/assets/{id} instead of the search path",
+      "method": "query",
+      "arguments": {
+        "options": {
+          "pageToken": null,
+          "pageSize": 1,
+          "filter": ["69de58c9bb8c4c6895418fa0"],
+          "collection": null,
+          "sortBy": null,
+          "sortOrder": null
+        },
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Test Asset",
+                "fileName": "test-asset.jpg",
+                "extension": "jpg",
+                "fileType": "image/jpeg",
+                "width": 1920,
+                "height": 1080,
+                "tags": [{ "name": "Product" }]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "16",
+      "name": "download - fullres (web intent, non-raster original)",
+      "descr": "On the web (on-screen) intent, a non-PNG/JPEG asset (e.g. EPS) at fullres is converted to the rasterized twin /assets/grafx/assets/:id/hrpreview so the canvas can decode it. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "5f9d1e2c3b4a5968770a1b2c",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "5f9d1e2c3b4a5968770a1b2c",
+                "name": "Vector Asset",
+                "extension": "eps",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "17",
+      "name": "download - highres (animation intent)",
+      "descr": "A JPEG is ingestible by CHILI's animation pipeline as-is, so highres/animation keeps the original /assets/grafx/assets/:id/content. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "69de58c9bb8c4c6895418fa0",
+        "download_type": "highres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "69de58c9bb8c4c6895418fa0",
+                "name": "Raster Asset",
+                "extension": "jpg",
+                "fileType": "image/jpeg"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/69de58c9bb8c4c6895418fa0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "18",
+      "name": "download - fullres (print intent, EPS)",
+      "descr": "The only tier and intent combination that requests the PDF rendition. CHILI's PDF export engine ingests only PNG/JPEG/PDF, so an EPS at fullres/print is served as the converted PDF rendition via /assets/grafx/assets/:id/pdf. The file type is resolved first via GET /assets/grafx/assets/:id.",
+      "method": "download",
+      "arguments": {
+        "id": "5f9d1e2c3b4a5968770a1b2c",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "5f9d1e2c3b4a5968770a1b2c",
+                "name": "Vector Asset",
+                "extension": "eps",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c/pdf",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "19",
+      "name": "download - fullres (animation intent, EPS)",
+      "descr": "CHILI's animation pipeline wants PNG/JPEG, so an EPS at fullres/animation is served as the rasterized twin /assets/grafx/assets/:id/hrpreview rather than the raw original.",
+      "method": "download",
+      "arguments": {
+        "id": "5f9d1e2c3b4a5968770a1b2c",
+        "download_type": "fullres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "5f9d1e2c3b4a5968770a1b2c",
+                "name": "Vector Asset",
+                "extension": "eps",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "20",
+      "name": "download - fullres (print intent, PSD)",
+      "descr": "PSD sits outside the print native set, as EPS does, so it routes to the PDF rendition on fullres/print. Covers a second non-native type so the rule is not accidentally EPS-specific.",
+      "method": "download",
+      "arguments": {
+        "id": "6a1b2c3d4e5f60718293a4b5",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6a1b2c3d4e5f60718293a4b5",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6a1b2c3d4e5f60718293a4b5",
+                "name": "Layered Asset",
+                "extension": "psd",
+                "fileType": "image/vnd.adobe.photoshop"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6a1b2c3d4e5f60718293a4b5/pdf",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "21",
+      "name": "download - fullres (print intent, TIFF)",
+      "descr": "A .tiff asset routes to the PDF rendition on fullres/print. The DAM stores the two TIFF spellings as distinct extension values, so this case covers only .tiff — the shorter .tif spelling is covered by the next case.",
+      "method": "download",
+      "arguments": {
+        "id": "6b2c3d4e5f60718293a4b5c6",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6b2c3d4e5f60718293a4b5c6",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6b2c3d4e5f60718293a4b5c6",
+                "name": "Scanned Asset",
+                "extension": "tiff",
+                "fileType": "image/tiff"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6b2c3d4e5f60718293a4b5c6/pdf",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "22",
+      "name": "download - fullres (print intent, TIF short spelling)",
+      "descr": "The DAM stores tif and tiff as two distinct extension values, so the short spelling needs its own case rather than riding on the .tiff fixture. Routes to the PDF rendition on fullres/print exactly as .tiff does.",
+      "method": "download",
+      "arguments": {
+        "id": "6e5f60718293a4b5c6d7e8f9",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6e5f60718293a4b5c6d7e8f9",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6e5f60718293a4b5c6d7e8f9",
+                "name": "Short Spelling Scan",
+                "extension": "tif",
+                "fileType": "image/tiff"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6e5f60718293a4b5c6d7e8f9/pdf",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "23",
+      "name": "download - highres (print intent, EPS)",
+      "descr": "DEFENSIVE - Studio has not been observed requesting highres on any intent. If it ever does, a type outside the print native set must not be handed the raw original: it routes to the rasterized twin /assets/grafx/assets/:id/hrpreview.",
+      "method": "download",
+      "arguments": {
+        "id": "5f9d1e2c3b4a5968770a1b2c",
+        "download_type": "highres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "5f9d1e2c3b4a5968770a1b2c",
+                "name": "Vector Asset",
+                "extension": "eps",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "24",
+      "name": "download - highres (animation intent, EPS)",
+      "descr": "DEFENSIVE - Studio has not been observed requesting highres on any intent. Routes a type outside the animation native set to the rasterized twin /assets/grafx/assets/:id/hrpreview rather than the raw original. Note this case still moves in lockstep with the print case above: .eps is outside BOTH native sets, so no change to the intent split can break one without the other. Case 32 is the one that actually pins the split.",
+      "method": "download",
+      "arguments": {
+        "id": "5f9d1e2c3b4a5968770a1b2c",
+        "download_type": "highres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "5f9d1e2c3b4a5968770a1b2c",
+                "name": "Vector Asset",
+                "extension": "eps",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/5f9d1e2c3b4a5968770a1b2c/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "25",
+      "name": "download - fullres (print intent, AI is not rerouted)",
+      "descr": "An .ai file is internally %PDF and is ingested directly by CHILI's PDF export engine, so it stays on /assets/grafx/assets/:id/content for print and no conversion is requested. Contrast with case 27, where the same file type routes to the rasterized twin on animation. If this ever routes to /pdf, ai has been dropped from the print native set.",
+      "method": "download",
+      "arguments": {
+        "id": "6c3d4e5f60718293a4b5c6d7",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6c3d4e5f60718293a4b5c6d7",
+                "name": "Illustrator Asset",
+                "extension": "ai",
+                "fileType": "application/illustrator"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "26",
+      "name": "download - fullres (print intent, uppercase EPS extension)",
+      "descr": "Extensions are stored case-sensitively, so an asset ingested as .EPS reports extension 'EPS'. The native sets are matched case-insensitively, so it must still route to the PDF rendition. Guards against a regression that drops the lower-casing in _getExtension.",
+      "method": "download",
+      "arguments": {
+        "id": "6d4e5f60718293a4b5c6d7e8",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6d4e5f60718293a4b5c6d7e8",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6d4e5f60718293a4b5c6d7e8",
+                "name": "Uppercase Vector Asset",
+                "extension": "EPS",
+                "fileType": "application/postscript"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6d4e5f60718293a4b5c6d7e8/pdf",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "27",
+      "name": "download - fullres (animation intent, AI)",
+      "descr": "An .ai file is internally %PDF and is ingested directly by the PDF export engine, so it passes through untouched on print - but the animation renderer fails on those same raw bytes, so fullres/animation serves the rasterized twin /assets/grafx/assets/:id/hrpreview. Pairs with case 25: the same file type takes a different variant on each intent, which is the reason print and animation carry separate native sets rather than one shared list.",
+      "method": "download",
+      "arguments": {
+        "id": "6c3d4e5f60718293a4b5c6d7",
+        "download_type": "fullres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6c3d4e5f60718293a4b5c6d7",
+                "name": "Illustrator Asset",
+                "extension": "ai",
+                "fileType": "application/illustrator"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "28",
+      "name": "download - fullres (animation intent, PDF)",
+      "descr": "A .pdf is ingested natively by the PDF export engine but not by the animation renderer, so fullres/animation serves the rasterized twin rather than the original bytes. Covers the second of the two print-native-but-not-animation-native types, so dropping either ai or pdf from the animation set fails a case on its own.",
+      "method": "download",
+      "arguments": {
+        "id": "6f60718293a4b5c6d7e8f9a0",
+        "download_type": "fullres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6f60718293a4b5c6d7e8f9a0",
+                "name": "Document Asset",
+                "extension": "pdf",
+                "fileType": "application/pdf"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "29",
+      "name": "download - fullres (print intent, PDF is not rerouted)",
+      "descr": "CHILI's PDF export engine ingests PDF natively, so a .pdf at fullres/print keeps /assets/grafx/assets/:id/content and no conversion is requested. Guards the print side of the split introduced for case 28: if this ever routes to /hrpreview, the animation rule has leaked into print.",
+      "method": "download",
+      "arguments": {
+        "id": "6f60718293a4b5c6d7e8f9a0",
+        "download_type": "fullres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6f60718293a4b5c6d7e8f9a0",
+                "name": "Document Asset",
+                "extension": "pdf",
+                "fileType": "application/pdf"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "30",
+      "name": "download - highres (animation intent, AI)",
+      "descr": "DEFENSIVE - Studio has not been observed requesting highres on any intent. highres and fullres share the same per-intent native sets, so an .ai routes to the rasterized twin here exactly as it does at fullres; only the fallback differs between the tiers. Fails independently of the print cases now that the two intents take separate highres branches.",
+      "method": "download",
+      "arguments": {
+        "id": "6c3d4e5f60718293a4b5c6d7",
+        "download_type": "highres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6c3d4e5f60718293a4b5c6d7",
+                "name": "Illustrator Asset",
+                "extension": "ai",
+                "fileType": "application/illustrator"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "31",
+      "name": "download - highres (animation intent, PDF)",
+      "descr": "DEFENSIVE - as case 30, for the other print-native-but-not-animation-native type. A .pdf at highres/animation routes to the rasterized twin, matching its fullres behaviour.",
+      "method": "download",
+      "arguments": {
+        "id": "6f60718293a4b5c6d7e8f9a0",
+        "download_type": "highres",
+        "download_intent": "animation",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6f60718293a4b5c6d7e8f9a0",
+                "name": "Document Asset",
+                "extension": "pdf",
+                "fileType": "application/pdf"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6f60718293a4b5c6d7e8f9a0/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "32",
+      "name": "download - highres (print intent, AI)",
+      "descr": "The case that pins the highres intent split. Every other highres fixture is a type the print and animation native sets agree on, so collapsing the intent ternary to either set alone leaves them all passing. An .ai is print-native but not animation-native, so it is the cheapest input that tells the two branches apart: it must keep /assets/grafx/assets/:id/content here, while case 30 sends the same asset to the rasterized twin on animation. If this ever routes to /hrpreview, highres has stopped distinguishing the intents.",
+      "method": "download",
+      "arguments": {
+        "id": "6c3d4e5f60718293a4b5c6d7",
+        "download_type": "highres",
+        "download_intent": "print",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6c3d4e5f60718293a4b5c6d7",
+                "name": "Illustrator Asset",
+                "extension": "ai",
+                "fileType": "application/illustrator"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7/content",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "33",
+      "name": "download - fullres (web intent, AI)",
+      "descr": "The case that tells the web and print native sets apart. They overlap on png/jpg/jpeg and both exclude eps, so every other web fixture routes identically through either one - an .ai is the cheapest input that separates them, because print serves it as original bytes while the canvas cannot decode it and needs the rasterized twin. Pins the on-screen display behaviour: if this ever routes to /content, the web branch has been pointed at the wrong set and vector art stops rendering on canvas.",
+      "method": "download",
+      "arguments": {
+        "id": "6c3d4e5f60718293a4b5c6d7",
+        "download_type": "fullres",
+        "download_intent": "web",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6c3d4e5f60718293a4b5c6d7",
+                "name": "Illustrator Asset",
+                "extension": "ai",
+                "fileType": "application/illustrator"
+              }
+            }
+          },
+          {
+            "url": "/assets/grafx/assets/6c3d4e5f60718293a4b5c6d7/hrpreview",
+            "method": "GET",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "34",
+      "name": "detail - image uploaded to a publication",
+      "descr": "An uploaded image is not a DAM asset: GET /assets/grafx/assets/{id} answers with no size and no tags, and detail() still returns it",
+      "method": "detail",
+      "arguments": {
+        "id": "6a0b1c2d3e4f5a6b7c8d9e0f",
+        "context": {}
+      },
+      "asserts": {
+        "fetch": [
+          {
+            "url": "/assets/grafx/assets/6a0b1c2d3e4f5a6b7c8d9e0f",
+            "method": "GET",
+            "count": 1,
+            "response": {
+              "status": 200,
+              "headers": { "content-type": "application/json" },
+              "body": {
+                "id": "6a0b1c2d3e4f5a6b7c8d9e0f",
+                "name": "photo.jpg",
+                "fileName": "photo.jpg",
+                "extension": "jpg",
+                "fileType": "image/jpeg",
+                "width": null,
+                "height": null,
+                "tags": []
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

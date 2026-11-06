@@ -1,0 +1,45 @@
+{
+  "name": "lytho-media-connector",
+  "description": "GraFx Media Connector for Lytho DAM",
+  "version": "1.0.0",
+  "author": {
+    "name": "Lytho",
+    "email": "support@lytho.com",
+    "url": "https://www.lytho.com"
+  },
+  "config": {
+    "connectorName": "Lytho",
+    "type": "media",
+    "iconUrl": "https://cdn.goinmo.com/images/lytho-app/favicon.svg",
+    "options": {
+      "LYTHO_BASE_URL": null
+    },
+    "mappings": {},
+    "supportedAuth": [
+      "oAuth2AuthorizationCode",
+      "oAuth2ClientCredentials"
+    ],
+    "authenticationConfig": {
+      "oAuth2AuthorizationCode": {
+        "authorizationServerMetadata": {
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_basic"
+          ]
+        }
+      }
+    }
+  },
+  "license": "MIT",
+  "main": "out/connector.js",
+  "dependencies": {
+    "typescript": "^5.2.2",
+    "@chili-publish/studio-connectors": "^1.39.0"
+  },
+  "scripts": {
+    "build": "yarn connector-cli build",
+    "test": "yarn connector-cli test -t tests.json && yarn connector-cli stress"
+  },
+  "devDependencies": {
+    "@chili-publish/connector-cli": "^1.9.0"
+  }
+}
