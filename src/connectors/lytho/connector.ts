@@ -1,48 +1,7 @@
 import { Connector, Media } from '@chili-publish/studio-connectors';
-
-// ─── Lytho API Types ──────────────────────────────────────────────────────────
-
-interface LythoTag {
-  id: string;
-  name: string;
-}
-
-// Shape of GET /assets/grafx/assets/{id}: a DAM asset or an image uploaded to a publication. `width` and
-// `height` are null and `tags` is empty for an upload.
-interface LythoAssetTag {
-  name: string;
-}
-
-interface LythoAsset {
-  id: string;
-  name: string;
-  fileName: string;
-  extension: string;
-  fileType: string;
-  width: number | null;
-  height: number | null;
-  tags: LythoAssetTag[];
-}
-
-// Slim, connector-owned shape returned by POST /search/grafx/api/v1/search. Decoupled from Lytho's
-// internal search models.
-interface ConnectorSearchHit {
-  id: string;
-  name: string;
-  fileName: string;
-  extension: string;
-  fileType: string;
-  width: number | null;
-  height: number | null;
-  tags: LythoTag[];
-}
-
-interface ConnectorSearchResponse {
-  totalHits: number;
-  from: number;
-  size: number;
-  hits: ConnectorSearchHit[];
-}
+import { toMedia, toMediaDetail } from './lib/mapping';
+import { selectVariant } from './lib/rendition';
+import type { ConnectorSearchResponse, LythoAsset } from './lib/types';
 
 // CHILI GraFx-supported asset file types (per docs.chiligrafx.com/GraFx-Media/overview/filetypes).
 // Sent with the search request to filter search/browse results to assets CHILI can use. This does
@@ -66,33 +25,6 @@ const SUPPORTED_EXTENSIONS = SUPPORTED_FILE_FORMATS.flatMap((ext) => [
   ext,
   ext.toUpperCase(),
 ]);
-
-// GraFx expects PNG/JPEG for on-screen (web) display. Assets already in these formats are
-// served as their original bytes; any other supported type (EPS/PDF/PSD/TIFF/AI) is served
-// as the DAM's rasterized `hrpreview` twin so the canvas can decode it. Matched case-insensitively
-// — the DAM stores `extension` as a case-sensitive keyword, so `.JPG`/`.Png` must be lower-cased first.
-const WEB_NATIVE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg']);
-
-// Per-intent allowlists of the types CHILI can ingest as raw original bytes. Anything outside an
-// intent's set is rerouted to a rendition that intent's pipeline can read. Per CHILI's Media
-// Connector docs, `fullres`/`print` takes PNG/JPEG/PDF ("for asset types other than PNG / JPEG /
-// PDF one should serve the asset wrapped as a PDF file") and `fullres`/`animation` takes PNG/JPEG
-// ("for asset types other than PNG / JPEG" serve it converted). So print reroutes to the DAM's
-// on-demand `pdf` rendition; animation reroutes to the rasterized `hrpreview` twin.
-//
-// AI and PDF are print-native but NOT animation-native. The PDF export engine ingests both
-// directly, while the animation renderer fails on their raw bytes, so the two intents keep
-// separate sets rather than sharing one list of types to reroute.
-//
-// An extension in neither set is treated as non-native and rerouted rather than passed through:
-// handing CHILI bytes it cannot decode is the failure this routing exists to prevent. That case is
-// only reachable for an asset referenced by id in an existing template — query() filters browse to
-// SUPPORTED_EXTENSIONS, so one cannot be picked.
-//
-// Matched case-insensitively: `extension` is stored as a case-sensitive value, so `.EPS` and `.Tif`
-// must be lower-cased before lookup.
-const PRINT_NATIVE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'pdf', 'ai']);
-const ANIMATION_NATIVE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg']);
 
 // ─── Connector Implementation ─────────────────────────────────────────────────
 
@@ -129,19 +61,7 @@ export default class LythoMediaConnector implements Media.MediaConnector {
       const asset = JSON.parse(result.text) as LythoAsset;
       return {
         pageSize: 1,
-        data: [
-          {
-            id: asset.id,
-            name: asset.name,
-            relativePath: '/' + asset.id,
-            type: 0,
-            extension: asset.extension ?? '',
-            metaData: {
-              fileType: asset.fileType ?? '',
-              tags: asset.tags?.map((t) => t.name).join(', ') ?? '',
-            },
-          },
-        ],
+        data: [toMedia(asset)],
         links: { nextPage: '' },
       };
     }
@@ -184,7 +104,7 @@ export default class LythoMediaConnector implements Media.MediaConnector {
 
     return {
       pageSize,
-      data: hits.map((h) => this._searchHitToMedia(h)),
+      data: hits.map(toMedia),
       links: {
         nextPage: nextFrom < totalHits ? String(nextFrom) : '',
       },
@@ -213,21 +133,7 @@ export default class LythoMediaConnector implements Media.MediaConnector {
     }
 
     const asset = JSON.parse(result.text) as LythoAsset;
-
-    return {
-      id: asset.id,
-      name: asset.name,
-      relativePath: '/' + asset.id,
-      type: 0,
-      extension: asset.extension ?? '',
-      width: asset.width ?? undefined,
-      height: asset.height ?? undefined,
-      metaData: {
-        fileType: asset.fileType ?? '',
-        fileName: asset.fileName ?? '',
-        tags: asset.tags?.map((t) => t.name).join(', ') ?? '',
-      },
-    };
+    return toMediaDetail(asset);
   }
 
   async download(
@@ -238,75 +144,9 @@ export default class LythoMediaConnector implements Media.MediaConnector {
   ): Promise<Connector.ArrayBufferPointer> {
     const baseUrl = this._getBaseUrl();
 
-    let variant: string;
-    switch (previewType) {
-      case 'thumbnail':
-        variant = 'preview';
-        break;
-      case 'mediumres':
-        variant = 'hrpreview';
-        break;
-      case 'highres': {
-        if (intent === 'web') {
-          // Loaded into editor frames for on-screen display. GraFx expects a decodable raster
-          // (PNG/JPEG) here for every file type — it has no "serve original" carve-out — so web
-          // always serves the rasterized twin, no type lookup needed.
-          variant = 'hrpreview';
-          break;
-        }
-        // print / animation. The contract asks for a high-quality image, but routing *every* type
-        // here would downscale a 4000px JPEG that exports correctly today, so stay type-aware:
-        // only the types that intent cannot ingest are rerouted. Same native sets as `fullres`,
-        // so a type never changes ingestibility between the two tiers — the tier only changes
-        // what the fallback is (`hrpreview` here; `fullres`/print falls back to `pdf`).
-        //
-        // DEFENSIVE. Studio has not been observed requesting `highres` on any intent — the display
-        // path uses `mediumres`/`web`. These branches cost nothing and the contract permits the
-        // tier, but the behaviour is unobserved rather than confirmed.
-        const ext = await this._getExtension(id);
-        const nativeExtensions =
-          intent === 'print'
-            ? PRINT_NATIVE_EXTENSIONS
-            : ANIMATION_NATIVE_EXTENSIONS;
-        variant = nativeExtensions.has(ext) ? 'content' : 'hrpreview';
-        break;
-      }
-      case 'fullres': {
-        // download() isn't handed the file type, so look it up — one extra metadata call per
-        // fullres download. Accepted cost; revisit only if this ever proves to be a hot path.
-        const ext = await this._getExtension(id);
-        if (intent === 'web') {
-          // Serve PNG/JPEG originals as-is; anything else becomes the rasterized twin so the
-          // canvas can decode it.
-          variant = WEB_NATIVE_EXTENSIONS.has(ext) ? 'content' : 'hrpreview';
-        } else if (intent === 'print') {
-          // CHILI's PDF export engine ingests only PNG/JPEG/PDF, so PDF and AI pass through as
-          // their original bytes. Everything else gets the DAM's on-demand PDF rendition. If
-          // conversion fails the DAM degrades to raster server-side and still returns 200 — there
-          // is nothing for the connector to retry or detect.
-          variant = PRINT_NATIVE_EXTENSIONS.has(ext) ? 'content' : 'pdf';
-        } else {
-          // animation: the contract wants PNG/JPEG, and `hrpreview` is exactly that. Note the
-          // narrower native set — PDF and AI pass through on print but not here, because the
-          // animation renderer fails on those raw bytes.
-          variant = ANIMATION_NATIVE_EXTENSIONS.has(ext)
-            ? 'content'
-            : 'hrpreview';
-        }
-        break;
-      }
-      // 'original' → full-resolution original bytes, every intent.
-      //
-      // Deliberately NOT intent-aware, unlike `highres`/`fullres` above. `original` means the
-      // original file; rerouting it to a rendition would make the one tier with an unambiguous
-      // contract lie about what it returns.
-      //
-      // If Studio is ever seen requesting `original` for animation and failing on a PDF, that is
-      // a contract question to settle rather than another reroute to add here.
-      default:
-        variant = 'content';
-        break;
-    }
+    const variant = await selectVariant(previewType, intent, () =>
+      this._getExtension(id)
+    );
     // Byte downloads use `/assets/grafx/assets/{id}/{variant}`, the endpoint family purpose-built for the
     // connector to stream asset bytes directly instead of following Lytho's usual pre-signed download links.
     // Metadata reads (detail(), and the query() id lookup) use the same family without a variant,
@@ -369,19 +209,5 @@ export default class LythoMediaConnector implements Media.MediaConnector {
     }
     const asset = JSON.parse(result.text) as LythoAsset;
     return (asset.extension ?? '').toLowerCase();
-  }
-
-  private _searchHitToMedia(hit: ConnectorSearchHit): Media.Media {
-    return {
-      id: hit.id,
-      name: hit.name,
-      relativePath: '/' + hit.id,
-      type: 0,
-      extension: hit.extension ?? '',
-      metaData: {
-        fileType: hit.fileType ?? '',
-        tags: hit.tags?.map((t) => t.name).join(', ') ?? '',
-      },
-    };
   }
 }
